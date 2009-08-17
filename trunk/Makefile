@@ -3,7 +3,7 @@ all: forker miniget wait time
 	date "+%d.%m.%Y %H:%M:%S" > build
 
 check: forker
-	./forker $(FORKC) ./wait 5
+	./time ./forker $(FORKC) ./wait 5
 
 forker: forker.c
 	gcc forker.c -o forker
