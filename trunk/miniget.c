@@ -4,10 +4,66 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 #include <fcntl.h>
 #include <string.h>
 #include <stdio.h>
 #include <dirent.h>
+
+/**
+* Открыть сокет
+* @param host хост или IP
+* @param port порт
+* @return сокет | файловый дескриптор
+*/
+int ht_open(const char *host, const char *port)
+{
+  if ( port == 0 ) port = "80";
+  
+  struct addrinfo hints, *addr;
+  
+  // first, load up address structs with getaddrinfo():
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+  
+  int t = getaddrinfo(host, port, &hints, &addr);
+  if ( t != 0 )
+  {
+    fprintf(stderr, "getaddrinfo fault\n");
+    return 0;
+  }
+  
+  int s = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+  if ( s == -1 )
+  {
+    fprintf(stderr, "open socket error\n");
+    freeaddrinfo(addr);
+    return 1;
+  }
+  
+  t = connect(s, addr->ai_addr, addr->ai_addrlen);
+  if ( t == -1 )
+  {
+    fprintf(stderr, "connect fault\n");
+    freeaddrinfo(addr);
+    close(s);
+    return 0;
+  }
+  
+  freeaddrinfo(addr);
+  
+  return s;
+}
+
+/**
+* Закрыть соединение
+*/
+void ht_close(int s)
+{
+  shutdown(s, SHUT_RDWR);
+  close(s);
+}
 
 void strtolower(char *str)
 {
@@ -16,38 +72,18 @@ void strtolower(char *str)
 
 int main()
 {
-  // подлючение: создать сокет
-  int s = socket(PF_INET, SOCK_STREAM, 0);
-  if ( s == -1 )
-  {
-    fprintf(stderr, "open socket error\n");
-    return 1;
-  }
   
-  // подключение: коннект
-  struct sockaddr_in sa;
-  memset(&sa, 0, sizeof(sa));
-  sa.sin_family = PF_INET;
-  sa.sin_port = htons(80);
-  int res = inet_pton(PF_INET, "127.0.0.1", &sa.sin_addr);
-  if ( res <= 0 )
+  int s = ht_open("localhost", 0);
+  if ( s == 0 )
   {
-    fprintf(stderr, "wrong host IP\n");
-    close(s);
-    return 1;
-  }
-  res = connect(s, (struct sockaddr*)(&sa), sizeof(sa));
-  if ( res == -1 )
-  {
-    fprintf(stderr, "connect fault\n");
-    close(s);
+    fprintf(stderr, "connection fault\n");
     return 1;
   }
   
   char *request = "GET / HTTP/1.0\r\nhost: och.localhost\r\n\r\n";
   // "GET /tests/sessions.php HTTP/1.0\r\nhost: test\r\n\r\n";
   int len = strlen(request);
-  int r = send(s, request, len, 0);
+  int r = write(s, request, len);
   if ( r != len )
   {
     fprintf(stderr, "send fault (not all data send)\n");
