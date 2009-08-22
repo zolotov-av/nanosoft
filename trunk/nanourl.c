@@ -72,8 +72,6 @@ url_p url_parse(const char *url)
   }
   url = s1;
   
-  printf("x: %s\n", url);
-  
   // fragment
   s1 = strchr(url, '#');
   if ( s1 )
