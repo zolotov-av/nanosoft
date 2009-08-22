@@ -1,5 +1,5 @@
 
-all: forker miniget wait time
+all: forker miniget wait time parse_url
 	date "+%d.%m.%Y %H:%M:%S" > build
 
 check: forker
@@ -8,8 +8,8 @@ check: forker
 forker: forker.c
 	gcc forker.c -o forker
 
-miniget: miniget.c
-	gcc miniget.c -o miniget
+miniget: miniget.c nanourl.h nanourl.c
+	gcc miniget.c nanourl.c -o miniget
 
 wait: wait.c
 	gcc wait.c -o wait
@@ -17,8 +17,10 @@ wait: wait.c
 time: time.c
 	gcc time.c -o time
 
+parse_url: parse_url.c nanourl.c nanourl.h
+	gcc parse_url.c nanourl.c -o parse_url
+
 clean:
 	rm -f *.o
 	rm -f build
-	rm -f forker miniget wait time
-
+	rm -f forker miniget wait time parse_url
