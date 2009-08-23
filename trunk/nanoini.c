@@ -120,6 +120,25 @@ const char *ini_get(ini_p ini, const char *section, const char *key, const char 
 }
 
 /**
+* Вернуть значение параметра
+* @param ini INI-файл
+* @param section название секции
+* @param key название параметра
+* @param defaultValue значение по умолчанию
+* @return значение параметра
+*/
+int ini_geti(ini_p ini, const char *section, const char *key, int defaultValue)
+{
+  ini_section_p s = ini_lookup_section(ini, section);
+  if ( s == 0 ) return defaultValue;
+  
+  ini_option_p o = ini_lookup_option(s, key);
+  if ( s == 0 ) return defaultValue;
+  
+  return atoi(o->value);
+}
+
+/**
 * Создать новую опцию в секции INI-файла
 */
 static ini_option_p ini_option_new(ini_section_p section, const char *key, const char *value)
@@ -179,6 +198,22 @@ int ini_set(ini_p ini, const char *section, const char *key, const char *value)
   
   return 1;
 }
+
+/**
+* Записать значение параметра
+* @param ini INI-файл
+* @param section название секции
+* @param key название параметра
+* @param value значение параметра
+* @return 1 - в случае удачи и 0 - в случае не удачи
+*/
+int ini_seti(ini_p ini, const char *section, const char *key, int value)
+{
+  char buf[20];
+  sprintf(buf, "%d", value);
+  return ini_set(ini, section, key, buf);
+}
+
 
 /**
 * Удалить значение параметра
