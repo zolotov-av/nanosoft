@@ -20,6 +20,12 @@ time: time.c
 parse_url: parse_url.c nanourl.c nanourl.h
 	gcc parse_url.c nanourl.c -o parse_url
 
+nanoini.o: nanoini.c nanoini.h
+	gcc -c nanoini.c
+
+nanostr.o: nanostr.c nanostr.h
+	gcc -c nanostr.c
+
 clean:
 	rm -f *.o
 	rm -f build
