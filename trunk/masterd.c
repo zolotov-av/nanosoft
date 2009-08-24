@@ -1,9 +1,13 @@
 
-#include "nanoini.h"
-#include <stdio.h>
+#include <sys/types.h>
 #include <limits.h>
+#include <pwd.h>
+#include <grp.h>
+#include <stdio.h>
 
-int start_worker(ini_p ini, const char *section, void *balon)
+#include "nanoini.h"
+
+int run_worker(ini_p ini, const char *section, pid_t uid, gid_t gid)
 {
   char path[PATH_MAX];
   realpath(ini_get(ini, section, "exec", 0), path);
@@ -15,8 +19,12 @@ int start_worker(ini_p ini, const char *section, void *balon)
     fprintf(stderr, "fork fault\n");
     return 0;
   }
+  
   if ( pid == 0 ) // потомок
   {
+    if ( uid ) if ( setuid(uid) != 0 ) fprintf(stderr, "setuid(%d) fault\n", uid);
+    if ( gid ) if ( setgid(gid) != 0 ) fprintf(stderr, "setgid(%d) fault\n", gid);
+    
     const char *args[3] = {
       path,
       ini_get(ini, section, "config", 0),
@@ -34,12 +42,52 @@ int start_worker(ini_p ini, const char *section, void *balon)
   return 0;
 }
 
+int start_worker(ini_p ini, const char *section, void *balon)
+{
+  char path[PATH_MAX];
+  realpath(ini_get(ini, section, "exec", 0), path);
+  printf("start worker: %s (%s)\n", section, path);
+  
+  pid_t uid = 0;
+  gid_t gid = 0;
+  
+  const char *user = ini_get(ini, section, "user", 0);
+  if ( user )
+  {
+    struct passwd *pw = getpwnam(user);
+    if ( pw )
+    {
+      uid = pw->pw_uid;
+      gid = pw->pw_gid;
+    }
+    else fprintf(stderr, "user not found: %s\n", user);
+  }
+  
+  const char *groupName = ini_get(ini, section, "group", 0);
+  if ( groupName )
+  {
+    struct group *gr = getgrnam(groupName);
+    if ( gr ) gid = gr->gr_gid;
+    else fprintf(stderr, "group not found: %s\n", groupName);
+  }
+  
+  printf("user: %s (%d)\ngroup: %s (%d)\n", user, uid, groupName, gid);
+  
+  ini_seti(ini, section, "uid", uid);
+  ini_seti(ini, section, "gid", gid);
+  
+  return run_worker(ini, section, uid, gid);
+}
+
 int restart_worker(ini_p ini, const char *section, void *balon)
 {
   if ( ini_geti(ini, section, "pid", 0) == *(int *)balon )
   {
-    start_worker(ini, section, 0);
+    int uid = ini_geti(ini, section, "uid", 0);
+    int gid = ini_geti(ini, section, "gid", 0);
+    return run_worker(ini, section, uid, gid);
   }
+  return 0;
 }
 
 int main(int argc, char **argv)

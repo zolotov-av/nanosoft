@@ -114,7 +114,7 @@ const char *ini_get(ini_p ini, const char *section, const char *key, const char 
   if ( s == 0 ) return defaultValue;
   
   ini_option_p o = ini_lookup_option(s, key);
-  if ( s == 0 ) return defaultValue;
+  if ( o == 0 ) return defaultValue;
   
   return o->value;
 }
