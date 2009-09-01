@@ -1,5 +1,5 @@
 
-all: forker miniget wait time parse_url masterd
+all: forker miniget wait time parse_url masterd nsu
 	date "+%d.%m.%Y %H:%M:%S" > build
 
 check: forker
@@ -23,6 +23,9 @@ parse_url: parse_url.c nanourl.c nanourl.h
 masterd: masterd.c nanoini.o nanostr.o
 	gcc masterd.c nanoini.o nanostr.o -o masterd
 
+nsu: nsu.c
+	gcc nsu.c -o nsu
+
 nanoini.o: nanoini.c nanoini.h
 	gcc -c nanoini.c
 
@@ -32,4 +35,4 @@ nanostr.o: nanostr.c nanostr.h
 clean:
 	rm -f *.o
 	rm -f build
-	rm -f forker miniget wait time parse_url masterd
+	rm -f forker miniget wait time parse_url masterd nsu

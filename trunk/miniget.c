@@ -146,9 +146,17 @@ int main(int argc, char **argv)
   
   body += 4;
   
-  char *file = strrchr(url->path, '/');
-  if ( file == 0 || file[1] == 0 ) file = "index.html";
-  else file ++;
+  char *file = 0;
+  if ( argc > 2 )
+  {
+    file = argv[2];
+  }
+  else
+  {
+    file = strrchr(url->path, '/');
+    if ( file == 0 || file[1] == 0 ) file = "index.html";
+    else file ++;
+  }
   
   printf("saving to file %s\n", file);
   
