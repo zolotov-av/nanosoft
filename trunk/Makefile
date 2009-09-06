@@ -1,5 +1,7 @@
 
-all: forker miniget wait time parse_url masterd nsu
+srcdir = .
+
+all: forker miniget wait time parse_url masterd nsu streams
 	date "+%d.%m.%Y %H:%M:%S" > build
 
 check: forker
@@ -26,13 +28,19 @@ masterd: masterd.c nanoini.o nanostr.o
 nsu: nsu.c
 	gcc nsu.c -o nsu
 
+streams: streams.cpp fstream.o
+	gcc streams.cpp fstream.o -o streams -I${srcdir} -lstdc++
+
 nanoini.o: nanoini.c nanoini.h
 	gcc -c nanoini.c
 
 nanostr.o: nanostr.c nanostr.h
 	gcc -c nanostr.c
 
+fstream.o: fstream.cpp nanosoft/stream.h nanosoft/fstream.h
+	gcc -c fstream.cpp -I$(srcdir)
+
 clean:
 	rm -f *.o
 	rm -f build
-	rm -f forker miniget wait time parse_url masterd nsu
+	rm -f forker miniget wait time parse_url masterd nsu streams
