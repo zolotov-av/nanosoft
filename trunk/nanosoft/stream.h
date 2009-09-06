@@ -15,7 +15,7 @@ namespace nanosoft
 		stream() { }
 		virtual ~stream() { }
 		virtual int read(void *buffer, size_t size) = 0;
-		virtual int write(void *buffer, size_t size) = 0;
+		virtual int write(const void *buffer, size_t size) = 0;
 	};
 	
 }

@@ -3,6 +3,11 @@
 #include <string.h>
 #include <ctype.h>
 
+void strtolower(char *str)
+{
+  for(; *str; str++) *str = tolower(*str);
+}
+
 char * ltrim(char *s)
 {
   char *p = s;

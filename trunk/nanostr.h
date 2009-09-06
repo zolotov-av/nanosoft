@@ -4,5 +4,6 @@
 char * ltrim(char *s);
 char * rtrim(char *s);
 char * trim(char *s);
+void strtolower(char *str);
 
 #endif // __NANO_STR_H_
