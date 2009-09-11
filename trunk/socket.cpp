@@ -33,7 +33,8 @@ namespace nanosoft
 		hints.ai_family = AF_UNSPEC;
 		hints.ai_socktype = SOCK_STREAM;
 		
-		if ( getaddrinfo(host, port, &hints, &addr) == 0 )
+		int r = getaddrinfo(host, port, &hints, &addr);
+		if ( r == 0 )
 		{
 			int s = ::socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 			
@@ -60,7 +61,7 @@ namespace nanosoft
 		}
 		else
 		{
-			fprintf(stderr, "getaddrinfo() fault\n");
+			fprintf(stderr, "getaddrinfo() fault: %s\n", gai_strerror(r));
 		}
 		
 		return 0;
