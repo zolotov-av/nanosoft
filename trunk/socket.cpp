@@ -44,11 +44,23 @@ namespace nanosoft
 					sock = s;
 					return 1;
 				}
+				else
+				{
+					fprintf(stderr, "connect() fault\n");
+				}
 				
 				::close(s);
 			}
+			else
+			{
+				fprintf(stderr, "socket() fault\n");
+			}
 			
 			freeaddrinfo(addr);
+		}
+		else
+		{
+			fprintf(stderr, "getaddrinfo() fault\n");
 		}
 		
 		return 0;
