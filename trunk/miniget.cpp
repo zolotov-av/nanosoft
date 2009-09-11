@@ -10,6 +10,9 @@ using namespace nanosoft;
 string nano_get(const string &URL)
 {
 	http sock;
+	string result;
+	char buf[4096];
+	int rd;
 	
 	if ( ! sock.open(URL.c_str()) )
 	{
@@ -17,14 +20,12 @@ string nano_get(const string &URL)
 		throw exception();
 	}
 	
-	int len = sock.getContentLength();
-	//cout << "Content length: " << len << endl;
+	while ( rd = sock.read(buf, sizeof(buf)) )
+	{
+		result.append(buf, rd);
+	}
 	
-	char *buf = new char[len+1];
-	sock.read(buf, len);
-	sock.close();
-	
-	return string(buf, len);
+	return result;
 }
 
 int main(int argc, char **argv)

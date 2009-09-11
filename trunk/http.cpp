@@ -17,6 +17,7 @@ namespace nanosoft
 {
 	
 	http::http(int abufsize):
+		headers(16),
 		buf(new char[abufsize]),
 		bufsize(abufsize),
 		length(0),
@@ -72,7 +73,7 @@ namespace nanosoft
 			body += 2;
 			
 			char *p = buf, *end, *value;
-			contentLength = -1;
+			headers.clear();
 			while ( (p < body) && (end = strchr(p, '\n')) )
 			{
 				*end = 0;
@@ -84,10 +85,8 @@ namespace nanosoft
 					value++;
 				}
 				strtolower(trim(p));
-				if ( strcmp(p, "content-length") == 0 )
-				{
-					contentLength = atoi(trim(value));
-				}
+				trim(value);
+				headers.write(p, value);
 				p = end + 1;
 			}
 			
