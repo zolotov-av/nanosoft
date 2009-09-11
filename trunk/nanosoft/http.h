@@ -22,8 +22,8 @@ namespace nanosoft
 		virtual ~http();
 		bool open(const char *url, const char *method = "GET");
 		int getContentLength();
-		virtual int read(void *buffer, size_t size);
-		virtual int write(const void *buffer, size_t size);
+		virtual size_t read(void *buffer, size_t size);
+		virtual size_t write(const void *buffer, size_t size);
 	};
 	
 	inline int http::getContentLength()

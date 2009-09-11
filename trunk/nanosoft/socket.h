@@ -15,8 +15,8 @@ namespace nanosoft
 		virtual ~socket();
 		bool connect(const char *host, char const *port);
 		void close();
-		virtual int read(void *buffer, size_t size);
-		virtual int write(const void *buffer, size_t size);
+		virtual size_t read(void *buffer, size_t size);
+		virtual size_t write(const void *buffer, size_t size);
 	};
 	
 }

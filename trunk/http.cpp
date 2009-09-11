@@ -102,7 +102,7 @@ namespace nanosoft
 		return a < b ? a : b;
 	}
 	
-	ssize_t http::read(void *buffer, size_t size)
+	size_t http::read(void *buffer, size_t size)
 	{
 		if ( size == 0 ) return 0;
 		
@@ -132,7 +132,7 @@ namespace nanosoft
 		return done;
 	}
 	
-	ssize_t http::write(const void *buffer, size_t size)
+	size_t http::write(const void *buffer, size_t size)
 	{
 		return socket::write(buffer, size);
 	}

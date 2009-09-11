@@ -26,8 +26,8 @@ namespace nanosoft
 		void bind(int afd = 0);
 		void close();
 		virtual ~fstream();
-		virtual int read(void *buffer, size_t size);
-		virtual int write(const void *buffer, size_t size);
+		virtual size_t read(void *buffer, size_t size);
+		virtual size_t write(const void *buffer, size_t size);
 	};
 	
 }

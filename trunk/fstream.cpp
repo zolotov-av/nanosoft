@@ -48,12 +48,12 @@ namespace nanosoft
 		fd = 0;
 	}
 	
-	ssize_t fstream::read(void *buffer, size_t size)
+	size_t fstream::read(void *buffer, size_t size)
 	{
 		return ::read(fd, buffer, size);
 	}
 	
-	ssize_t fstream::write(const void *buffer, size_t size)
+	size_t fstream::write(const void *buffer, size_t size)
 	{
 		return ::write(fd, buffer, size);
 	}

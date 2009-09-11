@@ -63,12 +63,12 @@ namespace nanosoft
 		}
 	}
 	
-	ssize_t socket::read(void *buffer, size_t size)
+	size_t socket::read(void *buffer, size_t size)
 	{
 		return ::read(sock, buffer, size);
 	}
 	
-	ssize_t socket::write(const void *buffer, size_t size)
+	size_t socket::write(const void *buffer, size_t size)
 	{
 		return ::write(sock, buffer, size);
 	}
