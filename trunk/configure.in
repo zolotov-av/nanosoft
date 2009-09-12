@@ -6,7 +6,13 @@ AC_INIT(nanosoft, 0.1, BUG-REPORT-ADDRESS)
 #AC_CONFIG_SRCDIR([parse_url.c])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_HEADER([nanosoft/config.h])
+
 AC_CANONICAL_HOST
+
+case "$host_os" in
+linux) AC_DEFINE(UNIX, 1) ;;
+mingw32) AC_DEFINE(WINDOWS, 1) ;;
+esac
 
 # Checks for programs.
 AC_PROG_CXX
@@ -18,15 +24,6 @@ AC_CHECK_TOOL(RANLIB, ranlib, ranlib)
 # Checks for libraries.
 
 # Checks for header files.
-AC_CHECK_HEADERS(windows.h, [WINDOWS=yes])
-
-if test "x$WINDOWS" = "xyes"; then
-	TARGET="windows"
-else
-	TARGET="unix"
-fi
-
-echo "target: $TARGET";
 
 # Checks for typedefs, structures, and compiler characteristics.
 

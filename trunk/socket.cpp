@@ -1,4 +1,5 @@
 
+#include <nanosoft/config.h>
 #include <nanosoft/socket.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -12,6 +13,13 @@
 
 namespace nanosoft
 {
+	int socket::inited = socket::init();
+	
+	int socket::init()
+	{
+		return 1;
+	}
+	
 	socket::socket(): sock(0)
 	{
 	}
@@ -22,7 +30,7 @@ namespace nanosoft
 	}
 	
 	bool socket::connect(const char *host, const char *port)
-	{printf("host: %s:%s\n", host, port);
+	{
 		struct addrinfo hints, *addr;
 		
 		// закрыть сокет если открыт

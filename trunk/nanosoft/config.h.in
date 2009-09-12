@@ -1,2 +1,3 @@
 
-#define HAVE_WINDOWS_H 0
+#undef UNIX
+#undef WINDOWS

@@ -10,6 +10,8 @@ namespace nanosoft
 	{
 	private:
 		int sock;
+		static int inited;
+		static int init();
 	public:
 		socket();
 		virtual ~socket();
