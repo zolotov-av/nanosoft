@@ -23,8 +23,8 @@ NETWORK_LIBS = @NETWORK_LIBS@
 all: all-$(HOST_OS)
 	date "+%d.%m.%Y %H:%M:%S" > build
 
-all-mingw32: libnanosoft.a miniget miniget2 parse_url streams options
-	echo > all-windows
+all-mingw32: libnanosoft.a miniget2 parse_url streams options
+	echo > all-mingw32
 
 all-linux: forker miniget wait time parse_url masterd nsu streams miniget2 options libnanosoft.a
 	echo > all-linux
@@ -92,5 +92,5 @@ distclean: clean
 
 clean:
 	rm -f *.o
-	rm -f build all-linux
+	rm -f build all-linux all-mingw32
 	rm -f forker miniget wait time parse_url masterd nsu streams miniget2 libnanosoft.a options

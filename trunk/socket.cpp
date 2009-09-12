@@ -2,10 +2,24 @@
 #include <nanosoft/config.h>
 #include <nanosoft/socket.h>
 #include <unistd.h>
+
+#ifdef UNIX
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+
+#else
+
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
+#define SHUT_RDWR SD_BOTH
+
+#endif
+
 #include <fcntl.h>
 #include <string.h>
 
@@ -17,6 +31,12 @@ namespace nanosoft
 	
 	int socket::init()
 	{
+#ifdef WINDOWS
+		WORD wVersionRequested = wVersionRequested = MAKEWORD(2, 2);
+		WSADATA wsaData;
+		int err = WSAStartup(wVersionRequested, &wsaData);
+		if ( err != 0 ) fprintf(stderr, "WSAStartup failed with error: %d\n", err);
+#endif
 		return 1;
 	}
 	
@@ -86,12 +106,12 @@ namespace nanosoft
 	
 	size_t socket::read(void *buffer, size_t size)
 	{
-		return ::read(sock, buffer, size);
+		return ::recv(sock, static_cast<char*>(buffer), size, 0);
 	}
 	
 	size_t socket::write(const void *buffer, size_t size)
 	{
-		return ::write(sock, buffer, size);
+		return ::send(sock, static_cast<const char*>(buffer), size, 0);
 	}
 	
 }
