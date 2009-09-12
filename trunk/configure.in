@@ -9,10 +9,19 @@ AC_CONFIG_HEADER([nanosoft/config.h])
 
 AC_CANONICAL_HOST
 
+NETWORK_LIBS=""
+
 case "$host_os" in
-linux) AC_DEFINE(UNIX, 1) ;;
-mingw32) AC_DEFINE(WINDOWS, 1) ;;
+linux)
+	AC_DEFINE(UNIX, 1)
+	;;
+mingw32)
+	AC_DEFINE(WINDOWS, 1)
+	AC_CHECK_LIB(ws2_32, WSAStartup, [NETWORK_LIBS="$NETWORK_LIBS -lws2_32"], [AC_MSG_ERROR([ws2_32 library not found])])
+	;;
 esac
+
+AC_SUBST(NETWORK_LIBS)
 
 # Checks for programs.
 AC_PROG_CXX

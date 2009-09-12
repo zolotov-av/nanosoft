@@ -18,6 +18,8 @@ BUILD = @build@
 HOST = @host@
 HOST_OS = @host_os@
 
+NETWORK_LIBS = @NETWORK_LIBS@
+
 all: all-$(HOST_OS)
 	date "+%d.%m.%Y %H:%M:%S" > build
 
@@ -37,7 +39,7 @@ miniget: $(srcdir)/miniget.c $(srcdir)/nanourl.h $(srcdir)/nanourl.c
 	$(CC) $(srcdir)/miniget.c $(srcdir)/nanourl.c -o miniget
 
 miniget2: $(srcdir)/miniget.cpp libnanosoft.a
-	$(CXX) $(srcdir)/miniget.cpp -lnanosoft -lstdc++ -L. -I$(srcdir) -o miniget2
+	$(CXX) $(srcdir)/miniget.cpp -lnanosoft -lstdc++ $(NETWORK_LIBS) -L. -I$(srcdir) -o miniget2
 
 wait: $(srcdir)/wait.c
 	$(CC) $(srcdir)/wait.c -o wait
