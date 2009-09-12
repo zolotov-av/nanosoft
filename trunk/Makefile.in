@@ -21,7 +21,7 @@ HOST_OS = @host_os@
 all: all-$(HOST_OS)
 	date "+%d.%m.%Y %H:%M:%S" > build
 
-all-windows: libnanosoft.a miniget miniget2
+all-mingw32: libnanosoft.a miniget miniget2 parse_url streams options
 	echo > all-windows
 
 all-linux: forker miniget wait time parse_url masterd nsu streams miniget2 options libnanosoft.a
