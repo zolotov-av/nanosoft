@@ -22,7 +22,7 @@ namespace nanosoft
 	}
 	
 	bool socket::connect(const char *host, const char *port)
-	{
+	{printf("host: %s:%s\n", host, port);
 		struct addrinfo hints, *addr;
 		
 		// закрыть сокет если открыт
