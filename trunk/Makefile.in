@@ -5,9 +5,10 @@ srclib = $(srcdir)/lib
 srcinc = $(srcdir)/include
 srcexm = $(srcdir)/examples
 
+config = ./src/include/nanosoft/config.h
 
-CFLAGS = @CFLAGS@ -I$(srcdir)/include -L.
-CXXFLAGS = @CFLAGS@ -I$(srcdir)/include -L.
+CFLAGS = @CFLAGS@ -I$(srcinc) -I./src/include -L.
+CXXFLAGS = @CFLAGS@ -I$(srcinc) -I./src/include -L.
 CXX = @CXX@ $(CXXFLAGS)
 CC = @CC@ $(CFLAGS)
 AR = @AR@
@@ -90,7 +91,7 @@ options.o: $(srclib)/options.cpp $(srcinc)/nanosoft/options.h
 fstream.o: $(srclib)/fstream.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/fstream.h
 	$(CXX) -c $(srclib)/fstream.cpp
 
-socket.o: $(srclib)/socket.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket.h
+socket.o: $(srclib)/socket.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket.h $(config)
 	$(CXX) -c $(srclib)/socket.cpp
 
 http.o: $(srclib)/http.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket.h $(srcinc)/nanosoft/http.h $(srcinc)/nanourl.h
@@ -98,10 +99,11 @@ http.o: $(srclib)/http.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket
 
 # CLEAN
 
+.PHONY: clean distclean
+
 distclean: clean
-	rm -f Makefile *.log  $(srcinc)/nanosoft/config.h config.status
+	rm -f Makefile *.log  $(config) config.status
 
 clean:
-	rm -f *.o
-	rm -f build all-linux all-mingw32
+	rm -f *.o build all-linux all-mingw32
 	rm -f forker miniget wait time parse_url masterd nsu streams miniget2 libnanosoft.a options
