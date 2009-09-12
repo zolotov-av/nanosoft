@@ -17,7 +17,7 @@ linux)
 	;;
 mingw32)
 	AC_DEFINE(WINDOWS, 1)
-	AC_CHECK_LIB(ws2_32, WSAStartup, [NETWORK_LIBS="$NETWORK_LIBS -lws2_32"], [AC_MSG_ERROR([ws2_32 library not found])])
+	AC_CHECK_LIB(ws2_32, main, [NETWORK_LIBS="$NETWORK_LIBS -lws2_32"], [AC_MSG_ERROR([ws2_32 library not found])])
 	;;
 esac
 

@@ -2719,9 +2719,9 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-{ echo "$as_me:$LINENO: checking for WSAStartup in -lws2_32" >&5
-echo $ECHO_N "checking for WSAStartup in -lws2_32... $ECHO_C" >&6; }
-if test "${ac_cv_lib_ws2_32_WSAStartup+set}" = set; then
+{ echo "$as_me:$LINENO: checking for main in -lws2_32" >&5
+echo $ECHO_N "checking for main in -lws2_32... $ECHO_C" >&6; }
+if test "${ac_cv_lib_ws2_32_main+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -2733,17 +2733,11 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char WSAStartup ();
+
 int
 main ()
 {
-return WSAStartup ();
+return main ();
   ;
   return 0;
 }
@@ -2766,21 +2760,21 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 	 test ! -s conftest.err
        } && test -s conftest$ac_exeext &&
        $as_test_x conftest$ac_exeext; then
-  ac_cv_lib_ws2_32_WSAStartup=yes
+  ac_cv_lib_ws2_32_main=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-	ac_cv_lib_ws2_32_WSAStartup=no
+	ac_cv_lib_ws2_32_main=no
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ echo "$as_me:$LINENO: result: $ac_cv_lib_ws2_32_WSAStartup" >&5
-echo "${ECHO_T}$ac_cv_lib_ws2_32_WSAStartup" >&6; }
-if test $ac_cv_lib_ws2_32_WSAStartup = yes; then
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_ws2_32_main" >&5
+echo "${ECHO_T}$ac_cv_lib_ws2_32_main" >&6; }
+if test $ac_cv_lib_ws2_32_main = yes; then
   NETWORK_LIBS="$NETWORK_LIBS -lws2_32"
 else
   { { echo "$as_me:$LINENO: error: ws2_32 library not found" >&5
