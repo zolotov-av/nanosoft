@@ -20,6 +20,7 @@ url_p url_parse(const char *url)
   len1 = s1 - url;
   purl->scheme = (char*) malloc(len1 + 1);
   strncpy(purl->scheme, url, len1);
+  purl->scheme[len1] = 0;
   url = s1 + 3;
   
   // username & password
@@ -32,16 +33,19 @@ url_p url_parse(const char *url)
       len1 = s2 - url;
       purl->user = (char *) malloc(len1 + 1);
       strncpy(purl->user, url, len1);
+      purl->user[len1] = 0;
       
       len2 = s1 - s2;
       purl->pass = (char *) malloc(len2);
       strncpy(purl->pass, s2+1, len2 - 1);
+      purl->pass[len2-1] = 0;
     }
     else
     { // only username
       len1 = s1 - url;
       purl->user = (char *) malloc(len1 + 1);
       strncpy(purl->user, url, len1);
+      purl->user[len1] = 0;
     }
     url = s1 + 1;
   }
@@ -59,16 +63,19 @@ url_p url_parse(const char *url)
     len1 = s2 - url;
     purl->host = (char *) malloc(len1 + 1);
     strncpy(purl->host, url, len1);
+    purl->host[len1] = 0;
     
     len2 = s1 - s2;
     purl->port = (char *) malloc(len2);
     strncpy(purl->port, s2 + 1, len2 - 1);
+    purl->port[len2-1] = 0;
   }
   else
   { // only host
     len1 = s1 - url;
     purl->host = (char *) malloc(len1 + 1);
     strncpy(purl->host, url, len1);
+    purl->host[len1] = 0;
   }
   url = s1;
   
@@ -93,6 +100,7 @@ url_p url_parse(const char *url)
     len1 = strlen(s1) - len2;
     purl->query = (char *) malloc(len1);
     strncpy(purl->query, s1+1, len1-1);
+    purl->query[len1-1] = 0;
     s2 = s1;
     len2 += len1;
   }
@@ -100,6 +108,7 @@ url_p url_parse(const char *url)
   len1 = strlen(url) - len2;
   purl->path = (char *) malloc(len1 + 1);
   strncpy(purl->path, url, len1);
+  purl->path[len1] = 0;
   
   return purl;
 }
