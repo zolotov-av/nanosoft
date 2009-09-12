@@ -8,14 +8,24 @@ CXX = @CXX@ $(CXXFLAGS)
 CC = @CC@ $(CFLAGS)
 AR = @AR@
 RANLIB = @RANLIB@
+INSTALL = @INSTALL@
 
 BINDIR = @bindir@
 INCLUDEDIR = @includedir@
 LIBDIR = @libdir@
 
+BUILD = @build@
+HOST = @host@
+HOST_OS = @host_os@
 
-all: forker miniget wait time parse_url masterd nsu streams miniget2 options libnanosoft.a
+all: all-$(HOST_OS)
 	date "+%d.%m.%Y %H:%M:%S" > build
+
+all-windows: libnanosoft.a miniget miniget2
+	echo > all-windows
+
+all-linux: forker miniget wait time parse_url masterd nsu streams miniget2 options libnanosoft.a
+	echo > all-linux
 
 check: forker
 	./time ./forker $(FORKC) ./wait 5
@@ -80,5 +90,5 @@ distclean: clean
 
 clean:
 	rm -f *.o
-	rm -f build
+	rm -f build all-linux
 	rm -f forker miniget wait time parse_url masterd nsu streams miniget2 libnanosoft.a options
