@@ -1698,7 +1698,7 @@ ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
 ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
-ac_config_headers="$ac_config_headers nanosoft/config.h"
+ac_config_headers="$ac_config_headers src/include/nanosoft/config.h"
 
 
 # Make sure we can run config.sub.
@@ -4664,7 +4664,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "nanosoft/config.h") CONFIG_HEADERS="$CONFIG_HEADERS nanosoft/config.h" ;;
+    "src/include/nanosoft/config.h") CONFIG_HEADERS="$CONFIG_HEADERS src/include/nanosoft/config.h" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

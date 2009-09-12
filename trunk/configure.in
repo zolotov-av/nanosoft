@@ -5,7 +5,7 @@ AC_PREREQ(2.61)
 AC_INIT(nanosoft, 0.1, BUG-REPORT-ADDRESS)
 #AC_CONFIG_SRCDIR([parse_url.c])
 AC_CONFIG_AUX_DIR(config)
-AC_CONFIG_HEADER([nanosoft/config.h])
+AC_CONFIG_HEADER([src/include/nanosoft/config.h])
 
 AC_CANONICAL_HOST
 

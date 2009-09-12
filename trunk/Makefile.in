@@ -1,9 +1,13 @@
 
-srcdir = @srcdir@
-VPATH = @srcdir@
+srcdir = @srcdir@/src
+srcbin = $(srcdir)/progs
+srclib = $(srcdir)/lib
+srcinc = $(srcdir)/include
+srcexm = $(srcdir)/examples
 
-CFLAGS = @CFLAGS@
-CXXFLAGS = @CFLAGS@
+
+CFLAGS = @CFLAGS@ -I$(srcdir)/include -L.
+CXXFLAGS = @CFLAGS@ -I$(srcdir)/include -L.
 CXX = @CXX@ $(CXXFLAGS)
 CC = @CC@ $(CFLAGS)
 AR = @AR@
@@ -29,66 +33,73 @@ all-mingw32: libnanosoft.a miniget2 parse_url streams options
 all-linux: forker miniget wait time parse_url masterd nsu streams miniget2 options libnanosoft.a
 	echo > all-linux
 
-check: forker
-	./time ./forker $(FORKC) ./wait 5
+# PROGRAMS
 
-forker: $(srcdir)/forker.c
-	$(CC) $(srcdir)/forker.c -o forker
+forker: $(srcbin)/forker.c
+	$(CC) $(srcbin)/forker.c -o forker
 
-miniget: $(srcdir)/miniget.c $(srcdir)/nanourl.h $(srcdir)/nanourl.c
-	$(CC) $(srcdir)/miniget.c $(srcdir)/nanourl.c -o miniget
+wait: $(srcbin)/wait.c
+	$(CC) $(srcbin)/wait.c -o wait
 
-miniget2: $(srcdir)/miniget.cpp libnanosoft.a
-	$(CXX) $(srcdir)/miniget.cpp -lnanosoft -lstdc++ $(NETWORK_LIBS) -L. -I$(srcdir) -o miniget2
+time: $(srcbin)/time.c
+	$(CC) $(srcbin)/time.c -o time
 
-wait: $(srcdir)/wait.c
-	$(CC) $(srcdir)/wait.c -o wait
+nsu: $(srcbin)/nsu.c
+	$(CC) $(srcbin)/nsu.c -o nsu
 
-time: $(srcdir)/time.c
-	$(CC) $(srcdir)/time.c -o time
+masterd: $(srcbin)/masterd.c libnanosoft.a
+	$(CC) $(srcbin)/masterd.c -lnanosoft -o masterd
 
-parse_url: $(srcdir)/parse_url.c $(srcdir)/nanourl.c $(srcdir)/nanourl.h
-	$(CC) $(srcdir)/parse_url.c $(srcdir)/nanourl.c -o parse_url
+miniget: $(srcbin)/miniget.c libnanosoft.a
+	$(CC) $(srcbin)/miniget.c -lnanosoft -o miniget
 
-masterd: $(srcdir)/masterd.c nanoini.o nanostr.o
-	$(CC) $(srcdir)/masterd.c nanoini.o nanostr.o -o masterd
+miniget2: $(srcbin)/miniget.cpp libnanosoft.a
+	$(CXX) $(srcbin)/miniget.cpp -lnanosoft -lstdc++ $(NETWORK_LIBS) -o miniget2
 
-nsu: $(srcdir)/nsu.c
-	$(CC) $(srcdir)/nsu.c -o nsu
+# EXAMPLES
 
-streams: $(srcdir)/streams.cpp fstream.o
-	$(CXX) $(srcdir)/streams.cpp fstream.o -o streams -I${srcdir} -lstdc++
+parse_url: $(srcexm)/parse_url.c libnanosoft.a
+	$(CC) $(srcexm)/parse_url.c -lnanosoft -o parse_url
 
-options: options.o $(srcdir)/options_test.cpp
-	$(CXX) options.o $(srcdir)/options_test.cpp -I$(srcdir) -lstdc++ -o options
+streams: $(srcexm)/streams.cpp libnanosoft.a
+	$(CXX) $(srcexm)/streams.cpp -lnanosoft -lstdc++ -o streams
+
+options: $(srcexm)/options.cpp  libnanosoft.a
+	$(CXX) $(srcexm)/options.cpp -lnanosoft -lstdc++ -o options
+
+# LIBRARY
 
 libnanosoft.a: nanoini.o nanostr.o nanourl.o options.o fstream.o socket.o http.o
 	$(AR) rc libnanosoft.a nanoini.o nanostr.o nanourl.o options.o fstream.o socket.o http.o
 	$(RANLIB) libnanosoft.a
 
-nanoini.o: $(srcdir)/nanoini.c $(srcdir)/nanoini.h
-	$(CC) -c $(srcdir)/nanoini.c
+# MODULES
 
-nanostr.o: $(srcdir)/nanostr.c $(srcdir)/nanostr.h
-	$(CC) -c $(srcdir)/nanostr.c
+nanoini.o: $(srclib)/nanoini.c $(srcinc)/nanoini.h
+	$(CC) -c $(srclib)/nanoini.c
 
-nanourl.o: $(srcdir)/nanourl.c $(srcdir)/nanourl.h
-	$(CC) -c $(srcdir)/nanourl.c
+nanostr.o: $(srclib)/nanostr.c $(srcinc)/nanostr.h
+	$(CC) -c $(srclib)/nanostr.c
 
-options.o: $(srcdir)/options.cpp $(srcdir)/nanosoft/options.h
-	$(CXX) -c $(srcdir)/options.cpp -I$(srcdir)
+nanourl.o: $(srclib)/nanourl.c $(srcinc)/nanourl.h
+	$(CC) -c $(srclib)/nanourl.c
 
-fstream.o: $(srcdir)/fstream.cpp $(srcdir)/nanosoft/stream.h $(srcdir)/nanosoft/fstream.h
-	$(CXX) -c $(srcdir)/fstream.cpp -I$(srcdir)
+options.o: $(srclib)/options.cpp $(srcinc)/nanosoft/options.h
+	$(CXX) -c $(srclib)/options.cpp
 
-socket.o: $(srcdir)/socket.cpp $(srcdir)/nanosoft/stream.h $(srcdir)/nanosoft/socket.h
-	$(CXX) -c $(srcdir)/socket.cpp -I$(srcdir)
+fstream.o: $(srclib)/fstream.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/fstream.h
+	$(CXX) -c $(srclib)/fstream.cpp
 
-http.o: $(srcdir)/http.cpp $(srcdir)/nanosoft/stream.h $(srcdir)/nanosoft/socket.h $(srcdir)/nanourl.h
-	$(CXX) -c $(srcdir)/http.cpp -I$(srcdir)
+socket.o: $(srclib)/socket.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket.h
+	$(CXX) -c $(srclib)/socket.cpp
+
+http.o: $(srclib)/http.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket.h $(srcinc)/nanosoft/http.h $(srcinc)/nanourl.h
+	$(CXX) -c $(srclib)/http.cpp
+
+# CLEAN
 
 distclean: clean
-	rm -f Makefile *.log nanosoft/config.h config.status
+	rm -f Makefile *.log  $(srcinc)/nanosoft/config.h config.status
 
 clean:
 	rm -f *.o
