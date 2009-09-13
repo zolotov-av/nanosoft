@@ -28,10 +28,10 @@ NETWORK_LIBS = @NETWORK_LIBS@
 all: all-$(HOST_OS)
 	date "+%d.%m.%Y %H:%M:%S" > build
 
-all-mingw32: libnanosoft.a miniget2 parse_url streams options
+all-mingw32: libnanosoft.a miniget2 parse_url streams options string
 	echo > all-mingw32
 
-all-linux: forker miniget wait time parse_url masterd nsu streams miniget2 options libnanosoft.a
+all-linux: forker miniget wait time parse_url masterd nsu streams miniget2 options string libnanosoft.a
 	echo > all-linux
 
 # PROGRAMS
@@ -68,10 +68,13 @@ streams: $(srcexm)/streams.cpp libnanosoft.a
 options: $(srcexm)/options.cpp  libnanosoft.a
 	$(CXX) $(srcexm)/options.cpp -lnanosoft -lstdc++ -o options
 
+string: $(srcexm)/string.cpp libnanosoft.a
+	$(CXX) $(srcexm)/string.cpp -lnanosoft -lstdc++ -o string
+
 # LIBRARY
 
-libnanosoft.a: nanoini.o nanostr.o nanourl.o options.o fstream.o socket.o http.o
-	$(AR) rc libnanosoft.a nanoini.o nanostr.o nanourl.o options.o fstream.o socket.o http.o
+libnanosoft.a: nanoini.o nanostr.o nanourl.o string.o options.o fstream.o socket.o http.o
+	$(AR) rc libnanosoft.a nanoini.o nanostr.o nanourl.o string.o options.o fstream.o socket.o http.o
 	$(RANLIB) libnanosoft.a
 
 # MODULES
@@ -84,6 +87,9 @@ nanostr.o: $(srclib)/nanostr.c $(srcinc)/nanostr.h
 
 nanourl.o: $(srclib)/nanourl.c $(srcinc)/nanourl.h
 	$(CC) -c $(srclib)/nanourl.c
+
+string.o: $(srclib)/string.cpp $(srcinc)/nanosoft/string.h
+	$(CXX) -c $(srclib)/string.cpp
 
 options.o: $(srclib)/options.cpp $(srcinc)/nanosoft/options.h
 	$(CXX) -c $(srclib)/options.cpp
@@ -106,4 +112,4 @@ distclean: clean
 
 clean:
 	rm -f *.o build all-linux all-mingw32
-	rm -f forker miniget wait time parse_url masterd nsu streams miniget2 libnanosoft.a options
+	rm -f forker miniget wait time parse_url masterd nsu streams miniget2 libnanosoft.a options string
