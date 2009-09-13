@@ -37,6 +37,7 @@ AC_CHECK_TOOL(RANLIB, ranlib, ranlib)
 # Checks for typedefs, structures, and compiler characteristics.
 
 # Checks for library functions.
+AC_CHECK_FUNC(gai_strerror, [AC_DEFINE(HAVE_GAI_STRERROR)])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

@@ -89,7 +89,11 @@ namespace nanosoft
 		}
 		else
 		{
+#ifdef HAVE_GAI_STRERROR
 			fprintf(stderr, "getaddrinfo() fault: %s\n", gai_strerror(r));
+#else
+			fprintf(stderr, "getaddrinfo() fault\n");
+#endif
 		}
 		
 		return 0;
