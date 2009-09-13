@@ -101,11 +101,7 @@ namespace nanosoft
 #else
 		
 		struct hostent *he = gethostbyname(host);
-		if ( he == 0 )
-		{
-			herror("gethostbyname");
-			return 0;
-		}
+		if ( he == 0 ) return 0;
 		
 		struct sockaddr_in target;
 		target.sin_family = AF_INET;
