@@ -21,9 +21,9 @@
 #endif
 
 #include <fcntl.h>
-#include <string.h>
-
-#include <stdio.h>
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
 
 namespace nanosoft
 {
@@ -51,10 +51,12 @@ namespace nanosoft
 	
 	bool socket::connect(const char *host, const char *port)
 	{
-		struct addrinfo hints, *addr;
-		
 		// закрыть сокет если открыт
 		close();
+		
+#ifdef USE_GETADDRINFO
+		
+		struct addrinfo hints, *addr;
 		
 		// first, load up address structs with getaddrinfo():
 		memset(&hints, 0, sizeof hints);
@@ -96,6 +98,53 @@ namespace nanosoft
 #endif
 		}
 		
+#else
+		
+		struct hostent *he = gethostbyname(host);
+		if ( he == 0 )
+		{
+			herror("gethostbyname");
+			return 0;
+		}
+		
+		struct sockaddr_in target;
+		target.sin_family = AF_INET;
+		target.sin_port = htons( (u_short)atoi(port) );
+		
+		if( he->h_length != sizeof( struct in_addr ) )
+		{
+			fprintf(stderr, "he->h_length != sizeof( struct in_addr )\n");
+			return 0;
+		}
+		else
+		{
+			memcpy(&target.sin_addr, he->h_addr, sizeof( struct in_addr ));
+		}
+		
+		memset(target.sin_zero, '\0', 8);
+		
+		int s = ::socket(PF_INET, SOCK_STREAM, 0);
+		
+		if ( s > 0 )
+		{
+			if ( ::connect(s, (struct sockaddr *)&target, sizeof( struct sockaddr )) == 0 )
+			{
+				sock = s;
+				return 1;
+			}
+			else
+			{
+				fprintf(stderr, "connect() fault\n");
+			}
+			
+			::close(s);
+		}
+		else
+		{
+			fprintf(stderr, "socket() fault\n");
+		}
+		
+#endif
 		return 0;
 	}
 	
