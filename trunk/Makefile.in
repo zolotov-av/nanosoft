@@ -14,10 +14,23 @@ CC = @CC@ $(CFLAGS)
 AR = @AR@
 RANLIB = @RANLIB@
 INSTALL = @INSTALL@
+MKDIR = @MKDIR@
 
-BINDIR = @bindir@
-INCLUDEDIR = @includedir@
-LIBDIR = @libdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+libdir = @libdir@
+includedir = @includedir@
+
+PREFIX = $(DESTDIR)$(prefix)
+EPREFIX = $(DESTDIR)$(exec_prefix)
+BINDIR = $(DESTDIR)$(bindir)
+INCLUDEDIR = $(DESTDIR)$(includedir)
+LIBDIR = $(DESTDIR)$(libdir)
+
+INSTALL_BIN = $(INSTALL) -m755
+INSTALL_INC = $(INSTALL) -m644
+INSTALL_LIB = $(INSTALL) -m644
 
 BUILD = @build@
 HOST = @host@
@@ -27,6 +40,34 @@ NETWORK_LIBS = @NETWORK_LIBS@
 
 all: all-$(HOST_OS)
 	date "+%d.%m.%Y %H:%M:%S" > build
+
+.PHONY: install install-linux install-mingw32
+install: install-$(HOST_OS)
+
+install-linux: forker miniget wait time masterd nsu miniget2 libnanosoft.a
+	$(MKDIR) -p $(BINDIR) $(LIBDIR) $(INCLUDEDIR)/nanosoft
+	$(INSTALL_BIN) forker $(BINDIR)/forker
+	$(INSTALL_BIN) miniget $(BINDIR)/miniget
+	$(INSTALL_BIN) wait $(BINDIR)/wait
+	$(INSTALL_BIN) time $(BINDIR)/time
+	$(INSTALL_BIN) masterd $(BINDIR)/masterd
+	$(INSTALL_BIN) nsu $(BINDIR)/nsu
+	$(INSTALL_BIN) miniget2 $(BINDIR)/miniget2
+	$(INSTALL_LIB) libnanosoft.a $(LIBDIR)/libnanosoft.a
+	$(INSTALL_INC) $(srcdir)/include/nanoini.h $(INCLUDEDIR)/nanoini.h
+	$(INSTALL_INC) $(srcdir)/include/nanostr.h $(INCLUDEDIR)/nanostr.h
+	$(INSTALL_INC) $(srcdir)/include/nanourl.h $(INCLUDEDIR)/nanourl.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/config.h $(INCLUDEDIR)/nanosoft/config.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/fstream.h $(INCLUDEDIR)/nanosoft/fstream.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/http.h $(INCLUDEDIR)/nanosoft/http.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/options.h $(INCLUDEDIR)/nanosoft/options.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/socket.h $(INCLUDEDIR)/nanosoft/socket.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/stream.h $(INCLUDEDIR)/nanosoft/stream.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/string.h $(INCLUDEDIR)/nanosoft/string.h
+
+install-mingw32: libnanosoft.a miniget2
+	$(INSTALL) miniget2 $(BINDIR)/miniget2
+	$(INSTALL) libnanosoft.a $(LIBDIR)/libnanosoft.a
 
 all-mingw32: libnanosoft.a miniget2 parse_url streams options string
 	echo > all-mingw32

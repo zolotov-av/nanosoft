@@ -29,6 +29,7 @@ AC_PROG_CC
 AC_PROG_INSTALL
 AC_CHECK_TOOL(AR, ar, ar)
 AC_CHECK_TOOL(RANLIB, ranlib, ranlib)
+AC_CHECK_TOOL(MKDIR, mkdir, mkdir)
 
 # Checks for libraries.
 
