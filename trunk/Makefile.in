@@ -65,6 +65,7 @@ install-linux: forker miniget wait time masterd nsu miniget2 showpath libnanosof
 	$(INSTALL_BIN) masterd $(BINDIR)/masterd
 	$(INSTALL_BIN) nsu $(BINDIR)/nsu
 	$(INSTALL_BIN) miniget2 $(BINDIR)/miniget2
+	$(INSTALL_BIN) showpath $(BINDIR)/showpath
 	$(INSTALL_LIB) libnanosoft.a $(LIBDIR)/libnanosoft.a
 
 install-mingw32: libnanosoft.a miniget2
