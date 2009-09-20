@@ -41,19 +41,10 @@ NETWORK_LIBS = @NETWORK_LIBS@
 all: all-$(HOST_OS)
 	date "+%d.%m.%Y %H:%M:%S" > build
 
-.PHONY: install install-linux install-mingw32
-install: install-$(HOST_OS)
+.PHONY: install install-linux install-mingw32 install-headers
+install: install-$(HOST_OS) install-headers
 
-install-linux: forker miniget wait time masterd nsu miniget2 libnanosoft.a
-	$(MKDIR) -p $(BINDIR) $(LIBDIR) $(INCLUDEDIR)/nanosoft
-	$(INSTALL_BIN) forker $(BINDIR)/forker
-	$(INSTALL_BIN) miniget $(BINDIR)/miniget
-	$(INSTALL_BIN) wait $(BINDIR)/wait
-	$(INSTALL_BIN) time $(BINDIR)/time
-	$(INSTALL_BIN) masterd $(BINDIR)/masterd
-	$(INSTALL_BIN) nsu $(BINDIR)/nsu
-	$(INSTALL_BIN) miniget2 $(BINDIR)/miniget2
-	$(INSTALL_LIB) libnanosoft.a $(LIBDIR)/libnanosoft.a
+install-headers:
 	$(INSTALL_INC) $(srcdir)/include/nanoini.h $(INCLUDEDIR)/nanoini.h
 	$(INSTALL_INC) $(srcdir)/include/nanostr.h $(INCLUDEDIR)/nanostr.h
 	$(INSTALL_INC) $(srcdir)/include/nanourl.h $(INCLUDEDIR)/nanourl.h
@@ -65,14 +56,25 @@ install-linux: forker miniget wait time masterd nsu miniget2 libnanosoft.a
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/stream.h $(INCLUDEDIR)/nanosoft/stream.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/string.h $(INCLUDEDIR)/nanosoft/string.h
 
+install-linux: forker miniget wait time masterd nsu miniget2 showpath libnanosoft.a
+	$(MKDIR) -p $(BINDIR) $(LIBDIR) $(INCLUDEDIR)/nanosoft
+	$(INSTALL_BIN) forker $(BINDIR)/forker
+	$(INSTALL_BIN) miniget $(BINDIR)/miniget
+	$(INSTALL_BIN) wait $(BINDIR)/wait
+	$(INSTALL_BIN) time $(BINDIR)/time
+	$(INSTALL_BIN) masterd $(BINDIR)/masterd
+	$(INSTALL_BIN) nsu $(BINDIR)/nsu
+	$(INSTALL_BIN) miniget2 $(BINDIR)/miniget2
+	$(INSTALL_LIB) libnanosoft.a $(LIBDIR)/libnanosoft.a
+
 install-mingw32: libnanosoft.a miniget2
-	$(INSTALL) miniget2 $(BINDIR)/miniget2
-	$(INSTALL) libnanosoft.a $(LIBDIR)/libnanosoft.a
+	$(INSTALL_BIN) miniget2 $(BINDIR)/miniget2
+	$(INSTALL_LIB) libnanosoft.a $(LIBDIR)/libnanosoft.a
 
 all-mingw32: libnanosoft.a miniget2 parse_url streams options string
 	echo > all-mingw32
 
-all-linux: forker miniget wait time parse_url masterd nsu streams miniget2 options string libnanosoft.a
+all-linux: forker miniget wait time parse_url masterd nsu streams miniget2 showpath options string libnanosoft.a
 	echo > all-linux
 
 # PROGRAMS
@@ -97,6 +99,9 @@ miniget: $(srcbin)/miniget.c libnanosoft.a
 
 miniget2: $(srcbin)/miniget.cpp libnanosoft.a
 	$(CXX) $(srcbin)/miniget.cpp -lnanosoft -lstdc++ $(NETWORK_LIBS) -o miniget2
+
+showpath: $(srcbin)/showpath.c
+	$(CXX) $(srcbin)/showpath.c -o showpath
 
 # EXAMPLES
 
@@ -153,4 +158,4 @@ distclean: clean
 
 clean:
 	rm -f *.o build all-linux all-mingw32
-	rm -f forker miniget wait time parse_url masterd nsu streams miniget2 libnanosoft.a options string
+	rm -f forker miniget wait time parse_url masterd nsu streams miniget2 showpath libnanosoft.a options string
