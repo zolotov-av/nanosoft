@@ -75,7 +75,7 @@ install-mingw32: libnanosoft.a miniget2
 all-mingw32: libnanosoft.a miniget2 parse_url streams options string
 	echo > all-mingw32
 
-all-linux: forker miniget wait time parse_url masterd nsu streams miniget2 showpath options string libnanosoft.a
+all-linux: forker miniget wait time parse_url masterd nsu streams miniget2 showpath options string libnanosoft.a netdaemon
 	echo > all-linux
 
 # PROGRAMS
@@ -150,6 +150,10 @@ socket.o: $(srclib)/socket.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/so
 http.o: $(srclib)/http.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket.h $(srcinc)/nanosoft/http.h $(srcinc)/nanourl.h
 	$(CXX) -c $(srclib)/http.cpp
 
+# libnetd modules
+netdaemon: $(srcdir)/libnetd/netdaemon.cpp
+	$(CXX) $(srcdir)/libnetd/netdaemon.cpp -o netdaemon -lpthread
+
 # CLEAN
 
 .PHONY: clean distclean
@@ -159,4 +163,4 @@ distclean: clean
 
 clean:
 	rm -f *.o build all-linux all-mingw32
-	rm -f forker miniget wait time parse_url masterd nsu streams miniget2 showpath libnanosoft.a options string
+	rm -f forker miniget wait time parse_url masterd nsu streams miniget2 showpath libnanosoft.a options string netdaemon
