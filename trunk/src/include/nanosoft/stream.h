@@ -10,7 +10,7 @@ namespace nanosoft
 	{
 	private:
 		stream(const stream &) { }
-		stream& operator = (const stream &) { }
+		stream& operator = (const stream &) { return *this; }
 	public:
 		stream() { }
 		virtual ~stream() { }
