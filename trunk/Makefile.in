@@ -155,15 +155,18 @@ http.o: $(srclib)/http.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket
 
 # libnetd modules
 daemon: $(srcexm)/daemon.cpp libnetd.a
-	$(CXX) $(srcexm)/daemon.cpp -o daemon -lpthread -lnetd
+	$(CXX) $(srcexm)/daemon.cpp -o daemon -lpthread -lnetd -lexpat
 
-libnetd.a: asyncstream.o netdaemon.o asyncobject.o asyncserver.o
-	$(AR) rc libnetd.a asyncstream.o netdaemon.o asyncobject.o asyncserver.o
+libnetd.a: asyncstream.o netdaemon.o asyncobject.o asyncserver.o asyncxmlstream.o
+	$(AR) rc libnetd.a asyncstream.o netdaemon.o asyncobject.o asyncserver.o asyncxmlstream.o
 	$(RANLIB) libnetd.a
 
 netdaemon.o: $(srcdir)/libnetd/netdaemon.cpp $(srcinc)/nanosoft/netdaemon.h
 	$(CXX) -c $(srcdir)/libnetd/netdaemon.cpp
 
+asyncxmlstream.o: $(srcdir)/libnetd/asyncxmlstream.cpp $(srcinc)/nanosoft/asyncxmlstream.h $(srcinc)/nanosoft/asyncstream.h $(srcinc)/nanosoft/asyncobject.h
+	$(CXX) -c $(srcdir)/libnetd/asyncxmlstream.cpp
+	
 asyncstream.o: $(srcdir)/libnetd/asyncstream.cpp $(srcinc)/nanosoft/asyncstream.h $(srcinc)/nanosoft/asyncobject.h
 	$(CXX) -c $(srcdir)/libnetd/asyncstream.cpp
 

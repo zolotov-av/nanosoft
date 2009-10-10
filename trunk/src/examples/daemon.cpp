@@ -1,17 +1,17 @@
-
+#include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include <iostream>
 #include <exception>
 #include <nanosoft/netdaemon.h>
-#include <nanosoft/asyncstream.h>
+#include <nanosoft/asyncxmlstream.h>
 #include <nanosoft/asyncserver.h>
 
 using namespace std;
 
 class NetDaemon;
 
-class TestStream: public AsyncStream
+class TestStream: public AsyncXMLStream
 {
 private:
 	/**
@@ -20,7 +20,7 @@ private:
 	NetDaemon *daemon;
 	
 public:
-	TestStream(NetDaemon *d, int afd): AsyncStream(afd), daemon(d) { }
+	TestStream(NetDaemon *d, int afd): AsyncXMLStream(afd), daemon(d) { }
 	
 	/**
 	* Событие готовности к чтению
@@ -28,6 +28,7 @@ public:
 	* Вызывается когда в потоке есть данные,
 	* которые можно прочитать без блокирования
 	*/
+	/*
 	void onRead()
 	{
 		char buf[400];
@@ -42,7 +43,7 @@ public:
 			return;
 		}
 		
-	}
+	}*/
 	
 	/**
 	* Событие готовности к записи
@@ -53,16 +54,6 @@ public:
 	void onWrite()
 	{
 		std::cerr << "not implemented TestStream::onWrite()" << std::endl;
-	}
-	
-	/**
-	* Событие ошибки
-	*
-	* Вызывается в случае возникновения какой-либо ошибки
-	*/
-	void onError(const char *message)
-	{
-		std::cerr << message << std::endl;
 	}
 	
 	/**
@@ -77,8 +68,37 @@ public:
 		{
 			stderror();
 		}
+		AsyncXMLStream::onShutdown();
 		daemon->removeObject(this);
 		delete this;
+	}
+	
+	/**
+	* Обработчик открытия тега
+	*/
+	virtual void onStartElement(const std::string &name, const attributtes_t &attributes)
+	{
+		cout << "<" << name;
+		for(attributtes_t::const_iterator iter = attributes.begin(); iter != attributes.end(); ++iter)
+		{
+			cout << " " << iter->first << "=\"" << iter->second << "\"";
+		}
+		cout << ">";
+	}
+	
+	/**
+	* Обработчик символьных данных
+	*/
+	virtual void onCharacterData(const std::string &cdata)
+	{
+		cout << cdata;
+	}
+	
+	/**
+	* Обработчик закрытия тега
+	*/
+	virtual void onEndElement(const std::string &name)
+	{
 	}
 };
 
@@ -90,8 +110,9 @@ private:
 	*/
 	NetDaemon *daemon;
 	
+	int count;
 public:
-	MyServer(NetDaemon *d): daemon(d) { }
+	MyServer(NetDaemon *d): daemon(d), count(0) { }
 	
 	AsyncObject* onAccept()
 	{
@@ -100,6 +121,7 @@ public:
 		{
 			AsyncObject *client = new TestStream(daemon, sock);
 			daemon->addObject(client);
+			fprintf(stderr, "accepted #%d\n", ++count);
 			return client;
 		}
 		return 0;

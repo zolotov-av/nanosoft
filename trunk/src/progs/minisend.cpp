@@ -37,13 +37,18 @@ int main(int argc, char **argv)
 				return 1;
 			}
 		}
-		if ( r == 0 ) return 0;
+		if ( r == 0 ) break;
 		if ( r < 0 )
 		{
 			cerr << "read fault" << endl;
 			return 1;
 		}
 	}
+	
+	struct timespec tm;
+	tm.tv_sec = 100;
+	tm.tv_nsec = 0;
+	nanosleep(&tm, 0);
 	
 	return 0;
 }
