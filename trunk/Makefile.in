@@ -75,7 +75,7 @@ install-mingw32: libnanosoft.a miniget2
 all-mingw32: libnanosoft.a miniget2 parse_url streams options string
 	echo > all-mingw32
 
-all-linux: forker miniget wait time parse_url masterd nsu streams miniget2 showpath options string daemon libnanosoft.a libnetd.a
+all-linux: forker miniget wait time parse_url masterd nsu streams miniget2 minisend showpath options string daemon libnanosoft.a libnetd.a
 	echo > all-linux
 
 # PROGRAMS
@@ -100,6 +100,9 @@ miniget: $(srcbin)/miniget.c libnanosoft.a
 
 miniget2: $(srcbin)/miniget.cpp libnanosoft.a
 	$(CXX) $(srcbin)/miniget.cpp -lnanosoft -lstdc++ $(NETWORK_LIBS) -o miniget2
+
+minisend: $(srcbin)/minisend.cpp libnanosoft.a
+	$(CXX) $(srcbin)/minisend.cpp -lnanosoft -lstdc++ $(NETWORK_LIBS) -o minisend
 
 showpath: $(srcbin)/showpath.c
 	$(CXX) $(srcbin)/showpath.c -o showpath
@@ -179,4 +182,4 @@ distclean: clean
 
 clean:
 	rm -f *.o build all-linux all-mingw32
-	rm -f forker miniget wait time parse_url masterd nsu streams miniget2 showpath libnanosoft.a libnetd.a options string daemon
+	rm -f forker miniget wait time parse_url masterd nsu streams miniget2 showpath libnanosoft.a libnetd.a options string daemon minisend
