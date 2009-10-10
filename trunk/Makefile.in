@@ -154,15 +154,18 @@ http.o: $(srclib)/http.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket
 daemon: $(srcexm)/daemon.cpp libnetd.a
 	$(CXX) $(srcexm)/daemon.cpp -o daemon -lpthread -lnetd
 
-libnetd.a: asyncstream.o netdaemon.o
-	$(AR) rc libnetd.a asyncstream.o netdaemon.o
+libnetd.a: asyncstream.o netdaemon.o asyncobject.o
+	$(AR) rc libnetd.a asyncstream.o netdaemon.o asyncobject.o
 	$(RANLIB) libnetd.a
 
 netdaemon.o: $(srcdir)/libnetd/netdaemon.cpp $(srcinc)/nanosoft/netdaemon.h
 	$(CXX) -c $(srcdir)/libnetd/netdaemon.cpp
 
-asyncstream.o: $(srcdir)/libnetd/asyncstream.cpp $(srcinc)/nanosoft/asyncstream.h
+asyncstream.o: $(srcdir)/libnetd/asyncstream.cpp $(srcinc)/nanosoft/asyncstream.h $(srcinc)/nanosoft/asyncobject.h
 	$(CXX) -c $(srcdir)/libnetd/asyncstream.cpp
+
+asyncobject.o: $(srcdir)/libnetd/asyncobject.cpp $(srcinc)/nanosoft/asyncobject.h
+	$(CXX) -c $(srcdir)/libnetd/asyncobject.cpp
 
 # CLEAN
 

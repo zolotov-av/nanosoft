@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <map>
-#include <nanosoft/asyncstream.h>
+#include <nanosoft/asyncobject.h>
 
 /**
 * Главный класс сетевого демона
@@ -20,9 +20,9 @@ private:
 	int epoll;
 	
 	/**
-	* Карта потоков (fd -> AsyncStream)
+	* Карта объектов (fd -> AsyncObject)
 	*/
-	std::map<int, AsyncStream*> streams;
+	std::map<int, AsyncObject*> objects;
 	
 	/**
 	* Число потоков-воркеров
@@ -52,14 +52,9 @@ private:
 	static void * workerEntry(void *pContext);
 	
 	/**
-	* Ожидать поток
+	* Возобновить работу с асинхронным объектом
 	*/
-	AsyncStream* waitStream();
-	
-	/**
-	* Возобновить работу с потоком
-	*/
-	bool resetStream(AsyncStream *stream);
+	bool resetObject(AsyncObject *object);
 	
 protected:
 	/**
@@ -99,14 +94,14 @@ public:
 	void setWorkerCount(int count);
 	
 	/**
-	* Добавить поток
+	* Добавить асинхронный объект
 	*/
-	bool addStream(AsyncStream *stream);
+	bool addObject(AsyncObject *object);
 	
 	/**
-	* Удалить поток
+	* Удалить асинхронный объект
 	*/
-	bool removeStream(AsyncStream *stream);
+	bool removeObject(AsyncObject *object);
 	
 	/**
 	* Запустить демона

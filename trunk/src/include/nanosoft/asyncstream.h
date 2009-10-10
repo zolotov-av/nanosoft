@@ -2,40 +2,24 @@
 #define NANOSOFT_ASYNCSTREAM_H
 
 #include <sys/types.h>
+#include <nanosoft/asyncobject.h>
 
 /**
 * Класс для асинхронной работы потоками
 */
-class AsyncStream
+class AsyncStream: public AsyncObject
 {
-friend class NetDaemon;
-private:
-	/**
-	* Файловый дескриптор
-	*/
-	int fd;
-	
-	/**
-	* Конструктор копий
-	*
-	* Не ищите его реализации, его нет и не надо.
-	* Просто блокируем конкструктор копий по умолчанию
-	*/
-	AsyncStream(const AsyncStream &);
-	
-	/**
-	* Оператор присваивания
-	*
-	* Блокируем аналогично конструктору копий
-	*/
-	AsyncStream& operator = (const AsyncStream &);
-	
 protected:
 	
 	/**
-	* Обработка системной ошибки
+	* Вернуть маску ожидаемых событий
 	*/
-	void stderror();
+	virtual uint32_t getEventsMask();
+	
+	/**
+	* Обработчик события
+	*/
+	virtual void onEvent(uint32_t events);
 	
 public:
 	/**

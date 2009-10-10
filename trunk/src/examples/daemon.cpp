@@ -4,6 +4,7 @@
 #include <iostream>
 #include <exception>
 #include <nanosoft/netdaemon.h>
+#include <nanosoft/asyncstream.h>
 
 using namespace std;
 
@@ -28,8 +29,10 @@ public:
 	*/
 	void onRead()
 	{
+		cerr << "onRead()";
 		char buf[400];
 		int r = read(buf, sizeof(buf)-1);
+		cerr << " " << r << " bytes" << endl;
 		if ( r > 0 )
 		{
 			cout << string(buf, r);
@@ -71,7 +74,7 @@ public:
 	void onShutdown()
 	{
 		std::cerr << "[TestStream]: peer shutdown connection" << std::endl;
-		throw std::exception();
+		daemon->terminate(0);
 	}
 };
 
@@ -87,16 +90,16 @@ public:
 	MyDaemon(): NetDaemon(1000)
 	{
 		stdin = new TestStream(this, STDIN_FILENO);
-		if ( ! addStream(stdin) )
+		if ( ! addObject(stdin) )
 		{
-			onError("addStream fault");
+			onError("add stdin fault");
 			throw exception();
 		}
 	}
 	
 	~MyDaemon()
 	{
-		removeStream(stdin);
+		removeObject(stdin);
 		delete stdin;
 	}
 };

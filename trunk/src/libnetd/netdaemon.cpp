@@ -14,9 +14,9 @@ using namespace std;
 * Конструктор демона
 * @param maxStreams максимальное число одновременных виртуальных потоков
 */
-NetDaemon::NetDaemon(int maxStreams)
+NetDaemon::NetDaemon(int maxObjects)
 {
-	epoll = epoll_create(maxStreams);
+	epoll = epoll_create(maxObjects);
 }
 
 /**
@@ -63,60 +63,40 @@ void NetDaemon::setWorkerCount(int count)
 }
 
 /**
-* Добавить поток
+* Добавить асинхронный объект
 */
-bool NetDaemon::addStream(AsyncStream *stream)
+bool NetDaemon::addObject(AsyncObject *object)
 {
-	streams[stream->fd] = stream;
 	struct epoll_event event;
-	event.events = EPOLLIN | EPOLLONESHOT | EPOLLRDHUP;
-	event.data.fd = stream->fd;
-	return epoll_ctl(epoll, EPOLL_CTL_ADD, stream->fd, &event) == 0;
+	objects[object->fd] = object;
+	event.events = object->getEventsMask();
+	event.data.fd = object->fd;
+	return epoll_ctl(epoll, EPOLL_CTL_ADD, object->fd, &event) == 0;
 }
 
 /**
-* Удалить поток
+* Удалить асинхронный объект
 */
-bool NetDaemon::removeStream(AsyncStream *stream)
+bool NetDaemon::removeObject(AsyncObject *object)
 {
-	if ( streams.erase(stream->fd) > 0 )
+	if ( objects.erase(object->fd) > 0 )
 	{
-		if ( epoll_ctl(epoll, EPOLL_CTL_DEL, stream->fd, 0) != 0 ) stderror();
+		if ( epoll_ctl(epoll, EPOLL_CTL_DEL, object->fd, 0) != 0 ) stderror();
 	}
 }
 
 /**
-* Возобновить работу с потоком
+* Возобновить работу с асинхронным объектом
 */
-bool NetDaemon::resetStream(AsyncStream *stream)
-{
+bool NetDaemon::resetObject(AsyncObject *object)
+{cerr << "resetObj" << endl;
 	struct epoll_event event;
-	event.events = EPOLLIN | EPOLLONESHOT | EPOLLRDHUP;
-	event.data.fd = stream->fd;
-	return epoll_ctl(epoll, EPOLL_CTL_MOD, stream->fd, &event) == 0;
-}
-
-/**
-* Ожидать поток
-*/
-AsyncStream* NetDaemon::waitStream()
-{
-	struct epoll_event event;
-	while ( 1 )
+	event.events = object->getEventsMask();
+	event.data.fd = object->fd;
+	if ( epoll_ctl(epoll, EPOLL_CTL_MOD, object->fd, &event) != 0 )
 	{
-		int r = epoll_wait(epoll, &event, 1, -1);
-		if ( r > 0 )
-		{
-			if ( event.events & EPOLLRDHUP )
-			{
-				streams[event.data.fd]->onShutdown();
-				continue;
-			}
-			return streams[event.data.fd];
-		}
-		if ( r < 0 ) stderror();
+		stderror();
 	}
-	return 0;
 }
 
 struct Context
@@ -130,17 +110,24 @@ struct Context
 */
 void* NetDaemon::workerEntry(void *pContext)
 {
+	struct epoll_event event;
 	Context *context = static_cast<Context *>(pContext);
+	NetDaemon *daemon = context->d;
 	
-	while ( context->d->active )
-	{
-		AsyncStream *s = context->d->waitStream();
-		if ( s == 0 ) break;
-		else s->onRead();
-		context->d->resetStream(s);
+	while ( daemon->active )
+	{cerr << "wait in #" << context->tid << endl;
+		int r = epoll_wait(daemon->epoll, &event, 1, -1);
+		if ( r > 0 )
+		{
+			AsyncObject *obj = daemon->objects[event.data.fd];
+			obj->onEvent(event.events);
+			daemon->resetObject(obj);
+		}
+		if ( r < 0 ) daemon->stderror();
+		if ( r == 0 ) daemon->onError("skip");
 	}
 	
-	context->d->onError("worker exiting");
+	daemon->onError("worker exiting");
 	delete context;
 	return 0;
 }
@@ -190,6 +177,7 @@ int NetDaemon::run()
 */
 void NetDaemon::terminate(int code)
 {
+	onError("terminate...");
 	exitCode = code;
 	active = false;
 }

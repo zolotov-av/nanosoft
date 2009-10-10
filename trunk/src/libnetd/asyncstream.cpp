@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#include <sys/epoll.h>
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
@@ -10,7 +11,7 @@ using namespace std;
 /**
 * Конструктор
 */
-AsyncStream::AsyncStream(int afd): fd(afd)
+AsyncStream::AsyncStream(int afd): AsyncObject(afd)
 {
 }
 
@@ -22,11 +23,25 @@ AsyncStream::~AsyncStream()
 }
 
 /**
-* Обработка системной ошибки
+* Вернуть маску ожидаемых событий
 */
-void AsyncStream::stderror()
+uint32_t AsyncStream::getEventsMask()
 {
-	onError(strerror(errno));
+	return EPOLLIN | EPOLLRDHUP | EPOLLONESHOT | EPOLLHUP | EPOLLERR;
+}
+
+/**
+* Обработчик события
+*/
+void AsyncStream::onEvent(uint32_t events)
+{
+	if ( events & EPOLLERR ) onError("epoll report some error in stream...");
+	else if ( events & EPOLLIN ) onRead();
+	else if ( (events & EPOLLRDHUP) || (events & EPOLLHUP) ) onShutdown();
+	else{
+		onError("========");
+		cerr << "events: " << events << " " << EPOLLHUP << endl;
+	}
 }
 
 /**
