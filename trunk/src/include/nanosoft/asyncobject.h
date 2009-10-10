@@ -51,6 +51,11 @@ public:
 	/**
 	* Конструктор
 	*/
+	AsyncObject();
+	
+	/**
+	* Конструктор
+	*/
 	AsyncObject(int afd);
 	
 	/**

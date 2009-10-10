@@ -5,6 +5,7 @@
 #include <exception>
 #include <nanosoft/netdaemon.h>
 #include <nanosoft/asyncstream.h>
+#include <nanosoft/asyncserver.h>
 
 using namespace std;
 
@@ -39,7 +40,9 @@ public:
 		}
 		if ( r <= 0 )
 		{
-			daemon->terminate(r < 0 ? 1 : 0);
+			daemon->removeObject(this);
+			//delete this;
+			//daemon->terminate(r < 0 ? 1 : 0);
 			return;
 		}
 		
@@ -74,7 +77,32 @@ public:
 	void onShutdown()
 	{
 		std::cerr << "[TestStream]: peer shutdown connection" << std::endl;
-		daemon->terminate(0);
+		//daemon->terminate(0);
+	}
+};
+
+class MyServer: public AsyncServer
+{
+private:
+	/**
+	* Ссылка на демона
+	*/
+	NetDaemon *daemon;
+	
+public:
+	MyServer(NetDaemon *d): daemon(d) { }
+	
+	AsyncObject* onAccept()
+	{
+		cerr << "onAccept()" << endl;
+		int sock = accept();
+		if ( sock )
+		{
+			AsyncObject *client = new TestStream(daemon, sock);
+			daemon->addObject(client);
+			return client;
+		}
+		return 0;
 	}
 };
 
@@ -86,8 +114,13 @@ private:
 	*/
 	TestStream *stdin;
 	
+	/**
+	* Демо сервер
+	*/
+	MyServer *server;
+	
 public:
-	MyDaemon(): NetDaemon(1000)
+	MyDaemon(): NetDaemon(10000)
 	{
 		stdin = new TestStream(this, STDIN_FILENO);
 		if ( ! addObject(stdin) )
@@ -95,12 +128,18 @@ public:
 			onError("add stdin fault");
 			throw exception();
 		}
+		
+		server = new MyServer(this);
+		server->bind(4000);
+		server->listen(10);
+		addObject(server);
 	}
 	
 	~MyDaemon()
 	{
 		removeObject(stdin);
 		delete stdin;
+		delete server;
 	}
 };
 

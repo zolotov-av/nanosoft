@@ -154,8 +154,8 @@ http.o: $(srclib)/http.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket
 daemon: $(srcexm)/daemon.cpp libnetd.a
 	$(CXX) $(srcexm)/daemon.cpp -o daemon -lpthread -lnetd
 
-libnetd.a: asyncstream.o netdaemon.o asyncobject.o
-	$(AR) rc libnetd.a asyncstream.o netdaemon.o asyncobject.o
+libnetd.a: asyncstream.o netdaemon.o asyncobject.o asyncserver.o
+	$(AR) rc libnetd.a asyncstream.o netdaemon.o asyncobject.o asyncserver.o
 	$(RANLIB) libnetd.a
 
 netdaemon.o: $(srcdir)/libnetd/netdaemon.cpp $(srcinc)/nanosoft/netdaemon.h
@@ -163,6 +163,9 @@ netdaemon.o: $(srcdir)/libnetd/netdaemon.cpp $(srcinc)/nanosoft/netdaemon.h
 
 asyncstream.o: $(srcdir)/libnetd/asyncstream.cpp $(srcinc)/nanosoft/asyncstream.h $(srcinc)/nanosoft/asyncobject.h
 	$(CXX) -c $(srcdir)/libnetd/asyncstream.cpp
+
+asyncserver.o: $(srcdir)/libnetd/asyncserver.cpp $(srcinc)/nanosoft/asyncserver.h $(srcinc)/nanosoft/asyncobject.h
+	$(CXX) -c $(srcdir)/libnetd/asyncserver.cpp
 
 asyncobject.o: $(srcdir)/libnetd/asyncobject.cpp $(srcinc)/nanosoft/asyncobject.h
 	$(CXX) -c $(srcdir)/libnetd/asyncobject.cpp

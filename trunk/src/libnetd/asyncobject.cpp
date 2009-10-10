@@ -7,11 +7,10 @@
 using namespace std;
 
 /**
-* Обработка системной ошибки
+* Конструктор
 */
-void AsyncObject::stderror()
+AsyncObject::AsyncObject(): fd(0)
 {
-	onError(strerror(errno));
 }
 
 /**
@@ -26,6 +25,14 @@ AsyncObject::AsyncObject(int afd): fd(afd)
 */
 AsyncObject::~AsyncObject()
 {
+}
+
+/**
+* Обработка системной ошибки
+*/
+void AsyncObject::stderror()
+{
+	onError(strerror(errno));
 }
 
 /**

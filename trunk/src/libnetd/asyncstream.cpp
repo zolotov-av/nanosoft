@@ -38,10 +38,7 @@ void AsyncStream::onEvent(uint32_t events)
 	if ( events & EPOLLERR ) onError("epoll report some error in stream...");
 	else if ( events & EPOLLIN ) onRead();
 	else if ( (events & EPOLLRDHUP) || (events & EPOLLHUP) ) onShutdown();
-	else{
-		onError("========");
-		cerr << "events: " << events << " " << EPOLLHUP << endl;
-	}
+	else onError("----------");
 }
 
 /**
