@@ -1,5 +1,7 @@
 #include <sys/types.h>
 #include <unistd.h>
+#include <errno.h>
+#include <string.h>
 #include <iostream>
 #include <nanosoft/asyncstream.h>
 
@@ -20,11 +22,21 @@ AsyncStream::~AsyncStream()
 }
 
 /**
+* Обработка системной ошибки
+*/
+void AsyncStream::stderror()
+{
+	onError(strerror(errno));
+}
+
+/**
 * Неблокирующее чтение из потока
 */
 ssize_t AsyncStream::read(void *buf, size_t count)
 {
-	return ::read(fd, buf, count);
+	ssize_t r = ::read(fd, buf, count);
+	if ( r < 0 ) stderror();
+	return r;
 }
 
 /**
@@ -32,7 +44,9 @@ ssize_t AsyncStream::read(void *buf, size_t count)
 */
 ssize_t AsyncStream::write(const void *buf, size_t count)
 {
-	return ::write(fd, buf, count);
+	ssize_t r = ::write(fd, buf, count);
+	if ( r < 0 ) stderror();
+	return r;
 }
 
 /**
@@ -40,7 +54,7 @@ ssize_t AsyncStream::write(const void *buf, size_t count)
 */
 bool AsyncStream::suspend()
 {
-	cerr << "TODO AsyncStream::suspend()" << endl;
+	onError("TODO AsyncStream::suspend()");
 }
 
 /**
@@ -48,7 +62,7 @@ bool AsyncStream::suspend()
 */
 bool AsyncStream::resume()
 {
-	cerr << "TODO AsyncStream::resume()" << endl;
+	onError("TODO AsyncStream::resume()");
 }
 
 /**
@@ -56,5 +70,17 @@ bool AsyncStream::resume()
 */
 void AsyncStream::close()
 {
-	::close(fd);
+	int r = ::close(fd);
+	if ( r < 0 ) stderror();
+}
+
+/**
+* Событие ошибки
+*
+* Вызывается в случае возникновения какой-либо ошибки.
+* По умолчанию выводит все ошибки в stderr
+*/
+void AsyncStream::onError(const char *message)
+{
+	cerr << "[AsyncStream]: " << message << endl;
 }

@@ -161,7 +161,7 @@ libnetd.a: asyncstream.o netdaemon.o
 netdaemon.o: $(srcdir)/libnetd/netdaemon.cpp $(srcinc)/nanosoft/netdaemon.h
 	$(CXX) -c $(srcdir)/libnetd/netdaemon.cpp
 
-asyncstream.o:
+asyncstream.o: $(srcdir)/libnetd/asyncstream.cpp $(srcinc)/nanosoft/asyncstream.h
 	$(CXX) -c $(srcdir)/libnetd/asyncstream.cpp
 
 # CLEAN

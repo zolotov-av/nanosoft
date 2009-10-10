@@ -35,6 +35,18 @@ private:
 	pthread_t *workers;
 	
 	/**
+	* Код возврата
+	*/
+	int exitCode;
+	
+	/**
+	* Признак активности демона
+	* TRUE - демон работает
+	* FALSE - демон остановлен или в процессе остановки
+	*/
+	bool active;
+	
+	/**
 	* Точка входа в воркер
 	*/
 	static void * workerEntry(void *pContext);
@@ -92,16 +104,26 @@ public:
 	bool addStream(AsyncStream *stream);
 	
 	/**
-	* Обработчик ошибок
-	*
-	* По умолчанию выводит все ошибки в stderr
+	* Удалить поток
 	*/
-	virtual void onError(const char *message);
+	bool removeStream(AsyncStream *stream);
 	
 	/**
 	* Запустить демона
 	*/
 	int run();
+	
+	/**
+	* Завершить работу демона
+	*/
+	void terminate(int code);
+	
+	/**
+	* Обработчик ошибок
+	*
+	* По умолчанию выводит все ошибки в stderr
+	*/
+	virtual void onError(const char *message);
 };
 
 #endif // NANOSOFT_NETDAEMON_H

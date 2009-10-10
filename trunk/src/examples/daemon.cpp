@@ -7,10 +7,18 @@
 
 using namespace std;
 
+class NetDaemon;
+
 class TestStream: public AsyncStream
 {
+private:
+	/**
+	* Ссылка на демона
+	*/
+	NetDaemon *daemon;
+	
 public:
-	TestStream(int afd): AsyncStream(afd) { }
+	TestStream(NetDaemon *d, int afd): AsyncStream(afd), daemon(d) { }
 	
 	/**
 	* Событие готовности к чтению
@@ -20,20 +28,18 @@ public:
 	*/
 	void onRead()
 	{
-		std::cerr << "TestStream::onRead()" << std::endl;
 		char buf[400];
 		int r = read(buf, sizeof(buf)-1);
-		if ( r < 0 )
+		if ( r > 0 )
 		{
-			std::cerr << "read() fault: " << strerror(errno) << std::endl;
-			throw std::exception();
+			cout << string(buf, r);
 		}
-		if ( r == 0 )
+		if ( r <= 0 )
 		{
-			std::cerr << "read() fault: end of file" << std::endl;
-			throw std::exception();
+			daemon->terminate(r < 0 ? 1 : 0);
+			return;
 		}
-		std::cout << std::string(buf, r);
+		
 	}
 	
 	/**
@@ -71,14 +77,27 @@ public:
 
 class MyDaemon: public NetDaemon
 {
+private:
+	/**
+	* Поток стандартного ввода
+	*/
+	TestStream *stdin;
+	
 public:
 	MyDaemon(): NetDaemon(1000)
 	{
-		if ( ! addStream(new TestStream(STDIN_FILENO)) )
+		stdin = new TestStream(this, STDIN_FILENO);
+		if ( ! addStream(stdin) )
 		{
 			onError("addStream fault");
 			throw exception();
 		}
+	}
+	
+	~MyDaemon()
+	{
+		removeStream(stdin);
+		delete stdin;
 	}
 };
 

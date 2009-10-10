@@ -30,6 +30,13 @@ private:
 	*/
 	AsyncStream& operator = (const AsyncStream &);
 	
+protected:
+	
+	/**
+	* Обработка системной ошибки
+	*/
+	void stderror();
+	
 public:
 	/**
 	* Конструктор
@@ -87,12 +94,13 @@ public:
 	*
 	* Вызывается в случае возникновения какой-либо ошибки
 	*/
-	virtual void onError(const char *message) = 0;
+	virtual void onError(const char *message);
 	
 	/**
-	* Событие закрытие соединения
+	* Событие ошибки
 	*
-	* Вызывается если peer закрыл соединение
+	* Вызывается в случае возникновения какой-либо ошибки.
+	* По умолчанию выводит все ошибки в stderr
 	*/
 	virtual void onShutdown() = 0;
 };

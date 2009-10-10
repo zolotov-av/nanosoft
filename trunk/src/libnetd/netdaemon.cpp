@@ -24,7 +24,8 @@ NetDaemon::NetDaemon(int maxStreams)
 */
 NetDaemon::~NetDaemon()
 {
-	close(epoll);
+	int r = ::close(epoll);
+	if ( r < 0 ) stderror();
 }
 
 /**
@@ -74,6 +75,17 @@ bool NetDaemon::addStream(AsyncStream *stream)
 }
 
 /**
+* Удалить поток
+*/
+bool NetDaemon::removeStream(AsyncStream *stream)
+{
+	if ( streams.erase(stream->fd) > 0 )
+	{
+		if ( epoll_ctl(epoll, EPOLL_CTL_DEL, stream->fd, 0) != 0 ) stderror();
+	}
+}
+
+/**
 * Возобновить работу с потоком
 */
 bool NetDaemon::resetStream(AsyncStream *stream)
@@ -120,10 +132,9 @@ void* NetDaemon::workerEntry(void *pContext)
 {
 	Context *context = static_cast<Context *>(pContext);
 	
-	while ( 1 )
+	while ( context->d->active )
 	{
 		AsyncStream *s = context->d->waitStream();
-		cerr << "#" << context->tid << ": ";
 		if ( s == 0 ) break;
 		else s->onRead();
 		context->d->resetStream(s);
@@ -143,7 +154,6 @@ void NetDaemon::startWorkers()
 	workers = new pthread_t[workerCount];
 	for(int i = 0; i < workerCount; i++)
 	{
-		cerr << "create #" << i << endl;
 		Context *context = new Context;
 		context->d = this;
 		context->tid = i;
@@ -165,6 +175,7 @@ void NetDaemon::stopWorkers()
 */
 int NetDaemon::run()
 {
+	active = true;
 	startWorkers();
 	Context *context = new Context;
 	context->d = this;
@@ -172,4 +183,13 @@ int NetDaemon::run()
 	workerEntry(context);
 	stopWorkers();
 	return 0;
+}
+
+/**
+* Завершить работу демона
+*/
+void NetDaemon::terminate(int code)
+{
+	exitCode = code;
+	active = false;
 }
