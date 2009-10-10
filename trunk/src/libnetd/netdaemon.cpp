@@ -3,161 +3,173 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <nanosoft/netdaemon.h>
+#include <iostream>
+#include <errno.h>
+#include <string.h>
+
+using namespace std;
 
 /**
-* Главный класс сетевого демона
+* Конструктор демона
+* @param maxStreams максимальное число одновременных виртуальных потоков
 */
-class NetDaemon
-{
-private:
-	/**
-	* Файловый дескриптор epoll
-	*/
-	int epoll;
-	
-	/**
-	* Число потоков-воркеров
-	*/
-	int workerCount;
-	
-	/**
-	* Список воркеров
-	*/
-	pthread_t *workers;
-	
-	/**
-	* Добавить поток в epoll
-	*/
-	bool addStream(int fd, int events);
-	
-	/**
-	* Ожидать поток
-	*/
-	int waitStream();
-	
-	/**
-	* Точка входа в воркер
-	*/
-	static void * workerEntry(void *pDaemon);
-	
-	/**
-	* Запустить воркеров
-	*/
-	void startWorkers();
-	
-	/**
-	* Остановить воркеров
-	*/
-	void stopWorkers();
-public:
-	/**
-	* Конструктор демона
-	* @param maxStreams максимальное число одновременных потоков
-	*/
-	NetDaemon(int maxStreams);
-	
-	/**
-	* Деструктор демона
-	*/
-	~NetDaemon();
-	
-	/**
-	* Вернуть число воркеров
-	*/
-	int getWorkerCount();
-	
-	/**
-	* Установить число воркеров
-	*/
-	void setWorkerCount(int count);
-	
-	/**
-	* Запустить демона
-	*/
-	int run();
-};
-
 NetDaemon::NetDaemon(int maxStreams)
 {
 	epoll = epoll_create(maxStreams);
-	
-	addStream(STDIN_FILENO, EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP | EPOLLET);
-	//addStream(STDOUT_FILENO, EPOLLOUT | EPOLLPRI | EPOLLERR | EPOLLHUP);
-	//addStream(STDERR_FILENO, EPOLLOUT | EPOLLPRI | EPOLLERR | EPOLLHUP);
 }
 
+/**
+* Деструктор демона
+*/
 NetDaemon::~NetDaemon()
 {
 	close(epoll);
 }
 
+/**
+* Обработчик ошибок
+*
+* По умолчанию выводит все ошибки в stderr
+*/
+void NetDaemon::onError(const char *message)
+{
+	cerr << "[NetDaemon]: " << message << endl;
+}
+
+/**
+* Обработка системной ошибки
+*/
+void NetDaemon::stderror()
+{
+	onError(strerror(errno));
+}
+
+/**
+* Вернуть число воркеров
+*/
 int NetDaemon::getWorkerCount()
 {
 	return workerCount;
 }
 
+/**
+* Установить число воркеров
+*/
 void NetDaemon::setWorkerCount(int count)
 {
 	workerCount = count;
 }
 
-bool NetDaemon::addStream(int fd, int events)
+/**
+* Добавить поток
+*/
+bool NetDaemon::addStream(AsyncStream *stream)
 {
+	streams[stream->fd] = stream;
 	struct epoll_event event;
-	event.events = events;
-	event.data.fd = fd;
-	return epoll_ctl(epoll, EPOLL_CTL_ADD, fd, &event) == 0;
+	event.events = EPOLLIN | EPOLLONESHOT | EPOLLRDHUP;
+	event.data.fd = stream->fd;
+	return epoll_ctl(epoll, EPOLL_CTL_ADD, stream->fd, &event) == 0;
 }
 
-int NetDaemon::waitStream()
+/**
+* Возобновить работу с потоком
+*/
+bool NetDaemon::resetStream(AsyncStream *stream)
 {
 	struct epoll_event event;
-	int r = epoll_wait(epoll, &event, 1, -1);
-	return r > 0 ? event.data.fd : r;
+	event.events = EPOLLIN | EPOLLONESHOT | EPOLLRDHUP;
+	event.data.fd = stream->fd;
+	return epoll_ctl(epoll, EPOLL_CTL_MOD, stream->fd, &event) == 0;
 }
 
-void * NetDaemon::workerEntry(void *pDaemon)
+/**
+* Ожидать поток
+*/
+AsyncStream* NetDaemon::waitStream()
 {
-	NetDaemon *d = static_cast<NetDaemon *>(pDaemon);
-	
-	int fd = d->waitStream();
-	char buf[400];
-	while ( int r = read(fd, buf, sizeof(buf)-1) )
+	struct epoll_event event;
+	while ( 1 )
 	{
-		buf[r] = 0;
-		printf("%s", buf);
+		int r = epoll_wait(epoll, &event, 1, -1);
+		if ( r > 0 )
+		{
+			if ( event.events & EPOLLRDHUP )
+			{
+				streams[event.data.fd]->onShutdown();
+				continue;
+			}
+			return streams[event.data.fd];
+		}
+		if ( r < 0 ) stderror();
 	}
-	
 	return 0;
 }
 
+struct Context
+{
+	NetDaemon *d;
+	int tid;
+};
+
+/**
+* Точка входа в воркер
+*/
+void* NetDaemon::workerEntry(void *pContext)
+{
+	Context *context = static_cast<Context *>(pContext);
+	
+	while ( 1 )
+	{
+		AsyncStream *s = context->d->waitStream();
+		cerr << "#" << context->tid << ": ";
+		if ( s == 0 ) break;
+		else s->onRead();
+		context->d->resetStream(s);
+	}
+	
+	context->d->onError("worker exiting");
+	delete context;
+	return 0;
+}
+
+/**
+* Запустить воркеров
+*/
 void NetDaemon::startWorkers()
 {
 	//printf("todo startWorkers\n");
 	workers = new pthread_t[workerCount];
 	for(int i = 0; i < workerCount; i++)
 	{
-		pthread_create(&workers[i], NULL, workerEntry, this);
+		cerr << "create #" << i << endl;
+		Context *context = new Context;
+		context->d = this;
+		context->tid = i;
+		pthread_create(&workers[i], NULL, workerEntry, context);
 	}
 }
 
+/**
+* Остановить воркеров
+*/
 void NetDaemon::stopWorkers()
 {
 	//printf("todo stopWorkers\n");
 	delete [] workers;
 }
 
+/**
+* Запустить демона
+*/
 int NetDaemon::run()
 {
 	startWorkers();
-	workerEntry(this);
+	Context *context = new Context;
+	context->d = this;
+	context->tid = -1;
+	workerEntry(context);
 	stopWorkers();
 	return 0;
-}
-
-int main()
-{
-	NetDaemon daemon(1000);
-	daemon.setWorkerCount(2);
-	return daemon.run();
 }
