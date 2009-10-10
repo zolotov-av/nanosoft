@@ -89,7 +89,7 @@ bool NetDaemon::removeObject(AsyncObject *object)
 * Возобновить работу с асинхронным объектом
 */
 bool NetDaemon::resetObject(AsyncObject *object)
-{cerr << "resetObj" << endl;
+{
 	struct epoll_event event;
 	event.events = object->getEventsMask();
 	event.data.fd = object->fd;
@@ -115,13 +115,16 @@ void* NetDaemon::workerEntry(void *pContext)
 	NetDaemon *daemon = context->d;
 	
 	while ( daemon->active )
-	{cerr << "wait in #" << context->tid << endl;
+	{
 		int r = epoll_wait(daemon->epoll, &event, 1, -1);
 		if ( r > 0 )
 		{
 			AsyncObject *obj = daemon->objects[event.data.fd];
 			obj->onEvent(event.events);
-			daemon->resetObject(obj);
+			if ( daemon->objects[event.data.fd] != 0 )
+			{
+				daemon->resetObject(obj);
+			}
 		}
 		if ( r < 0 ) daemon->stderror();
 		if ( r == 0 ) daemon->onError("skip");
@@ -143,7 +146,7 @@ void NetDaemon::startWorkers()
 	{
 		Context *context = new Context;
 		context->d = this;
-		context->tid = i;
+		context->tid = i + 1;
 		pthread_create(&workers[i], NULL, workerEntry, context);
 	}
 }
@@ -166,7 +169,7 @@ int NetDaemon::run()
 	startWorkers();
 	Context *context = new Context;
 	context->d = this;
-	context->tid = -1;
+	context->tid = 0;
 	workerEntry(context);
 	stopWorkers();
 	return 0;

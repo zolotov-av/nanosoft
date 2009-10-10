@@ -30,18 +30,14 @@ public:
 	*/
 	void onRead()
 	{
-		cerr << "onRead()";
 		char buf[400];
 		int r = read(buf, sizeof(buf)-1);
-		cerr << " " << r << " bytes" << endl;
 		if ( r > 0 )
 		{
 			cout << string(buf, r);
 		}
 		if ( r <= 0 )
 		{
-			daemon->removeObject(this);
-			//delete this;
 			//daemon->terminate(r < 0 ? 1 : 0);
 			return;
 		}
@@ -77,7 +73,12 @@ public:
 	void onShutdown()
 	{
 		std::cerr << "[TestStream]: peer shutdown connection" << std::endl;
-		//daemon->terminate(0);
+		if ( shutdown(fd, SHUT_RDWR) != 0 )
+		{
+			stderror();
+		}
+		daemon->removeObject(this);
+		delete this;
 	}
 };
 
@@ -94,7 +95,6 @@ public:
 	
 	AsyncObject* onAccept()
 	{
-		cerr << "onAccept()" << endl;
 		int sock = accept();
 		if ( sock )
 		{

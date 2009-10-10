@@ -20,6 +20,7 @@ AsyncStream::AsyncStream(int afd): AsyncObject(afd)
 */
 AsyncStream::~AsyncStream()
 {
+	close();
 }
 
 /**
@@ -27,7 +28,7 @@ AsyncStream::~AsyncStream()
 */
 uint32_t AsyncStream::getEventsMask()
 {
-	return EPOLLIN | EPOLLRDHUP | EPOLLONESHOT | EPOLLHUP | EPOLLERR;
+	return EPOLLIN | EPOLLRDHUP | EPOLLONESHOT | EPOLLHUP | EPOLLERR | EPOLLET;
 }
 
 /**
@@ -36,9 +37,8 @@ uint32_t AsyncStream::getEventsMask()
 void AsyncStream::onEvent(uint32_t events)
 {
 	if ( events & EPOLLERR ) onError("epoll report some error in stream...");
-	else if ( events & EPOLLIN ) onRead();
-	else if ( (events & EPOLLRDHUP) || (events & EPOLLHUP) ) onShutdown();
-	else onError("----------");
+	if ( events & EPOLLIN ) onRead();
+	if ( (events & EPOLLRDHUP) || (events & EPOLLHUP) ) onShutdown();
 }
 
 /**
@@ -82,8 +82,12 @@ bool AsyncStream::resume()
 */
 void AsyncStream::close()
 {
-	int r = ::close(fd);
-	if ( r < 0 ) stderror();
+	if ( fd )
+	{
+		int r = ::close(fd);
+		fd = 0;
+		if ( r < 0 ) stderror();
+	}
 }
 
 /**
