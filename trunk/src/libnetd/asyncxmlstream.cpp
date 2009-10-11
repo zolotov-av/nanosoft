@@ -22,7 +22,6 @@ AsyncXMLStream::AsyncXMLStream(int afd): AsyncStream(afd)
 */
 AsyncXMLStream::~AsyncXMLStream()
 {
-	cerr << "parser free" << endl;
 	XML_ParserFree(parser);
 }
 
@@ -64,6 +63,17 @@ void AsyncXMLStream::onError(const char *message)
 */
 void AsyncXMLStream::onShutdown()
 {
+	while ( 1 )
+	{
+		char buf[4096];
+		ssize_t r = read(buf, sizeof(buf));
+		if ( r <= 0 ) break;
+		if ( ! XML_Parse(parser, buf, r, false) )
+		{
+			onError(XML_ErrorString(XML_GetErrorCode(parser)));
+		}
+	}
+	
 	if ( ! XML_Parse(parser, 0, 0, true) )
 	{
 		onError(XML_ErrorString(XML_GetErrorCode(parser)));

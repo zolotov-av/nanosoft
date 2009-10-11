@@ -45,10 +45,5 @@ int main(int argc, char **argv)
 		}
 	}
 	
-	struct timespec tm;
-	tm.tv_sec = 100;
-	tm.tv_nsec = 0;
-	nanosleep(&tm, 0);
-	
 	return 0;
 }

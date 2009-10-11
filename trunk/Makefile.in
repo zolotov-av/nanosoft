@@ -55,6 +55,12 @@ install-headers:
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/socket.h $(INCLUDEDIR)/nanosoft/socket.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/stream.h $(INCLUDEDIR)/nanosoft/stream.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/string.h $(INCLUDEDIR)/nanosoft/string.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlwriter.h $(INCLUDEDIR)/nanosoft/xmlwriter.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncobject.h $(INCLUDEDIR)/nanosoft/asyncobject.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncstream.h $(INCLUDEDIR)/nanosoft/asyncstream.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncxmlstream.h $(INCLUDEDIR)/nanosoft/asyncxmlstream.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncserver.h $(INCLUDEDIR)/nanosoft/asyncserver.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/netdaemon.h $(INCLUDEDIR)/nanosoft/netdaemon.h
 
 install-linux: forker miniget wait time masterd nsu miniget2 showpath libnanosoft.a
 	$(MKDIR) -p $(BINDIR) $(LIBDIR) $(INCLUDEDIR)/nanosoft
@@ -67,6 +73,7 @@ install-linux: forker miniget wait time masterd nsu miniget2 showpath libnanosof
 	$(INSTALL_BIN) miniget2 $(BINDIR)/miniget2
 	$(INSTALL_BIN) showpath $(BINDIR)/showpath
 	$(INSTALL_LIB) libnanosoft.a $(LIBDIR)/libnanosoft.a
+	$(INSTALL_LIB) libnetd.a $(LIBDIR)/libnetd.a
 
 install-mingw32: libnanosoft.a miniget2
 	$(INSTALL_BIN) miniget2 $(BINDIR)/miniget2
@@ -123,8 +130,8 @@ string: $(srcexm)/string.cpp libnanosoft.a
 
 # LIBRARY
 
-libnanosoft.a: nanoini.o nanostr.o nanourl.o string.o options.o fstream.o socket.o http.o
-	$(AR) rc libnanosoft.a nanoini.o nanostr.o nanourl.o string.o options.o fstream.o socket.o http.o
+libnanosoft.a: nanoini.o nanostr.o nanourl.o string.o options.o fstream.o socket.o http.o xmlwriter.o
+	$(AR) rc libnanosoft.a nanoini.o nanostr.o nanourl.o string.o options.o fstream.o socket.o http.o xmlwriter.o
 	$(RANLIB) libnanosoft.a
 
 # MODULES
@@ -153,9 +160,12 @@ socket.o: $(srclib)/socket.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/so
 http.o: $(srclib)/http.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket.h $(srcinc)/nanosoft/http.h $(srcinc)/nanourl.h
 	$(CXX) -c $(srclib)/http.cpp
 
+xmlwriter.o:  $(srclib)/xmlwriter.cpp $(srcinc)/nanosoft/xmlwriter.h
+	$(CXX) -c $(srclib)/xmlwriter.cpp
+
 # libnetd modules
-daemon: $(srcexm)/daemon.cpp libnetd.a
-	$(CXX) $(srcexm)/daemon.cpp -o daemon -lpthread -lnetd -lexpat
+daemon: $(srcexm)/daemon.cpp libnetd.a libnanosoft.a
+	$(CXX) $(srcexm)/daemon.cpp -o daemon -lpthread -lnetd -lnanosoft -lexpat
 
 libnetd.a: asyncstream.o netdaemon.o asyncobject.o asyncserver.o asyncxmlstream.o
 	$(AR) rc libnetd.a asyncstream.o netdaemon.o asyncobject.o asyncserver.o asyncxmlstream.o
@@ -164,7 +174,7 @@ libnetd.a: asyncstream.o netdaemon.o asyncobject.o asyncserver.o asyncxmlstream.
 netdaemon.o: $(srcdir)/libnetd/netdaemon.cpp $(srcinc)/nanosoft/netdaemon.h
 	$(CXX) -c $(srcdir)/libnetd/netdaemon.cpp
 
-asyncxmlstream.o: $(srcdir)/libnetd/asyncxmlstream.cpp $(srcinc)/nanosoft/asyncxmlstream.h $(srcinc)/nanosoft/asyncstream.h $(srcinc)/nanosoft/asyncobject.h
+asyncxmlstream.o: $(srcdir)/libnetd/asyncxmlstream.cpp $(srcinc)/nanosoft/asyncxmlstream.h $(srcinc)/nanosoft/asyncstream.h $(srcinc)/nanosoft/asyncobject.h $(srcinc)/nanosoft/xmlwriter.h
 	$(CXX) -c $(srcdir)/libnetd/asyncxmlstream.cpp
 	
 asyncstream.o: $(srcdir)/libnetd/asyncstream.cpp $(srcinc)/nanosoft/asyncstream.h $(srcinc)/nanosoft/asyncobject.h

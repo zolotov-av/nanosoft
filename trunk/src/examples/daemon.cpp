@@ -6,21 +6,26 @@
 #include <nanosoft/netdaemon.h>
 #include <nanosoft/asyncxmlstream.h>
 #include <nanosoft/asyncserver.h>
+#include <nanosoft/xmlwriter.h>
 
 using namespace std;
 
 class NetDaemon;
 
-class TestStream: public AsyncXMLStream
+class TestStream: public AsyncXMLStream, private nanosoft::XMLWriter
 {
 private:
 	/**
 	* Ссылка на демона
 	*/
 	NetDaemon *daemon;
-	
+protected:
+	void onWriteXML(const char *data, size_t len)
+	{
+		cout << string(data, len);
+	}
 public:
-	TestStream(NetDaemon *d, int afd): AsyncXMLStream(afd), daemon(d) { }
+	TestStream(NetDaemon *d, int afd): AsyncXMLStream(afd), daemon(d), XMLWriter(80) { }
 	
 	/**
 	* Событие готовности к чтению
@@ -63,12 +68,13 @@ public:
 	*/
 	void onShutdown()
 	{
-		std::cerr << "[TestStream]: peer shutdown connection" << std::endl;
+		AsyncXMLStream::onShutdown();
+		XMLWriter::flush();
+		//std::cerr << "[TestStream]: peer shutdown connection" << std::endl;
 		if ( shutdown(fd, SHUT_RDWR) != 0 )
 		{
 			stderror();
 		}
-		AsyncXMLStream::onShutdown();
 		daemon->removeObject(this);
 		delete this;
 	}
@@ -78,12 +84,11 @@ public:
 	*/
 	virtual void onStartElement(const std::string &name, const attributtes_t &attributes)
 	{
-		cout << "<" << name;
+		startElement(name);
 		for(attributtes_t::const_iterator iter = attributes.begin(); iter != attributes.end(); ++iter)
 		{
-			cout << " " << iter->first << "=\"" << iter->second << "\"";
+			setAttribute(iter->first, iter->second);
 		}
-		cout << ">";
 	}
 	
 	/**
@@ -91,7 +96,7 @@ public:
 	*/
 	virtual void onCharacterData(const std::string &cdata)
 	{
-		cout << cdata;
+		characterData(cdata);
 	}
 	
 	/**
@@ -99,6 +104,7 @@ public:
 	*/
 	virtual void onEndElement(const std::string &name)
 	{
+		endElement(name);
 	}
 };
 
@@ -121,7 +127,6 @@ public:
 		{
 			AsyncObject *client = new TestStream(daemon, sock);
 			daemon->addObject(client);
-			fprintf(stderr, "accepted #%d\n", ++count);
 			return client;
 		}
 		return 0;
