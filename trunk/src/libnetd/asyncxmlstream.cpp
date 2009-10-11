@@ -26,6 +26,18 @@ AsyncXMLStream::~AsyncXMLStream()
 }
 
 /**
+* Сбросить парсер, начать парсить новый поток
+*/
+void AsyncXMLStream::resetParser()
+{
+	XML_ParserFree(parser);
+	parser = XML_ParserCreate((XML_Char *) "UTF-8");
+	XML_SetUserData(parser, (void*) this);
+	XML_SetElementHandler(parser, startElementCallback, endElementCallback);
+	XML_SetCharacterDataHandler(parser, characterDataCallback);
+}
+
+/**
 * Событие готовности к чтению
 *
 * Вызывается когда в потоке есть данные,
@@ -37,6 +49,7 @@ void AsyncXMLStream::onRead()
 	ssize_t r = read(buf, sizeof(buf));
 	if ( r > 0 )
 	{
+		cout << "parse: " << string(buf, r);
 		if ( ! XML_Parse(parser, buf, r, false) )
 		{
 			onError(XML_ErrorString(XML_GetErrorCode(parser)));
