@@ -108,6 +108,11 @@ namespace nanosoft
 		virtual ~XMLWriter();
 		
 		/**
+		* Начать новый XML-файл
+		*/
+		void resetWriter();
+		
+		/**
 		* Экранировать спец. символы XML
 		*/
 		static std::string escape(const std::string &text);

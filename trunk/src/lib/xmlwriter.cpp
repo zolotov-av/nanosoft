@@ -148,6 +148,16 @@ namespace nanosoft
 	}
 	
 	/**
+	* Начать новый XML-файл
+	*/
+	void XMLWriter::resetWriter()
+	{
+		flush();
+		opened = false;
+		stack.clear();
+	}
+	
+	/**
 	* Открыть тег
 	*/
 	void XMLWriter::startElement(const std::string &tag)
