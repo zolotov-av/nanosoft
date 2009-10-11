@@ -81,13 +81,10 @@ namespace nanosoft
 		std::string popTag();
 		
 	protected:
-		
 		/**
 		* Класс атрибуты тега
 		*/
-		class attributes_t: public std::map<std::string, std::string>
-		{
-		};
+		typedef std::map<std::string, std::string> attributes_t;
 		
 		/**
 		* Атрибуты тега

@@ -3,6 +3,7 @@
 
 #include <expat.h>
 #include <map>
+#include <string>
 #include <nanosoft/asyncstream.h>
 
 /**
@@ -35,9 +36,7 @@ public:
 	/**
 	* Класс описывающий атрибуты тега
 	*/
-	class attributtes_t: public std::map<std::string, std::string>
-	{
-	};
+	typedef std::map<std::string, std::string> attributtes_t;
 	
 	/**
 	* Конструктор
