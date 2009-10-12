@@ -9,12 +9,9 @@ using namespace std;
 /**
 * Конструктор
 */
-AsyncXMLStream::AsyncXMLStream(int afd): AsyncStream(afd)
+AsyncXMLStream::AsyncXMLStream(int afd): AsyncStream(afd), parsing(false), resetNeed(false)
 {
-	parser = XML_ParserCreate((XML_Char *) "UTF-8");
-	XML_SetUserData(parser, (void*) this);
-	XML_SetElementHandler(parser, startElementCallback, endElementCallback);
-	XML_SetCharacterDataHandler(parser, characterDataCallback);
+	initParser();
 }
 
 /**
@@ -26,15 +23,48 @@ AsyncXMLStream::~AsyncXMLStream()
 }
 
 /**
-* Сбросить парсер, начать парсить новый поток
+* Инициализация парсера
 */
-void AsyncXMLStream::resetParser()
+void AsyncXMLStream::initParser()
 {
-	XML_ParserFree(parser);
 	parser = XML_ParserCreate((XML_Char *) "UTF-8");
 	XML_SetUserData(parser, (void*) this);
 	XML_SetElementHandler(parser, startElementCallback, endElementCallback);
 	XML_SetCharacterDataHandler(parser, characterDataCallback);
+}
+
+/**
+* Парсинг
+*/
+void AsyncXMLStream::parse(const char *buf, size_t len, bool isFinal)
+{
+	cout << "\nparse: \033[22;31m" << string(buf, len) << "\033[0m\n";
+	parsing = true;
+	int r = XML_Parse(parser, buf, len, isFinal);
+	parsing = false;
+	if ( resetNeed ) realResetParser();
+	else if ( ! r )
+	{
+		onError(XML_ErrorString(XML_GetErrorCode(parser)));
+	}
+}
+
+/**
+* Реальная переинициализация парсера
+*/
+void AsyncXMLStream::realResetParser()
+{
+	XML_ParserFree(parser);
+	initParser();
+}
+
+/**
+* Сбросить парсер, начать парсить новый поток
+*/
+void AsyncXMLStream::resetParser()
+{
+	if ( parsing ) resetNeed = true;
+	else realResetParser();
 }
 
 /**
@@ -49,11 +79,7 @@ void AsyncXMLStream::onRead()
 	ssize_t r = read(buf, sizeof(buf));
 	if ( r > 0 )
 	{
-		cout << "parse: " << string(buf, r);
-		if ( ! XML_Parse(parser, buf, r, false) )
-		{
-			onError(XML_ErrorString(XML_GetErrorCode(parser)));
-		}
+		parse(buf, r, false);
 	}
 }
 
@@ -81,16 +107,9 @@ void AsyncXMLStream::onShutdown()
 		char buf[4096];
 		ssize_t r = read(buf, sizeof(buf));
 		if ( r <= 0 ) break;
-		if ( ! XML_Parse(parser, buf, r, false) )
-		{
-			onError(XML_ErrorString(XML_GetErrorCode(parser)));
-		}
+		parse(buf, r, false);
 	}
-	
-	if ( ! XML_Parse(parser, 0, 0, true) )
-	{
-		onError(XML_ErrorString(XML_GetErrorCode(parser)));
-	}
+	parse(0, 0, true);
 }
 
 
