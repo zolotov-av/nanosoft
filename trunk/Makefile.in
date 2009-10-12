@@ -56,6 +56,7 @@ install-headers:
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/stream.h $(INCLUDEDIR)/nanosoft/stream.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/string.h $(INCLUDEDIR)/nanosoft/string.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlwriter.h $(INCLUDEDIR)/nanosoft/xmlwriter.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/base64.h $(INCLUDEDIR)/nanosoft/base64.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncobject.h $(INCLUDEDIR)/nanosoft/asyncobject.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncstream.h $(INCLUDEDIR)/nanosoft/asyncstream.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncxmlstream.h $(INCLUDEDIR)/nanosoft/asyncxmlstream.h
@@ -130,8 +131,8 @@ string: $(srcexm)/string.cpp libnanosoft.a
 
 # LIBRARY
 
-libnanosoft.a: nanoini.o nanostr.o nanourl.o string.o options.o fstream.o socket.o http.o xmlwriter.o
-	$(AR) rc libnanosoft.a nanoini.o nanostr.o nanourl.o string.o options.o fstream.o socket.o http.o xmlwriter.o
+libnanosoft.a: nanoini.o nanostr.o nanourl.o string.o options.o fstream.o socket.o http.o xmlwriter.o base64.o
+	$(AR) rc libnanosoft.a nanoini.o nanostr.o nanourl.o string.o options.o fstream.o socket.o http.o xmlwriter.o base64.o
 	$(RANLIB) libnanosoft.a
 
 # MODULES
@@ -160,8 +161,11 @@ socket.o: $(srclib)/socket.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/so
 http.o: $(srclib)/http.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket.h $(srcinc)/nanosoft/http.h $(srcinc)/nanourl.h
 	$(CXX) -c $(srclib)/http.cpp
 
-xmlwriter.o:  $(srclib)/xmlwriter.cpp $(srcinc)/nanosoft/xmlwriter.h
+xmlwriter.o: $(srclib)/xmlwriter.cpp $(srcinc)/nanosoft/xmlwriter.h
 	$(CXX) -c $(srclib)/xmlwriter.cpp
+
+base64.o: $(srclib)/base64.cpp $(srcinc)/nanosoft/base64.h
+	$(CXX) -c $(srclib)/base64.cpp
 
 # libnetd modules
 daemon: $(srcexm)/daemon.cpp libnetd.a libnanosoft.a
