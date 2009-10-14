@@ -7,8 +7,11 @@ srcexm = $(srcdir)/examples
 
 config = ./src/include/nanosoft/config.h
 
-CFLAGS = @CFLAGS@ -I$(srcinc) -I./src/include -L.
-CXXFLAGS = @CFLAGS@ -I$(srcinc) -I./src/include -L.
+CPPFLAGS = @CPPFLAGS@ -I$(srcinc) -I./src/include
+LDFLAGS = @LDFLAGS@ -L.
+CFLAGS = @CFLAGS@ $(CPPFLAGS) -L.
+CXXFLAGS = @CXXFLAGS@ $(CPPFLAGS)  -L.
+LIBS = @LIBS@
 CXX = @CXX@ $(CXXFLAGS)
 CC = @CC@ $(CFLAGS)
 AR = @AR@
@@ -57,6 +60,7 @@ LIBNETD_OBJECTS+=asyncserver.o
 LIBNETD_OBJECTS+=asyncxmlstream.o
 LIBNETD_OBJECTS+=saslserver.o
 LIBNETD_OBJECTS+=cyrussaslserver.o
+LIBNETD_OBJECTS+=gsaslserver.o
 
 
 all: all-$(HOST_OS)
@@ -85,6 +89,7 @@ install-headers:
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/netdaemon.h $(INCLUDEDIR)/nanosoft/netdaemon.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/saslserver.h $(INCLUDEDIR)/nanosoft/saslserver.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/cyrussaslserver.h $(INCLUDEDIR)/nanosoft/cyrussaslserver.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/gsaslserver.h $(INCLUDEDIR)/nanosoft/gsaslserver.h
 
 
 install-linux: forker miniget wait time masterd nsu miniget2 showpath libnanosoft.a
@@ -193,7 +198,7 @@ base64.o: $(srclib)/base64.cpp $(srcinc)/nanosoft/base64.h
 
 # libnetd modules
 daemon: $(srcexm)/daemon.cpp libnetd.a libnanosoft.a
-	$(CXX) $(srcexm)/daemon.cpp -o daemon -lpthread -lnetd -lnanosoft -lexpat -lsasl2
+	$(CXX) $(srcexm)/daemon.cpp -o daemon -lpthread -lnetd -lnanosoft -lexpat
 
 libnetd.a: $(LIBNETD_OBJECTS)
 	$(AR) rc libnetd.a $(LIBNETD_OBJECTS)
@@ -216,6 +221,9 @@ asyncobject.o: $(srcdir)/libnetd/asyncobject.cpp $(srcinc)/nanosoft/asyncobject.
 
 cyrussaslserver.o: $(srcdir)/libnetd/cyrussaslserver.cpp $(srcinc)/nanosoft/cyrussaslserver.h $(srcinc)/nanosoft/saslserver.h
 	$(CXX) -c $(srcdir)/libnetd/cyrussaslserver.cpp
+
+gsaslserver.o: $(srcdir)/libnetd/gsaslserver.cpp $(srcinc)/nanosoft/gsaslserver.h $(srcinc)/nanosoft/saslserver.h
+	$(CXX) -c $(srcdir)/libnetd/gsaslserver.cpp
 
 saslserver.o: $(srcdir)/libnetd/saslserver.cpp $(srcinc)/nanosoft/saslserver.h
 	$(CXX) -c $(srcdir)/libnetd/saslserver.cpp

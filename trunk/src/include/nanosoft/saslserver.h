@@ -13,13 +13,12 @@ class SASLServer
 {
 protected:
 	/**
-	* Обработчик авторизации пользователя
+	* Вернуть пароль пользователя
+	* @param realm домен (виртуальный хост)
 	* @param username логин пользователя
-	* @param realm realm...
-	* @param password пароль пользователя
-	* @return TRUE - авторизован, FALSE - логин или пароль не верен
+	* @return пароль пользователя
 	*/
-	virtual bool onSASLAuthorize(const std::string &username, const std::string &realm, const std::string &password) = 0;
+	virtual std::string getUserPassword(const std::string &realm, const std::string &username) = 0;
 	
 public:
 	enum status_t { ok, next, error };
@@ -50,14 +49,14 @@ public:
 	* @param input начальный ввод от клиента
 	* @param output ответ сервера
 	*/
-	virtual status_t start(const std::string &mech, const std::string &input, std::string &output) = 0;
+	//virtual status_t start(const std::string &mech, const std::string &input, std::string &output) = 0;
 	
 	/**
 	* Продолжить авторизацию авторизацию
 	* @param input ввод от клиента
 	* @param output ответ сервера
 	*/
-	virtual status_t step(const std::string &input, std::string &output) = 0;
+	//virtual status_t step(const std::string &input, std::string &output) = 0;
 };
 
 #endif // NANOSOFT_SASLSERVER_H

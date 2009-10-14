@@ -31,6 +31,13 @@ AC_CHECK_TOOL(AR, ar, ar)
 AC_CHECK_TOOL(RANLIB, ranlib, ranlib)
 AC_CHECK_TOOL(MKDIR, mkdir, mkdir)
 
+AC_ARG_WITH(gsasl, AS_HELP_STRING([--with-gsasl=PREFIX], [GNU SASL library]), [
+		CPPFLAGS="$CPPFLAGS  -I$withval/include"
+		LDFLAGS="$LDFLAGS -L$withval/lib"
+	])
+# TODO AC_CHECK_HEADER(gsasl.h, [], [AC_ERROR(GNU SASL library required)])
+AC_CHECK_LIB(gsasl, main, [], [AC_ERROR(GNU SASL library required)])
+
 # Checks for libraries.
 
 # Checks for header files.

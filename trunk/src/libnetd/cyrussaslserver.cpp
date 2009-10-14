@@ -64,27 +64,11 @@ void CyrusSASLServer::finish()
 }
 
 /**
-* Отбработчик авторизации пользователя
-*/
-int CyrusSASLServer::checkUserPassword(sasl_conn_t *conn, CyrusSASLServer *server,
-	const char *user, const char *pass, unsigned passlen, struct propctx *propctx)
-{
-	const char *at = strchr(user, '@');
-	const char *realm = at ? at + 1 : "";
-	return server->onSASLAuthorize(string(user, at), string(realm), string(pass, passlen));
-}
-
-/**
 * Конструктор
 */
 CyrusSASLServer::CyrusSASLServer(const char *service, const char *vhost, const char *realm)
 {
-	sasl_callback_t internal_callbacks[] = {
-		{SASL_CB_SERVER_USERDB_CHECKPASS, (int (*)())&checkUserPassword, this},
-		{SASL_CB_LIST_END, NULL, NULL}
-	};
-	
-	int result = sasl_server_new(service, vhost, realm, 0, 0, internal_callbacks, 0, &conn);
+	int result = sasl_server_new(service, vhost, realm, 0, 0, 0, 0, &conn);
 	if ( result != 0 )
 	{
 		fprintf(stderr, "Cyrus SASL sasl_server_new fault: %s\n", sasl_errstring(result, NULL, NULL));
