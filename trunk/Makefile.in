@@ -38,6 +38,27 @@ HOST_OS = @host_os@
 
 NETWORK_LIBS = @NETWORK_LIBS@
 
+NANOSOFT_OBJECTS=nanoini.o
+NANOSOFT_OBJECTS+=nanostr.o
+NANOSOFT_OBJECTS+=nanourl.o
+NANOSOFT_OBJECTS+=nanoini.o
+NANOSOFT_OBJECTS+=string.o
+NANOSOFT_OBJECTS+=options.o
+NANOSOFT_OBJECTS+=fstream.o
+NANOSOFT_OBJECTS+=socket.o
+NANOSOFT_OBJECTS+=http.o
+NANOSOFT_OBJECTS+=xmlwriter.o
+NANOSOFT_OBJECTS+=base64.o
+
+LIBNETD_OBJECTS=netdaemon.o
+LIBNETD_OBJECTS+=asyncobject.o
+LIBNETD_OBJECTS+=asyncstream.o
+LIBNETD_OBJECTS+=asyncserver.o
+LIBNETD_OBJECTS+=asyncxmlstream.o
+LIBNETD_OBJECTS+=saslserver.o
+LIBNETD_OBJECTS+=cyrussaslserver.o
+
+
 all: all-$(HOST_OS)
 	date "+%d.%m.%Y %H:%M:%S" > build
 
@@ -62,6 +83,9 @@ install-headers:
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncxmlstream.h $(INCLUDEDIR)/nanosoft/asyncxmlstream.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncserver.h $(INCLUDEDIR)/nanosoft/asyncserver.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/netdaemon.h $(INCLUDEDIR)/nanosoft/netdaemon.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/saslserver.h $(INCLUDEDIR)/nanosoft/saslserver.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/cyrussaslserver.h $(INCLUDEDIR)/nanosoft/cyrussaslserver.h
+
 
 install-linux: forker miniget wait time masterd nsu miniget2 showpath libnanosoft.a
 	$(MKDIR) -p $(BINDIR) $(LIBDIR) $(INCLUDEDIR)/nanosoft
@@ -131,8 +155,8 @@ string: $(srcexm)/string.cpp libnanosoft.a
 
 # LIBRARY
 
-libnanosoft.a: nanoini.o nanostr.o nanourl.o string.o options.o fstream.o socket.o http.o xmlwriter.o base64.o
-	$(AR) rc libnanosoft.a nanoini.o nanostr.o nanourl.o string.o options.o fstream.o socket.o http.o xmlwriter.o base64.o
+libnanosoft.a: $(NANOSOFT_OBJECTS)
+	$(AR) rc libnanosoft.a $(NANOSOFT_OBJECTS)
 	$(RANLIB) libnanosoft.a
 
 # MODULES
@@ -169,10 +193,10 @@ base64.o: $(srclib)/base64.cpp $(srcinc)/nanosoft/base64.h
 
 # libnetd modules
 daemon: $(srcexm)/daemon.cpp libnetd.a libnanosoft.a
-	$(CXX) $(srcexm)/daemon.cpp -o daemon -lpthread -lnetd -lnanosoft -lexpat
+	$(CXX) $(srcexm)/daemon.cpp -o daemon -lpthread -lnetd -lnanosoft -lexpat -lsasl2
 
-libnetd.a: asyncstream.o netdaemon.o asyncobject.o asyncserver.o asyncxmlstream.o
-	$(AR) rc libnetd.a asyncstream.o netdaemon.o asyncobject.o asyncserver.o asyncxmlstream.o
+libnetd.a: $(LIBNETD_OBJECTS)
+	$(AR) rc libnetd.a $(LIBNETD_OBJECTS)
 	$(RANLIB) libnetd.a
 
 netdaemon.o: $(srcdir)/libnetd/netdaemon.cpp $(srcinc)/nanosoft/netdaemon.h
@@ -189,6 +213,12 @@ asyncserver.o: $(srcdir)/libnetd/asyncserver.cpp $(srcinc)/nanosoft/asyncserver.
 
 asyncobject.o: $(srcdir)/libnetd/asyncobject.cpp $(srcinc)/nanosoft/asyncobject.h
 	$(CXX) -c $(srcdir)/libnetd/asyncobject.cpp
+
+cyrussaslserver.o: $(srcdir)/libnetd/cyrussaslserver.cpp $(srcinc)/nanosoft/cyrussaslserver.h $(srcinc)/nanosoft/saslserver.h
+	$(CXX) -c $(srcdir)/libnetd/cyrussaslserver.cpp
+
+saslserver.o: $(srcdir)/libnetd/saslserver.cpp $(srcinc)/nanosoft/saslserver.h
+	$(CXX) -c $(srcdir)/libnetd/saslserver.cpp
 
 # CLEAN
 

@@ -3,6 +3,10 @@
 
 typedef struct ini_t *ini_p;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
 * Создать чистый INI-файл
 */
@@ -99,5 +103,9 @@ int ini_section_map(ini_p ini, const char *section, ini_option_callback callback
 * Закрыть INI-файл
 */
 void ini_close(ini_p ini);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __NANO_INI_H_
