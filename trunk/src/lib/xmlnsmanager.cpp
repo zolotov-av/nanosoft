@@ -45,9 +45,9 @@ namespace nanosoft
 	* @param prefix префикс
 	* @return простраство имен
 	*/
-	std::string XMLNSManager::prefixToNS(const std::string &prefix)
+	std::string XMLNSManager::prefixToNS(const std::string &prefix) const
 	{
-		p2ns_map::iterator p = p2ns.find(prefix);
+		p2ns_map::const_iterator p = p2ns.find(prefix);
 		if ( p == p2ns.end() ) error("[XMLNSManager] unknown prefix:" + prefix);
 	}
 	
@@ -59,9 +59,9 @@ namespace nanosoft
 	* где defaultValue - это то, что предложил парсер, по первому
 	* символу # мы отличаем, что это неизвестный нам namespace
 	*/
-	std::string XMLNSManager::NSToPrefix(const string &ns, const string &defaultValue)
+	std::string XMLNSManager::NSToPrefix(const string &ns, const string &defaultValue) const
 	{
-		ns2p_map::iterator p = ns2p.find(ns);
+		ns2p_map::const_iterator p = ns2p.find(ns);
 		if ( p == ns2p.end() )
 		{ // неизвестное простанство имен
 			return "#" + defaultValue;

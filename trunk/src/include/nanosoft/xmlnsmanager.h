@@ -62,7 +62,7 @@ namespace nanosoft
 		* @param prefix префикс
 		* @return простраство имен
 		*/
-		std::string prefixToNS(const std::string &prefix);
+		std::string prefixToNS(const std::string &prefix) const;
 		
 		/**
 		* Вернуть стандартный префикс простанства имен
@@ -72,7 +72,7 @@ namespace nanosoft
 		* где defaultValue - это то, что предложил парсер, по первому
 		* символу # мы отличаем, что это неизвестный нам namespace
 		*/
-		std::string NSToPrefix(const std::string &uri, const std::string &defaultValue);
+		std::string NSToPrefix(const std::string &uri, const std::string &defaultValue) const;
 	};
 }
 
