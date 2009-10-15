@@ -64,6 +64,12 @@ public:
 	status_t step(GSASLSession *session, const std::string &input, std::string &output);
 	
 	/**
+	* Вернуть логин пользователя авторизованного
+	* @param session сеанс
+	*/
+	std::string getUsername(GSASLSession *session);
+	
+	/**
 	* Закрыть сеанс
 	*/
 	void close(GSASLSession *session);

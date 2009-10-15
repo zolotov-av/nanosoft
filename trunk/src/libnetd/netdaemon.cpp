@@ -140,13 +140,18 @@ void* NetDaemon::workerEntry(void *pContext)
 void NetDaemon::startWorkers()
 {
 	//printf("todo startWorkers\n");
-	workers = new pthread_t[workerCount];
+	workers = new worker_info[workerCount];
 	for(int i = 0; i < workerCount; i++)
 	{
 		Context *context = new Context;
 		context->d = this;
 		context->tid = i + 1;
-		pthread_create(&workers[i], NULL, workerEntry, context);
+		pthread_attr_init(&workers[i].attr);
+		size_t stack_size = sizeof(double) * 1024 * 1024;
+		pthread_attr_setstacksize(&workers[i].attr, stack_size);
+		cout << "worker stack size: " << stack_size << endl;
+		// TODO delete attr somewhere...
+		pthread_create(&workers[i].thread, &workers[i].attr, workerEntry, context);
 	}
 }
 

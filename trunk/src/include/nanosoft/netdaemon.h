@@ -32,7 +32,7 @@ private:
 	/**
 	* Список воркеров
 	*/
-	pthread_t *workers;
+	struct worker_info { pthread_t thread; pthread_attr_t attr; } *workers;
 	
 	/**
 	* Код возврата

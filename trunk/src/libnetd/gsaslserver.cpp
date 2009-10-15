@@ -154,6 +154,15 @@ GSASLServer::status_t GSASLServer::step(GSASLSession *session, const std::string
 }
 
 /**
+* Вернуть логин пользователя авторизованного
+* @param session сеанс
+*/
+std::string GSASLServer::getUsername(GSASLSession *session)
+{
+	return gsasl_property_fast(session->sctx, GSASL_AUTHID);
+}
+
+/**
 * Закрыть сеанс
 */
 void GSASLServer::close(GSASLSession *session)

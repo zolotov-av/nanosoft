@@ -28,6 +28,10 @@ AsyncXMLStream::~AsyncXMLStream()
 void AsyncXMLStream::initParser()
 {
 	parser = XML_ParserCreate((XML_Char *) "UTF-8");
+	if ( parser == 0 )
+	{
+		cerr << "XML_ParserCreate() fault" << endl;
+	}
 	XML_SetUserData(parser, (void*) this);
 	XML_SetElementHandler(parser, startElementCallback, endElementCallback);
 	XML_SetCharacterDataHandler(parser, characterDataCallback);
