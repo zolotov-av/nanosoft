@@ -59,7 +59,7 @@ LIBNETD_OBJECTS+=asyncstream.o
 LIBNETD_OBJECTS+=asyncserver.o
 LIBNETD_OBJECTS+=asyncxmlstream.o
 LIBNETD_OBJECTS+=saslserver.o
-LIBNETD_OBJECTS+=cyrussaslserver.o
+#LIBNETD_OBJECTS+=cyrussaslserver.o
 LIBNETD_OBJECTS+=gsaslserver.o
 
 
@@ -88,7 +88,6 @@ install-headers:
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncserver.h $(INCLUDEDIR)/nanosoft/asyncserver.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/netdaemon.h $(INCLUDEDIR)/nanosoft/netdaemon.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/saslserver.h $(INCLUDEDIR)/nanosoft/saslserver.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/cyrussaslserver.h $(INCLUDEDIR)/nanosoft/cyrussaslserver.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/gsaslserver.h $(INCLUDEDIR)/nanosoft/gsaslserver.h
 
 
