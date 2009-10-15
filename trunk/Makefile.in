@@ -52,6 +52,7 @@ NANOSOFT_OBJECTS+=socket.o
 NANOSOFT_OBJECTS+=http.o
 NANOSOFT_OBJECTS+=xmlwriter.o
 NANOSOFT_OBJECTS+=base64.o
+NANOSOFT_OBJECTS+=error.o
 
 LIBNETD_OBJECTS=netdaemon.o
 LIBNETD_OBJECTS+=asyncobject.o
@@ -82,6 +83,7 @@ install-headers:
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/string.h $(INCLUDEDIR)/nanosoft/string.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlwriter.h $(INCLUDEDIR)/nanosoft/xmlwriter.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/base64.h $(INCLUDEDIR)/nanosoft/base64.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/error.h $(INCLUDEDIR)/nanosoft/error.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncobject.h $(INCLUDEDIR)/nanosoft/asyncobject.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncstream.h $(INCLUDEDIR)/nanosoft/asyncstream.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncxmlstream.h $(INCLUDEDIR)/nanosoft/asyncxmlstream.h
@@ -194,6 +196,9 @@ xmlwriter.o: $(srclib)/xmlwriter.cpp $(srcinc)/nanosoft/xmlwriter.h
 
 base64.o: $(srclib)/base64.cpp $(srcinc)/nanosoft/base64.h
 	$(CXX) -c $(srclib)/base64.cpp
+
+error.o: $(srclib)/error.cpp $(srcinc)/nanosoft/error.h
+	$(CXX) -c $(srclib)/error.cpp
 
 # libnetd modules
 daemon: $(srcexm)/daemon.cpp libnetd.a libnanosoft.a
