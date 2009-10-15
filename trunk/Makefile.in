@@ -51,6 +51,7 @@ NANOSOFT_OBJECTS+=fstream.o
 NANOSOFT_OBJECTS+=socket.o
 NANOSOFT_OBJECTS+=http.o
 NANOSOFT_OBJECTS+=xmlwriter.o
+NANOSOFT_OBJECTS+=xmlnsmanager.o
 NANOSOFT_OBJECTS+=base64.o
 NANOSOFT_OBJECTS+=error.o
 
@@ -82,6 +83,7 @@ install-headers:
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/stream.h $(INCLUDEDIR)/nanosoft/stream.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/string.h $(INCLUDEDIR)/nanosoft/string.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlwriter.h $(INCLUDEDIR)/nanosoft/xmlwriter.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlnsmanager.h $(INCLUDEDIR)/nanosoft/xmlnsmanager.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/base64.h $(INCLUDEDIR)/nanosoft/base64.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/error.h $(INCLUDEDIR)/nanosoft/error.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncobject.h $(INCLUDEDIR)/nanosoft/asyncobject.h
@@ -190,6 +192,9 @@ socket.o: $(srclib)/socket.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/so
 
 http.o: $(srclib)/http.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket.h $(srcinc)/nanosoft/http.h $(srcinc)/nanourl.h
 	$(CXX) -c $(srclib)/http.cpp
+
+xmlnsmanager.o: $(srclib)/xmlnsmanager.cpp $(srcinc)/nanosoft/xmlnsmanager.h
+	$(CXX) -c $(srclib)/xmlnsmanager.cpp
 
 xmlwriter.o: $(srclib)/xmlwriter.cpp $(srcinc)/nanosoft/xmlwriter.h
 	$(CXX) -c $(srclib)/xmlwriter.cpp
