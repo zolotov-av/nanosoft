@@ -147,10 +147,9 @@ void NetDaemon::startWorkers()
 		context->d = this;
 		context->tid = i + 1;
 		pthread_attr_init(&workers[i].attr);
-		size_t stack_size = sizeof(double) * 1024 * 1024;
+		size_t stack_size = sizeof(size_t) * 2 * 1024 * 1024;
 		pthread_attr_setstacksize(&workers[i].attr, stack_size);
 		cout << "worker stack size: " << stack_size << endl;
-		// TODO delete attr somewhere...
 		pthread_create(&workers[i].thread, &workers[i].attr, workerEntry, context);
 	}
 }
