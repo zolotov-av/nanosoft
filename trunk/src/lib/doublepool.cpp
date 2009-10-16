@@ -1,12 +1,21 @@
+#include <sys/types.h>
 #include <nanosoft/simplepool.h>
-#include <nanosoft/error.h>
-#include <string.h>
-#include <stdlib.h>
+#include <nanosoft/doublepool.h>
 
 namespace nanosoft
 {
 	/**
-	* Конструктор простого пула
+	* Обменять пулы местами
+	*/
+	void DoublePool::swap()
+	{
+		SimplePool *p = active;
+		active = temp;
+		temp = p;
+	}
+	
+	/**
+	* Конструктор двойного пула
 	*
 	* Параметры size и stack_len определяют размер пула
 	* и размер внутреннего стека контекстов. Для нормальной
@@ -21,28 +30,19 @@ namespace nanosoft
 	* @param stack_len размер стека контекстов (максимальное число
 	*   вложенных контекстов)
 	*/
-	SimplePool::SimplePool(const char *name, size_t size, size_t stack_len)
+	DoublePool::DoublePool(const char *name, size_t size, size_t stack_len)
 	{
-		this->name = strdup(name);
-		
-		offset = data = static_cast<char *>(malloc(size));
-		limit = data + size;
-		
-		top = stack = static_cast<char **>(malloc(stack_len * sizeof(*stack)));
-		stackLimit = stack + stack_len;
-		
-		peakMemory = 0;
-		peakDepth = 0;
+		active = new SimplePool(name, size, stack_len / 2);
+		temp = new SimplePool(name, size, stack_len / 2);
 	}
 	
 	/**
-	* Деструктор простого пула
+	* Деструктор двойного пула
 	*/
-	SimplePool::~SimplePool()
+	DoublePool::~DoublePool()
 	{
-		free(name);
-		free(data);
-		free(stack);
+		delete active;
+		delete temp;
 	}
 	
 	/**
@@ -54,16 +54,23 @@ namespace nanosoft
 	* @param size требуемый размер блока
 	* @return указатель на выделеный блок
 	*/
-	void * SimplePool::alloc(size_t size)
+	void * DoublePool::alloc(size_t size)
 	{
-		if ( offset + size > limit ) error("[SimplePool] pool exeeded");
-		
-		void *p = offset;
-		offset += size;
-		ptrdiff_t busy = offset - data;
-		if ( busy > peakMemory ) peakMemory = busy;
-		
-		return p;
+		return active->alloc(size);
+	}
+	
+	/**
+	* Выделить память из пула временных объектов
+	*
+	* Если память выделить не удается, то данная функция выводит
+	* сообщение об ошибке в stderr и генерирует исключение.
+	*
+	* @param size требуемый размер блока
+	* @return указатель на выделеный блок
+	*/
+	void * DoublePool::tempAlloc(size_t size)
+	{
+		return temp->alloc(size);
 	}
 	
 	/**
@@ -74,13 +81,10 @@ namespace nanosoft
 	* во внутреннем стеке. Если стек переполнен, то в stderr
 	* выводиться сообщение об ошибке и генерируется исключение.
 	*/
-	void SimplePool::enter()
+	void DoublePool::enter()
 	{
-		if ( top == stackLimit ) error("[SimplePool] stack exeeded");
-		*top = offset;
-		top ++;
-		ptrdiff_t depth = top - stack;
-		if ( depth > peakDepth ) peakDepth = depth;
+		swap();
+		temp->enter();
 	}
 	
 	/**
@@ -93,46 +97,45 @@ namespace nanosoft
 	* Если внутренный стек контекстов пуст, то в stderr
 	* выводиться сообщение об ошибке и генерируется исключение.
 	*/
-	void SimplePool::leave()
+	void DoublePool::leave()
 	{
-		if ( top == stack ) error("[SimplePool] stack is empty");
-		top --;
-		offset = *top;
+		temp->leave();
+		swap();
 	}
 	
 	/**
 	* Вернуть название пула
 	* @return название пула
 	*/
-	const char * SimplePool::getPoolName()
+	const char * DoublePool::getPoolName()
 	{
-		return name;
+		return active->getPoolName();
 	}
 	
 	/**
 	* Вернуть объем свободной памяти
 	* @return размер свободной память
 	*/
-	size_t SimplePool::getFreeSize()
+	size_t DoublePool::getFreeSize()
 	{
-		return static_cast<size_t>(limit - offset);
+		return active->getFreeSize() + temp->getFreeSize();
 	}
 	
 	/**
 	* Вернуть размер выделенной памяти
 	* @return размер выделенной памяти
 	*/
-	size_t SimplePool::getBusySize()
+	size_t DoublePool::getBusySize()
 	{
-		return static_cast<size_t>(offset - data);
+		return active->getBusySize() + temp->getBusySize();
 	}
 	
 	/**
 	* Вернуть глубину контекста
 	*/
-	size_t SimplePool::getStackDepth()
+	size_t DoublePool::getStackDepth()
 	{
-		return static_cast<size_t>(top - stack);
+		return active->getStackDepth() + temp->getStackDepth();
 	}
 	
 	/**
@@ -143,9 +146,10 @@ namespace nanosoft
 	*
 	* @return максимальный зафиксированный размер занятой памяти
 	*/
-	size_t SimplePool::getPeakMemory()
+	size_t DoublePool::getPeakMemory()
 	{
-		return peakMemory;
+		// TODO нужно что-то более правильное...
+		return active->getPeakMemory() + temp->getPeakMemory();
 	}
 	
 	/**
@@ -156,8 +160,9 @@ namespace nanosoft
 	*
 	* @return максимальная зафиксированная глубина стека
 	*/
-	size_t SimplePool::getPeakDepth()
+	size_t DoublePool::getPeakDepth()
 	{
-		return peakDepth;
+		// TODO нужно что-то более правильное...
+		return active->getPeakDepth() + temp->getPeakDepth();
 	}
 }
