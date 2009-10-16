@@ -50,6 +50,7 @@ NANOSOFT_OBJECTS+=options.o
 NANOSOFT_OBJECTS+=fstream.o
 NANOSOFT_OBJECTS+=socket.o
 NANOSOFT_OBJECTS+=http.o
+NANOSOFT_OBJECTS+=simplepool.o
 NANOSOFT_OBJECTS+=xmlwriter.o
 NANOSOFT_OBJECTS+=xmlnsmanager.o
 NANOSOFT_OBJECTS+=xmlnscontext.o
@@ -83,6 +84,7 @@ install-headers:
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/socket.h $(INCLUDEDIR)/nanosoft/socket.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/stream.h $(INCLUDEDIR)/nanosoft/stream.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/string.h $(INCLUDEDIR)/nanosoft/string.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/simplepool.h $(INCLUDEDIR)/nanosoft/simplepool.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlwriter.h $(INCLUDEDIR)/nanosoft/xmlwriter.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlnsmanager.h $(INCLUDEDIR)/nanosoft/xmlnsmanager.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlnscontext.h $(INCLUDEDIR)/nanosoft/xmlnscontext.h
@@ -117,7 +119,7 @@ install-mingw32: libnanosoft.a miniget2
 all-mingw32: libnanosoft.a miniget2 parse_url streams options string
 	echo > all-mingw32
 
-all-linux: forker miniget wait time parse_url masterd nsu streams miniget2 minisend showpath options string daemon libnanosoft.a libnetd.a
+all-linux: forker miniget wait time parse_url masterd nsu streams miniget2 minisend showpath options string daemon pools libnanosoft.a libnetd.a
 	echo > all-linux
 
 # PROGRAMS
@@ -163,6 +165,9 @@ options: $(srcexm)/options.cpp  libnanosoft.a
 string: $(srcexm)/string.cpp libnanosoft.a
 	$(CXX) $(srcexm)/string.cpp -lnanosoft -lstdc++ -o string
 
+pools: $(srcexm)/pools.cpp libnanosoft.a
+	$(CXX) $(srcexm)/pools.cpp -lnanosoft -o pools
+
 # LIBRARY
 
 libnanosoft.a: $(NANOSOFT_OBJECTS)
@@ -194,6 +199,9 @@ socket.o: $(srclib)/socket.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/so
 
 http.o: $(srclib)/http.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket.h $(srcinc)/nanosoft/http.h $(srcinc)/nanourl.h
 	$(CXX) -c $(srclib)/http.cpp
+
+simplepool.o: $(srclib)/simplepool.cpp $(srcinc)/nanosoft/simplepool.h
+	$(CXX) -c $(srclib)/simplepool.cpp
 
 xmlnscontext.o: $(srclib)/xmlnscontext.cpp $(srcinc)/nanosoft/xmlnscontext.h $(srcinc)/nanosoft/xmlnsmanager.h
 	$(CXX) -c $(srclib)/xmlnscontext.cpp
@@ -251,4 +259,4 @@ distclean: clean
 
 clean:
 	rm -f *.o build all-linux all-mingw32
-	rm -f forker miniget wait time parse_url masterd nsu streams miniget2 showpath libnanosoft.a libnetd.a options string daemon minisend
+	rm -f forker miniget wait time parse_url masterd nsu streams miniget2 showpath libnanosoft.a libnetd.a options string daemon minisend pools
