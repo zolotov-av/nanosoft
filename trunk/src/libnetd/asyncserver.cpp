@@ -73,6 +73,16 @@ int AsyncServer::accept()
 }
 
 /**
+* Закрыть сокет
+*/
+void AsyncServer::close()
+{
+	::close(fd);
+	fd = 0;
+}
+
+
+/**
 * Вернуть маску ожидаемых событий
 */
 uint32_t AsyncServer::getEventsMask()
