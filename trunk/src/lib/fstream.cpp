@@ -1,5 +1,6 @@
 
 #include <nanosoft/fstream.h>
+#include <nanosoft/error.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -14,11 +15,13 @@ namespace nanosoft
 	fstream::fstream(const char *fileName, int flags)
 	{
 		fd = ::open(fileName, flags);
+		if ( fd < 0 ) stderror();
 	}
 	
 	fstream::fstream(const char *fileName, int flags, mode_t mode)
 	{
 		fd = ::open(fileName, flags, mode);
+		if ( fd < 0 ) stderror();
 	}
 	
 	fstream::~fstream()
@@ -28,13 +31,13 @@ namespace nanosoft
 	bool fstream::open(const char *fileName, int flags)
 	{
 		fd = ::open(fileName, flags);
-		return fd ? 1 : 0;
+		return fd >= 0 ? 1 : 0;
 	}
 	
 	bool fstream::open(const char *fileName, int flags, mode_t mode)
 	{
 		fd = ::open(fileName, flags, mode);
-		return fd ? 1 : 0;
+		return fd >= 0 ? 1 : 0;
 	}
 	
 	void fstream::bind(int afd)
