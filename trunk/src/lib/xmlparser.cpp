@@ -36,8 +36,12 @@ namespace nanosoft
 	
 	/**
 	* Парсинг
+	* @param buf буфер с данными
+	* @param len длина буфера с данными
+	* @param isFinal TRUE - последний кусок, FALSE - будет продолжение
+	* @return TRUE - успешно, FALSE - ошибка парсинга
 	*/
-	void XMLParser::parseXML(const char *buf, size_t len, bool isFinal)
+	bool XMLParser::parseXML(const char *buf, size_t len, bool isFinal)
 	{
 		cout << "\nparse: \033[22;31m" << string(buf, len) << "\033[0m\n";
 		parsing = true;
@@ -47,7 +51,9 @@ namespace nanosoft
 		else if ( ! r )
 		{
 			onParseError(XML_ErrorString(XML_GetErrorCode(parser)));
+			return false;
 		}
+		return true;
 	}
 	
 	/**

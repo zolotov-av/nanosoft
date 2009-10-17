@@ -30,8 +30,12 @@ namespace nanosoft
 		
 		/**
 		* Парсинг
+		* @param buf буфер с данными
+		* @param len длина буфера с данными
+		* @param isFinal TRUE - последний кусок, FALSE - будет продолжение
+		* @return TRUE - успешно, FALSE - ошибка парсинга
 		*/
-		void parseXML(const char *buf, size_t len, bool isFinal);
+		bool parseXML(const char *buf, size_t len, bool isFinal);
 		
 		/**
 		* Сбросить парсер, начать парсить новый поток
