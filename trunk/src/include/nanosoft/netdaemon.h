@@ -56,6 +56,11 @@ private:
 	*/
 	bool resetObject(AsyncObject *object);
 	
+	/**
+	* Размер стека воркера
+	*/
+	size_t workerStackSize;
+	
 protected:
 	/**
 	* Запустить воркеров
@@ -63,9 +68,19 @@ protected:
 	void startWorkers();
 	
 	/**
-	* Остановить воркеров
+	* Послать сигнал всем воркера
 	*/
-	void stopWorkers();
+	void killWorkers(int sig);
+	
+	/**
+	* Ожидать завершения работы всех воркеров
+	*/
+	void waitWorkers();
+	
+	/**
+	* Удалить воркеров
+	*/
+	void freeWorkers();
 	
 	/**
 	* Обработка системной ошибки
@@ -92,6 +107,16 @@ public:
 	* Установить число воркеров
 	*/
 	void setWorkerCount(int count);
+	
+	/**
+	* Вернуть размер стека воркера
+	*/
+	size_t getWorkerStackSize();
+	
+	/**
+	* Установить размер стека воркера
+	*/
+	void setWorkerStackSize(size_t size);
 	
 	/**
 	* Добавить асинхронный объект

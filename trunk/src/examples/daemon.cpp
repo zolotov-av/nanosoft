@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <signal.h>
 #include <iostream>
 #include <exception>
 #include <nanosoft/netdaemon.h>
@@ -80,6 +81,24 @@ public:
 	}
 	
 	/**
+	* Сигнал завершения работы
+	*
+	* Объект должен закрыть файловый дескриптор
+	* и освободить все занимаемые ресурсы
+	*/
+	void onTerminate()
+	{
+		XMLWriter::flush();
+		//std::cerr << "[TestStream]: peer shutdown connection" << std::endl;
+		if ( shutdown(fd, SHUT_RDWR) != 0 )
+		{
+			stderror();
+		}
+		daemon->removeObject(this);
+		delete this;
+	}
+	
+	/**
 	* Обработчик открытия тега
 	*/
 	virtual void onStartElement(const std::string &name, const attributtes_t &attributes)
@@ -131,6 +150,18 @@ public:
 		}
 		return 0;
 	}
+	
+	/**
+	* Сигнал завершения работы
+	*
+	* Объект должен закрыть файловый дескриптор
+	* и освободить все занимаемые ресурсы
+	*/
+	void onTerminate()
+	{
+		close();
+		delete this;
+	}
 };
 
 class MyDaemon: public NetDaemon
@@ -170,9 +201,36 @@ public:
 	}
 };
 
+MyDaemon mydaemon;
+
+void on_signal(int sig)
+{
+	switch ( sig )
+	{
+	case SIGTERM:
+	case SIGINT:
+		mydaemon.terminate(0);
+		break;
+	case SIGHUP:
+		// TODO
+		break;
+	default:
+		// обычно мы не должны сюда попадать,
+		// если попали, значит забыли добавить обработчик
+		cerr << "[main] signal: " << sig << endl;
+	}
+}
+
 int main()
 {
-	MyDaemon daemon;
-	daemon.setWorkerCount(2);
-	return daemon.run();
+	mydaemon.setWorkerCount(2);
+	
+	struct sigaction sa;
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = on_signal;
+	sigaction(SIGTERM, &sa, 0);
+	sigaction(SIGHUP, &sa, 0);
+	sigaction(SIGINT, &sa, 0);
+	
+	return mydaemon.run();
 }

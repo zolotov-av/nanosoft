@@ -4,16 +4,20 @@
 #include <pthread.h>
 #include <nanosoft/netdaemon.h>
 #include <iostream>
+#include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <signal.h>
 
 using namespace std;
+
+#define DEFAULT_WORKER_STACK_SIZE (sizeof(size_t) * 1024 * 1024)
 
 /**
 * Конструктор демона
 * @param maxStreams максимальное число одновременных виртуальных потоков
 */
-NetDaemon::NetDaemon(int maxObjects)
+NetDaemon::NetDaemon(int maxObjects): workerStackSize(DEFAULT_WORKER_STACK_SIZE)
 {
 	epoll = epoll_create(maxObjects);
 }
@@ -59,6 +63,22 @@ int NetDaemon::getWorkerCount()
 void NetDaemon::setWorkerCount(int count)
 {
 	workerCount = count;
+}
+
+/**
+* Вернуть размер стека воркера
+*/
+size_t NetDaemon::getWorkerStackSize()
+{
+	return workerStackSize;
+}
+
+/**
+* Установить размер стека воркера
+*/
+void NetDaemon::setWorkerStackSize(size_t size)
+{
+	workerStackSize = size;
 }
 
 /**
@@ -129,7 +149,7 @@ void* NetDaemon::workerEntry(void *pContext)
 		if ( r == 0 ) daemon->onError("skip");
 	}
 	
-	daemon->onError("worker exiting");
+	fprintf(stderr, "worker exiting #%d\n", context->tid);
 	delete context;
 	return 0;
 }
@@ -139,7 +159,6 @@ void* NetDaemon::workerEntry(void *pContext)
 */
 void NetDaemon::startWorkers()
 {
-	//printf("todo startWorkers\n");
 	workers = new worker_info[workerCount];
 	for(int i = 0; i < workerCount; i++)
 	{
@@ -147,19 +166,47 @@ void NetDaemon::startWorkers()
 		context->d = this;
 		context->tid = i + 1;
 		pthread_attr_init(&workers[i].attr);
-		size_t stack_size = sizeof(size_t) * 2 * 1024 * 1024;
-		pthread_attr_setstacksize(&workers[i].attr, stack_size);
-		cout << "worker stack size: " << stack_size << endl;
+		pthread_attr_setstacksize(&workers[i].attr, getWorkerStackSize());
+		pthread_attr_setdetachstate(&workers[i].attr, PTHREAD_CREATE_JOINABLE);
 		pthread_create(&workers[i].thread, &workers[i].attr, workerEntry, context);
 	}
 }
 
 /**
-* Остановить воркеров
+* Послать сигнал всем воркера
 */
-void NetDaemon::stopWorkers()
+void NetDaemon::killWorkers(int sig)
 {
-	//printf("todo stopWorkers\n");
+	for(int i = 0; i < workerCount; i++)
+	{
+		pthread_kill(workers[i].thread, sig);
+	}
+}
+
+/**
+* Ожидать завершения работы всех воркеров
+*/
+void NetDaemon::waitWorkers()
+{
+	cerr << "[NetDaemon] wait for workers exited..." << endl;
+	for(int i = 0; i < workerCount; i++)
+	{
+		void *status;
+		int rc = pthread_join(workers[i].thread, &status);
+		if ( rc ) cerr << "some error with thread #" << (i+1) << endl;
+	}
+	cerr << "[NetDaemon] workers exited." << endl;
+}
+
+/**
+* Удалить воркеров
+*/
+void NetDaemon::freeWorkers()
+{
+	for(int i = 0; i < workerCount; i++)
+	{
+		pthread_attr_destroy(&workers[i].attr);
+	}
 	delete [] workers;
 }
 
@@ -174,7 +221,8 @@ int NetDaemon::run()
 	context->d = this;
 	context->tid = 0;
 	workerEntry(context);
-	stopWorkers();
+	waitWorkers();
+	freeWorkers();
 	return 0;
 }
 
@@ -186,4 +234,5 @@ void NetDaemon::terminate(int code)
 	onError("terminate...");
 	exitCode = code;
 	active = false;
+	killWorkers(SIGHUP);
 }
