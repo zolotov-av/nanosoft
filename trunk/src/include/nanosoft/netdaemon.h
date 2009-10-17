@@ -19,10 +19,11 @@ private:
 	*/
 	int epoll;
 	
+	typedef std::map<int, AsyncObject*> map_objects_t;
 	/**
 	* Карта объектов (fd -> AsyncObject)
 	*/
-	std::map<int, AsyncObject*> objects;
+	map_objects_t objects;
 	
 	/**
 	* Число потоков-воркеров
@@ -81,6 +82,11 @@ protected:
 	* Удалить воркеров
 	*/
 	void freeWorkers();
+	
+	/**
+	* Послать сигнал onTerminate() всем подконтрольным объектам
+	*/
+	void killObjects();
 	
 	/**
 	* Обработка системной ошибки

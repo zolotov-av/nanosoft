@@ -211,6 +211,18 @@ void NetDaemon::freeWorkers()
 }
 
 /**
+* Послать сигнал onTerminate() всем подконтрольным объектам
+*/
+void NetDaemon::killObjects()
+{
+	// TODO быть может все-таки удасться распределить завершение на несколько воркеров
+	for(map_objects_t::iterator pos = objects.begin(); pos != objects.end(); ++pos)
+	{
+		pos->second->onTerminate();
+	}
+}
+
+/**
 * Запустить демона
 */
 int NetDaemon::run()
@@ -223,6 +235,7 @@ int NetDaemon::run()
 	workerEntry(context);
 	waitWorkers();
 	freeWorkers();
+	killObjects();
 	return 0;
 }
 
