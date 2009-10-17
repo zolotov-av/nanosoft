@@ -1,65 +1,15 @@
 #ifndef NANOSOFT_ASYNCXMLSTREAM_H
 #define NANOSOFT_ASYNCXMLSTREAM_H
 
-#include <expat.h>
-#include <map>
 #include <string>
 #include <nanosoft/asyncstream.h>
+#include <nanosoft/xmlparser.h>
 
 /**
 * Асинхронный парсер XML потоков
 */
-class AsyncXMLStream: public AsyncStream
+class AsyncXMLStream: public AsyncStream, public nanosoft::XMLParser
 {
-private:
-	/**
-	* Парсер expat
-	*/
-	XML_Parser parser;
-	
-	/**
-	* Признак парсинга
-	* TRUE - парсер в состоянии обработка куска файла
-	*/
-	bool parsing;
-	
-	/**
-	* Признак необходимости перенинициализации парсера
-	* TRUE - парсер должен быть переинициализован перед
-	*   обработкой следующего куска файла
-	*/
-	bool resetNeed;
-	
-	/**
-	* Инициализация парсера
-	*/
-	void initParser();
-	
-	/**
-	* Парсинг
-	*/
-	void parse(const char *buf, size_t len, bool isFinal);
-	
-	/**
-	* Реальная переинициализация парсера
-	*/
-	void realResetParser();
-	
-	/**
-	* Обработчик открытия тега
-	*/
-	static void startElementCallback(void *user_data, const XML_Char *name, const XML_Char **atts);
-	
-	/**
-	* Отработчик символьных данных
-	*/
-	static void characterDataCallback(void *user_data, const XML_Char *s, int len);
-	
-	/**
-	* Отбработчик закрытия тега
-	*/
-	static void endElementCallback(void *user_data, const XML_Char *name);
-	
 public:
 	/**
 	* Класс описывающий атрибуты тега
@@ -76,11 +26,7 @@ public:
 	*/
 	virtual ~AsyncXMLStream();
 	
-	/**
-	* Сбросить парсер, начать парсить новый поток
-	*/
-	void resetParser();
-	
+protected:
 	/**
 	* Событие готовности к чтению
 	*
@@ -103,6 +49,11 @@ public:
 	* Вызывается в случае возникновения какой-либо ошибки
 	*/
 	virtual void onError(const char *message);
+	
+	/**
+	* Обработчик ошибок парсера
+	*/
+	virtual void onParseError(const char *message);
 	
 	/**
 	* Событие закрытия потока

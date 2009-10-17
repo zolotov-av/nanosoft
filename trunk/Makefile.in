@@ -52,6 +52,7 @@ NANOSOFT_OBJECTS+=socket.o
 NANOSOFT_OBJECTS+=http.o
 NANOSOFT_OBJECTS+=simplepool.o
 NANOSOFT_OBJECTS+=doublepool.o
+NANOSOFT_OBJECTS+=xmlparser.o
 NANOSOFT_OBJECTS+=xmlwriter.o
 NANOSOFT_OBJECTS+=xmlnsmanager.o
 NANOSOFT_OBJECTS+=xmlnscontext.o
@@ -87,6 +88,7 @@ install-headers:
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/string.h $(INCLUDEDIR)/nanosoft/string.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/simplepool.h $(INCLUDEDIR)/nanosoft/simplepool.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/doublepool.h $(INCLUDEDIR)/nanosoft/doublepool.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlparser.h $(INCLUDEDIR)/nanosoft/xmlparser.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlwriter.h $(INCLUDEDIR)/nanosoft/xmlwriter.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlnsmanager.h $(INCLUDEDIR)/nanosoft/xmlnsmanager.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlnscontext.h $(INCLUDEDIR)/nanosoft/xmlnscontext.h
@@ -214,6 +216,9 @@ xmlnscontext.o: $(srclib)/xmlnscontext.cpp $(srcinc)/nanosoft/xmlnscontext.h $(s
 xmlnsmanager.o: $(srclib)/xmlnsmanager.cpp $(srcinc)/nanosoft/xmlnsmanager.h
 	$(CXX) -c $(srclib)/xmlnsmanager.cpp
 
+xmlparser.o: $(srclib)/xmlparser.cpp $(srcinc)/nanosoft/xmlparser.h
+	$(CXX) -c $(srclib)/xmlparser.cpp
+
 xmlwriter.o: $(srclib)/xmlwriter.cpp $(srcinc)/nanosoft/xmlwriter.h
 	$(CXX) -c $(srclib)/xmlwriter.cpp
 
@@ -234,7 +239,7 @@ libnetd.a: $(LIBNETD_OBJECTS)
 netdaemon.o: $(srcdir)/libnetd/netdaemon.cpp $(srcinc)/nanosoft/netdaemon.h
 	$(CXX) -c $(srcdir)/libnetd/netdaemon.cpp
 
-asyncxmlstream.o: $(srcdir)/libnetd/asyncxmlstream.cpp $(srcinc)/nanosoft/asyncxmlstream.h $(srcinc)/nanosoft/asyncstream.h $(srcinc)/nanosoft/asyncobject.h $(srcinc)/nanosoft/xmlwriter.h
+asyncxmlstream.o: $(srcdir)/libnetd/asyncxmlstream.cpp $(srcinc)/nanosoft/asyncxmlstream.h $(srcinc)/nanosoft/asyncstream.h $(srcinc)/nanosoft/asyncobject.h $(srcinc)/nanosoft/xmlwriter.h $(srcinc)/nanosoft/xmlparser.h
 	$(CXX) -c $(srcdir)/libnetd/asyncxmlstream.cpp
 	
 asyncstream.o: $(srcdir)/libnetd/asyncstream.cpp $(srcinc)/nanosoft/asyncstream.h $(srcinc)/nanosoft/asyncobject.h

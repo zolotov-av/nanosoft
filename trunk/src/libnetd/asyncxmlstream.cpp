@@ -9,9 +9,8 @@ using namespace std;
 /**
 * Конструктор
 */
-AsyncXMLStream::AsyncXMLStream(int afd): AsyncStream(afd), parsing(false), resetNeed(false)
+AsyncXMLStream::AsyncXMLStream(int afd): AsyncStream(afd)
 {
-	initParser();
 }
 
 /**
@@ -19,56 +18,6 @@ AsyncXMLStream::AsyncXMLStream(int afd): AsyncStream(afd), parsing(false), reset
 */
 AsyncXMLStream::~AsyncXMLStream()
 {
-	XML_ParserFree(parser);
-}
-
-/**
-* Инициализация парсера
-*/
-void AsyncXMLStream::initParser()
-{
-	parser = XML_ParserCreate((XML_Char *) "UTF-8");
-	if ( parser == 0 )
-	{
-		cerr << "XML_ParserCreate() fault" << endl;
-	}
-	XML_SetUserData(parser, (void*) this);
-	XML_SetElementHandler(parser, startElementCallback, endElementCallback);
-	XML_SetCharacterDataHandler(parser, characterDataCallback);
-}
-
-/**
-* Парсинг
-*/
-void AsyncXMLStream::parse(const char *buf, size_t len, bool isFinal)
-{
-	cout << "\nparse: \033[22;31m" << string(buf, len) << "\033[0m\n";
-	parsing = true;
-	int r = XML_Parse(parser, buf, len, isFinal);
-	parsing = false;
-	if ( resetNeed ) realResetParser();
-	else if ( ! r )
-	{
-		onError(XML_ErrorString(XML_GetErrorCode(parser)));
-	}
-}
-
-/**
-* Реальная переинициализация парсера
-*/
-void AsyncXMLStream::realResetParser()
-{
-	XML_ParserFree(parser);
-	initParser();
-}
-
-/**
-* Сбросить парсер, начать парсить новый поток
-*/
-void AsyncXMLStream::resetParser()
-{
-	if ( parsing ) resetNeed = true;
-	else realResetParser();
 }
 
 /**
@@ -83,7 +32,7 @@ void AsyncXMLStream::onRead()
 	ssize_t r = read(buf, sizeof(buf));
 	if ( r > 0 )
 	{
-		parse(buf, r, false);
+		parseXML(buf, r, false);
 	}
 }
 
@@ -99,6 +48,15 @@ void AsyncXMLStream::onError(const char *message)
 }
 
 /**
+* Обработчик ошибок парсера
+*/
+void AsyncXMLStream::onParseError(const char *message)
+{
+	onError(message);
+}
+
+
+/**
 * Событие закрытия потока
 *
 * Вызывается в случае достижения конца файла
@@ -111,37 +69,7 @@ void AsyncXMLStream::onShutdown()
 		char buf[4096];
 		ssize_t r = read(buf, sizeof(buf));
 		if ( r <= 0 ) break;
-		parse(buf, r, false);
+		parseXML(buf, r, false);
 	}
-	parse(0, 0, true);
-}
-
-
-
-/**
-* Обработчик открытия тега
-*/
-void AsyncXMLStream::startElementCallback(void *user_data, const XML_Char *name, const XML_Char **atts)
-{
-	attributtes_t attributes;
-	for(int i = 0; atts[i]; i += 2) {
-		attributes[ atts[i] ] = atts[i + 1];
-	}
-	static_cast<AsyncXMLStream *>(user_data)->onStartElement(name, attributes);
-}
-
-/**
-* Отработчик символьных данных
-*/
-void AsyncXMLStream::characterDataCallback(void *user_data, const XML_Char *s, int len)
-{
-	static_cast<AsyncXMLStream *>(user_data)->onCharacterData(string(s, len));
-}
-
-/**
-* Отбработчик закрытия тега
-*/
-void AsyncXMLStream::endElementCallback(void *user_data, const XML_Char *name)
-{
-	static_cast<AsyncXMLStream *>(user_data)->onEndElement(name);
+	parseXML(0, 0, true);
 }

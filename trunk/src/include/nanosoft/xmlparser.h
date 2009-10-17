@@ -1,0 +1,108 @@
+#ifndef NANOSOFT_XMLPARSER_H
+#define NANOSOFT_XMLPARSER_H
+
+#include <expat.h>
+#include <map>
+#include <string>
+
+namespace nanosoft
+{
+	/**
+	* XML парсер
+	*/
+	class XMLParser
+	{
+	public:
+		/**
+		* Класс описывающий атрибуты тега
+		*/
+		typedef std::map<std::string, std::string> attributtes_t;
+		
+		/**
+		* Конструктор
+		*/
+		XMLParser();
+		
+		/**
+		* Деструктор
+		*/
+		virtual ~XMLParser();
+		
+		/**
+		* Парсинг
+		*/
+		void parseXML(const char *buf, size_t len, bool isFinal);
+		
+		/**
+		* Сбросить парсер, начать парсить новый поток
+		*/
+		void resetParser();
+		
+	protected:
+		/**
+		* Обработчик открытия тега
+		*/
+		virtual void onStartElement(const std::string &name, const attributtes_t &attributes) = 0;
+		
+		/**
+		* Обработчик символьных данных
+		*/
+		virtual void onCharacterData(const std::string &cdata) = 0;
+		
+		/**
+		* Обработчик закрытия тега
+		*/
+		virtual void onEndElement(const std::string &name) = 0;
+		
+		/**
+		* Обработчик ошибок парсера
+		*/
+		virtual void onParseError(const char *message) = 0;
+		
+	private:
+		/**
+		* Парсер expat
+		*/
+		XML_Parser parser;
+		
+		/**
+		* Признак парсинга
+		* TRUE - парсер в состоянии обработка куска файла
+		*/
+		bool parsing;
+		
+		/**
+		* Признак необходимости перенинициализации парсера
+		* TRUE - парсер должен быть переинициализован перед
+		*   обработкой следующего куска файла
+		*/
+		bool resetNeed;
+		
+		/**
+		* Инициализация парсера
+		*/
+		void initParser();
+		
+		/**
+		* Реальная переинициализация парсера
+		*/
+		void realResetParser();
+		
+		/**
+		* Обработчик открытия тега
+		*/
+		static void startElementCallback(void *user_data, const XML_Char *name, const XML_Char **atts);
+		
+		/**
+		* Отработчик символьных данных
+		*/
+		static void characterDataCallback(void *user_data, const XML_Char *s, int len);
+		
+		/**
+		* Отбработчик закрытия тега
+		*/
+		static void endElementCallback(void *user_data, const XML_Char *name);
+	};
+}
+
+#endif // NANOSOFT_XMLPARSER_H
