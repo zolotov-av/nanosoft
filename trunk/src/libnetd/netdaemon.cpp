@@ -192,14 +192,12 @@ void NetDaemon::stopWorkers()
 */
 void NetDaemon::waitWorkers()
 {
-	cerr << "[NetDaemon] wait for workers exited..." << endl;
 	for(int i = 0; i < workerCount; i++)
 	{
 		void *status;
 		int rc = pthread_join(workers[i].thread, &status);
-		if ( rc ) cerr << "some error with thread #" << (i+1) << endl;
+		if ( rc ) fprintf(stderr, "[NetDaemon] pthread_join(#%) fault\n", i+1);
 	}
-	cerr << "[NetDaemon] workers exited." << endl;
 }
 
 /**

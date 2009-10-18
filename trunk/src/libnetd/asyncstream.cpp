@@ -87,18 +87,14 @@ enum { READ = 1, WRITE = 2 };
 */
 bool AsyncStream::shutdown(int how)
 {
-	cerr << "AsyncStream::shutdown() enter (" << how << ")\n";
 	if ( how & READ & ~ flags ) {
-		cerr << "shutdown read" << endl;
 		if ( ::shutdown(fd, SHUT_RD) != 0 ) stderror();
 		flags |= READ;
 	}
 	if ( how & WRITE & ~ flags ) {
-		cerr << "shutdown write" << endl;
 		if ( ::shutdown(fd, SHUT_WR) != 0 ) stderror();
 		flags |= WRITE;
 	}
-	cerr << "AsyncStream::shutdown() leave (" << how << ")\n";
 }
 
 /**
@@ -108,7 +104,6 @@ void AsyncStream::close()
 {
 	if ( fd )
 	{
-		cerr << "[AsyncStream]: close socket..." << endl;
 		int r = ::close(fd);
 		fd = 0;
 		if ( r < 0 ) stderror();

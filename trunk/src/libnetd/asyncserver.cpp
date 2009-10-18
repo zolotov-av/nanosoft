@@ -81,7 +81,6 @@ int AsyncServer::accept()
 void AsyncServer::close()
 {
 	if ( fd ) {
-		cerr << "[AsyncServer]: close socket" << endl;
 		int r = ::close(fd);
 		fd = 0;
 		if ( r != 0 ) stderror();
