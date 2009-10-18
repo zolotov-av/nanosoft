@@ -69,13 +69,9 @@ public:
 	*/
 	void onShutdown()
 	{
+		std::cerr << "[TestStream]: peer shutdown connection" << std::endl;
 		AsyncXMLStream::onShutdown();
 		XMLWriter::flush();
-		//std::cerr << "[TestStream]: peer shutdown connection" << std::endl;
-		if ( shutdown(fd, SHUT_RDWR) != 0 )
-		{
-			stderror();
-		}
 		daemon->removeObject(this);
 		delete this;
 	}
@@ -89,11 +85,7 @@ public:
 	void onTerminate()
 	{
 		XMLWriter::flush();
-		//std::cerr << "[TestStream]: peer shutdown connection" << std::endl;
-		if ( shutdown(fd, SHUT_RDWR) != 0 )
-		{
-			stderror();
-		}
+		shutdown(READ | WRITE);
 		daemon->removeObject(this);
 		delete this;
 	}
@@ -159,49 +151,13 @@ public:
 	*/
 	void onTerminate()
 	{
-		close();
+		cerr << "MyServer::onTerminate()...";
+		daemon->removeObject(this);
 		delete this;
 	}
 };
 
-class MyDaemon: public NetDaemon
-{
-private:
-	/**
-	* Поток стандартного ввода
-	*/
-	TestStream *stdin;
-	
-	/**
-	* Демо сервер
-	*/
-	MyServer *server;
-	
-public:
-	MyDaemon(): NetDaemon(10000)
-	{
-		stdin = new TestStream(this, STDIN_FILENO);
-		if ( ! addObject(stdin) )
-		{
-			onError("add stdin fault");
-			throw exception();
-		}
-		
-		server = new MyServer(this);
-		server->bind(4000);
-		server->listen(10);
-		addObject(server);
-	}
-	
-	~MyDaemon()
-	{
-		removeObject(stdin);
-		delete stdin;
-		delete server;
-	}
-};
-
-MyDaemon mydaemon;
+NetDaemon mydaemon(10000);
 
 void on_signal(int sig)
 {
@@ -209,7 +165,7 @@ void on_signal(int sig)
 	{
 	case SIGTERM:
 	case SIGINT:
-		mydaemon.terminate(0);
+		mydaemon.terminate();
 		break;
 	case SIGHUP:
 		// TODO
@@ -224,6 +180,11 @@ void on_signal(int sig)
 int main()
 {
 	mydaemon.setWorkerCount(2);
+	
+	MyServer *server = new MyServer(&mydaemon);
+	server->bind(4000);
+	server->listen(10);
+	mydaemon.addObject(server);
 	
 	struct sigaction sa;
 	memset(&sa, 0, sizeof(sa));

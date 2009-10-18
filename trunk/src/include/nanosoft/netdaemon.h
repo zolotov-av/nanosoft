@@ -15,11 +15,32 @@ class NetDaemon
 {
 private:
 	/**
+	* Состояние демона
+	*/
+	enum state_t {
+		/**
+		* Работает - нормальное состояние
+		*/
+		running,
+		
+		/**
+		* Завершение - демон в состоянии завершения работы
+		*/
+		terminating
+	} state;
+	
+	/**
 	* Файловый дескриптор epoll
 	*/
 	int epoll;
 	
+	/**
+	* PID основного процесса
+	*/
+	pid_t master_pid;
+	
 	typedef std::map<int, AsyncObject*> map_objects_t;
+	
 	/**
 	* Карта объектов (fd -> AsyncObject)
 	*/
@@ -34,11 +55,6 @@ private:
 	* Список воркеров
 	*/
 	struct worker_info { pthread_t thread; pthread_attr_t attr; } *workers;
-	
-	/**
-	* Код возврата
-	*/
-	int exitCode;
 	
 	/**
 	* Признак активности демона
@@ -69,9 +85,9 @@ protected:
 	void startWorkers();
 	
 	/**
-	* Послать сигнал всем воркера
+	* Остановить воркеров
 	*/
-	void killWorkers(int sig);
+	void stopWorkers();
 	
 	/**
 	* Ожидать завершения работы всех воркеров
@@ -142,7 +158,7 @@ public:
 	/**
 	* Завершить работу демона
 	*/
-	void terminate(int code);
+	void terminate();
 	
 	/**
 	* Обработчик ошибок

@@ -102,6 +102,7 @@ bool NetDaemon::removeObject(AsyncObject *object)
 	{
 		if ( epoll_ctl(epoll, EPOLL_CTL_DEL, object->fd, 0) != 0 ) stderror();
 	}
+	if ( objects.empty() ) stopWorkers();
 }
 
 /**
@@ -173,14 +174,17 @@ void NetDaemon::startWorkers()
 }
 
 /**
-* Послать сигнал всем воркера
+* Остановить воркеров
 */
-void NetDaemon::killWorkers(int sig)
+void NetDaemon::stopWorkers()
 {
+	cerr << "NetDaemon::stopWorkers()...\n";
+	active = false;
 	for(int i = 0; i < workerCount; i++)
 	{
-		pthread_kill(workers[i].thread, sig);
+		pthread_kill(workers[i].thread, SIGHUP);
 	}
+	kill(master_pid, SIGHUP);
 }
 
 /**
@@ -215,7 +219,7 @@ void NetDaemon::freeWorkers()
 */
 void NetDaemon::killObjects()
 {
-	// TODO быть может все-таки удасться распределить завершение на несколько воркеров
+	// TODO добавить mutex
 	for(map_objects_t::iterator pos = objects.begin(); pos != objects.end(); ++pos)
 	{
 		pos->second->onTerminate();
@@ -227,6 +231,7 @@ void NetDaemon::killObjects()
 */
 int NetDaemon::run()
 {
+	master_pid = getpid();
 	active = true;
 	startWorkers();
 	Context *context = new Context;
@@ -235,17 +240,15 @@ int NetDaemon::run()
 	workerEntry(context);
 	waitWorkers();
 	freeWorkers();
-	killObjects();
 	return 0;
 }
 
 /**
 * Завершить работу демона
 */
-void NetDaemon::terminate(int code)
+void NetDaemon::terminate()
 {
 	onError("terminate...");
-	exitCode = code;
-	active = false;
-	killWorkers(SIGHUP);
+	state = terminating;
+	killObjects();
 }

@@ -18,6 +18,9 @@ AsyncServer::AsyncServer()
 		stderror();
 		throw exception();
 	}
+	
+	int yes = 1;
+	if ( setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) stderror();
 }
 
 /**
@@ -25,7 +28,7 @@ AsyncServer::AsyncServer()
 */
 AsyncServer::~AsyncServer()
 {
-	if ( ::close(fd) != 0 ) stderror();
+	close();
 }
 
 /**
@@ -77,8 +80,12 @@ int AsyncServer::accept()
 */
 void AsyncServer::close()
 {
-	::close(fd);
-	fd = 0;
+	if ( fd ) {
+		cerr << "[AsyncServer]: close socket" << endl;
+		int r = ::close(fd);
+		fd = 0;
+		if ( r != 0 ) stderror();
+	}
 }
 
 

@@ -52,6 +52,14 @@ public:
 	*/
 	bool resume();
 	
+	enum { READ = 1, WRITE = 2 };
+	
+	/**
+	* Завершить чтение/запись
+	* @note только для сокетов
+	*/
+	bool shutdown(int how);
+	
 	/**
 	* Закрыть поток
 	*/
@@ -87,6 +95,12 @@ public:
 	* или если противоположный конец закрыл поток
 	*/
 	virtual void onShutdown() = 0;
+	
+private:
+	/**
+	* Флаги
+	*/
+	int flags;
 };
 
 #endif // NANOSOFT_ASYNCSTREAM_H

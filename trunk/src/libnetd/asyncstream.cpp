@@ -5,13 +5,15 @@
 #include <string.h>
 #include <iostream>
 #include <nanosoft/asyncstream.h>
+#include <nanosoft/error.h>
+#include <sys/socket.h>
 
 using namespace std;
 
 /**
 * Конструктор
 */
-AsyncStream::AsyncStream(int afd): AsyncObject(afd)
+AsyncStream::AsyncStream(int afd): AsyncObject(afd), flags(0)
 {
 }
 
@@ -77,6 +79,28 @@ bool AsyncStream::resume()
 	onError("TODO AsyncStream::resume()");
 }
 
+enum { READ = 1, WRITE = 2 };
+
+/**
+* Завершить чтение/запись
+* @note только для сокетов
+*/
+bool AsyncStream::shutdown(int how)
+{
+	cerr << "AsyncStream::shutdown() enter (" << how << ")\n";
+	if ( how & READ & ~ flags ) {
+		cerr << "shutdown read" << endl;
+		if ( ::shutdown(fd, SHUT_RD) != 0 ) stderror();
+		flags |= READ;
+	}
+	if ( how & WRITE & ~ flags ) {
+		cerr << "shutdown write" << endl;
+		if ( ::shutdown(fd, SHUT_WR) != 0 ) stderror();
+		flags |= WRITE;
+	}
+	cerr << "AsyncStream::shutdown() leave (" << how << ")\n";
+}
+
 /**
 * Закрыть поток
 */
@@ -84,6 +108,7 @@ void AsyncStream::close()
 {
 	if ( fd )
 	{
+		cerr << "[AsyncStream]: close socket..." << endl;
 		int r = ::close(fd);
 		fd = 0;
 		if ( r < 0 ) stderror();
