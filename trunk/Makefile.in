@@ -58,6 +58,7 @@ NANOSOFT_OBJECTS+=xmlnsmanager.o
 NANOSOFT_OBJECTS+=xmlnscontext.o
 NANOSOFT_OBJECTS+=base64.o
 NANOSOFT_OBJECTS+=error.o
+NANOSOFT_OBJECTS+=mysql.o
 
 LIBNETD_OBJECTS=netdaemon.o
 LIBNETD_OBJECTS+=asyncobject.o
@@ -67,6 +68,24 @@ LIBNETD_OBJECTS+=asyncxmlstream.o
 LIBNETD_OBJECTS+=saslserver.o
 #LIBNETD_OBJECTS+=cyrussaslserver.o
 LIBNETD_OBJECTS+=gsaslserver.o
+
+LINUX_PROGS=forker
+LINUX_PROGS+=miniget
+LINUX_PROGS+=wait
+LINUX_PROGS+=time
+LINUX_PROGS+=parse_url
+LINUX_PROGS+=masterd
+LINUX_PROGS+=nsu
+LINUX_PROGS+=miniget2
+LINUX_PROGS+=minisend
+LINUX_PROGS+=showpath
+
+LINUX_EXAMPLES=streams
+LINUX_EXAMPLES+=options
+LINUX_EXAMPLES+=string
+LINUX_EXAMPLES+=daemon
+LINUX_EXAMPLES+=pools
+LINUX_EXAMPLES+=mysql
 
 
 all: all-$(HOST_OS)
@@ -101,7 +120,7 @@ install-headers:
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/netdaemon.h $(INCLUDEDIR)/nanosoft/netdaemon.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/saslserver.h $(INCLUDEDIR)/nanosoft/saslserver.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/gsaslserver.h $(INCLUDEDIR)/nanosoft/gsaslserver.h
-
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/mysql.h $(INCLUDEDIR)/nanosoft/mysql.h
 
 install-linux: forker miniget wait time masterd nsu miniget2 showpath libnanosoft.a
 	$(MKDIR) -p $(BINDIR) $(LIBDIR) $(INCLUDEDIR)/nanosoft
@@ -123,7 +142,7 @@ install-mingw32: libnanosoft.a miniget2
 all-mingw32: libnanosoft.a miniget2 parse_url streams options string
 	echo > all-mingw32
 
-all-linux: forker miniget wait time parse_url masterd nsu streams miniget2 minisend showpath options string daemon pools libnanosoft.a libnetd.a
+all-linux: $(LINUX_PROGS) $(LINUX_EXAMPLES) libnanosoft.a libnetd.a
 	echo > all-linux
 
 # PROGRAMS
@@ -171,6 +190,9 @@ string: $(srcexm)/string.cpp libnanosoft.a
 
 pools: $(srcexm)/pools.cpp libnanosoft.a
 	$(CXX) $(srcexm)/pools.cpp -lnanosoft -o pools
+
+mysql: $(srcexm)/mysql.cpp libnanosoft.a
+	$(CXX) $(srcexm)/mysql.cpp -lnanosoft $(LIBS) -o mysql
 
 # LIBRARY
 
@@ -228,6 +250,9 @@ base64.o: $(srclib)/base64.cpp $(srcinc)/nanosoft/base64.h
 error.o: $(srclib)/error.cpp $(srcinc)/nanosoft/error.h
 	$(CXX) -c $(srclib)/error.cpp
 
+mysql.o: $(srclib)/mysql.cpp $(srcinc)/nanosoft/mysql.h
+	$(CXX) -c $(srclib)/mysql.cpp
+
 # libnetd modules
 daemon: $(srcexm)/daemon.cpp libnetd.a libnanosoft.a
 	$(CXX) $(srcexm)/daemon.cpp -o daemon -lpthread -lnetd -lnanosoft -lexpat
@@ -269,4 +294,4 @@ distclean: clean
 
 clean:
 	rm -f *.o build all-linux all-mingw32
-	rm -f forker miniget wait time parse_url masterd nsu streams miniget2 showpath libnanosoft.a libnetd.a options string daemon minisend pools
+	rm -f $(LINUX_PROGS) $(LINUX_EXAMPLES) libnanosoft.a libnetd.a
