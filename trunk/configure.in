@@ -33,14 +33,14 @@ AC_CHECK_TOOL(MKDIR, mkdir, mkdir)
 
 AC_ARG_WITH(gsasl, AS_HELP_STRING([--with-gsasl=PREFIX], [GNU SASL library]), [
 		CPPFLAGS="$CPPFLAGS  -I$withval/include"
-		LDFLAGS="$LDFLAGS -L$withval/lib"
+		LDFLAGS="$LDFLAGS -L$withval/lib -Wl,-rpath=$withval/lib"
 	])
 # TODO AC_CHECK_HEADER(gsasl.h, [], [AC_ERROR(GNU SASL library required)])
 AC_CHECK_LIB(gsasl, main, [], [AC_ERROR(GNU SASL library required)])
 
 AC_ARG_WITH(mysql, AS_HELP_STRING([--with-mysql=PREFIX], [MySQL client library]), [
 		CPPFLAGS="$CPPFLAGS  -I$withval/include"
-		LDFLAGS="$LDFLAGS -L$withval/lib"
+		LDFLAGS="$LDFLAGS -L$withval/lib -Wl,-rpath=$withval/lib"
 	])
 # TODO AC_CHECK_HEADER(mysql.h, [], [AC_ERROR(MySQL client library required)])
 AC_CHECK_LIB(mysqlclient_r, mysql_real_connect, [], [AC_ERROR(MySQL client library required)])

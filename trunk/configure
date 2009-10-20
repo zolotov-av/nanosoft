@@ -4209,7 +4209,7 @@ fi
 if test "${with_gsasl+set}" = set; then
   withval=$with_gsasl;
 		CPPFLAGS="$CPPFLAGS  -I$withval/include"
-		LDFLAGS="$LDFLAGS -L$withval/lib"
+		LDFLAGS="$LDFLAGS -L$withval/lib -Wl,-rpath=$withval/lib"
 
 fi
 
@@ -4289,7 +4289,7 @@ fi
 if test "${with_mysql+set}" = set; then
   withval=$with_mysql;
 		CPPFLAGS="$CPPFLAGS  -I$withval/include"
-		LDFLAGS="$LDFLAGS -L$withval/lib"
+		LDFLAGS="$LDFLAGS -L$withval/lib -Wl,-rpath=$withval/lib"
 
 fi
 
