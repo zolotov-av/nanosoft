@@ -102,7 +102,7 @@ namespace nanosoft
 	*/
 	std::string MySQL::quote(const std::string &text)
 	{
-		return '"' + text + '"';
+		return '"' + escape(text) + '"';
 	}
 	
 	/**
