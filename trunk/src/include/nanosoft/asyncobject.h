@@ -12,6 +12,11 @@ class AsyncObject
 friend class NetDaemon;
 private:
 	/**
+	* Номер воркера обрабатывающий в данный момент объект
+	*/
+	int workerId;
+	
+	/**
 	* Конструктор копий
 	*
 	* Не ищите его реализации, его нет и не надо.
@@ -65,6 +70,11 @@ public:
 	* Конструктор
 	*/
 	AsyncObject(int afd);
+	
+	/**
+	* Вернуть ID воркера обрабатывающий объект
+	*/
+	int getWorkerId() { return workerId; }
 	
 	/**
 	* Деструктор

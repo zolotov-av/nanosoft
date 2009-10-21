@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include <iostream>
+#include <stdio.h>
 #include <nanosoft/asyncstream.h>
 #include <nanosoft/error.h>
 #include <sys/socket.h>
@@ -30,7 +30,7 @@ AsyncStream::~AsyncStream()
 */
 uint32_t AsyncStream::getEventsMask()
 {
-	return EPOLLIN | EPOLLRDHUP | EPOLLONESHOT | EPOLLHUP | EPOLLERR | EPOLLET;
+	return EPOLLIN | EPOLLRDHUP | EPOLLONESHOT | EPOLLHUP | EPOLLERR;
 }
 
 /**
@@ -118,5 +118,5 @@ void AsyncStream::close()
 */
 void AsyncStream::onError(const char *message)
 {
-	cerr << "[AsyncStream]: " << message << endl;
+	fprintf(stderr, "#%d [AsyncStream]: %s\n", getWorkerId(), message);
 }

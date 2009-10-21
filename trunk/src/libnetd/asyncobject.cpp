@@ -9,7 +9,7 @@ using namespace std;
 /**
 * Конструктор
 */
-AsyncObject::AsyncObject(): fd(0)
+AsyncObject::AsyncObject(): fd(0), workerId(-1)
 {
 }
 

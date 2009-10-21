@@ -63,7 +63,7 @@ int GSASLServer::gsaslCallback(Gsasl *ctx, Gsasl_session *sctx, Gsasl_property p
 			return GSASL_OK;
 		}
 	default:
-		cout << "callback(" << prop << ")\n";
+		//cout << "callback(" << prop << ")\n";
 		return GSASL_NO_CALLBACK;
 	}
 	

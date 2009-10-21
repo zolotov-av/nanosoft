@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <nanosoft/netdaemon.h>
+#include <nanosoft/error.h>
 #include <iostream>
 #include <stdio.h>
 #include <errno.h>
@@ -86,11 +87,14 @@ void NetDaemon::setWorkerStackSize(size_t size)
 */
 bool NetDaemon::addObject(AsyncObject *object)
 {
+	fprintf(stderr, "addObject enter, count: %d\n", objects.size());
 	struct epoll_event event;
 	objects[object->fd] = object;
 	event.events = object->getEventsMask();
 	event.data.fd = object->fd;
-	return epoll_ctl(epoll, EPOLL_CTL_ADD, object->fd, &event) == 0;
+	bool r = epoll_ctl(epoll, EPOLL_CTL_ADD, object->fd, &event) == 0;
+	fprintf(stderr, "addObject leave, count: %d\n", objects.size());
+	return r;
 }
 
 /**
@@ -98,6 +102,7 @@ bool NetDaemon::addObject(AsyncObject *object)
 */
 bool NetDaemon::removeObject(AsyncObject *object)
 {
+	fprintf(stderr, "#%d: NetDaemon::removeObject\n", object->workerId);
 	if ( objects.erase(object->fd) > 0 )
 	{
 		if ( epoll_ctl(epoll, EPOLL_CTL_DEL, object->fd, 0) != 0 ) stderror();
@@ -110,6 +115,7 @@ bool NetDaemon::removeObject(AsyncObject *object)
 */
 bool NetDaemon::resetObject(AsyncObject *object)
 {
+	fprintf(stderr, "#%d: NetDaemon::resetObject()\n", object->workerId);
 	struct epoll_event event;
 	event.events = object->getEventsMask();
 	event.data.fd = object->fd;
@@ -140,17 +146,19 @@ void* NetDaemon::workerEntry(void *pContext)
 		if ( r > 0 )
 		{
 			AsyncObject *obj = daemon->objects[event.data.fd];
+			obj->workerId = context->tid;
 			obj->onEvent(event.events);
 			if ( daemon->objects[event.data.fd] != 0 )
 			{
+				fprintf(stderr, "#%d: resetObject\n", context->tid);
 				daemon->resetObject(obj);
 			}
 		}
-		if ( r < 0 ) daemon->stderror();
-		if ( r == 0 ) daemon->onError("skip");
+		if ( r < 0 ) fprintf(stderr, "#%d: %s\n", context->tid, nanosoft::stderror());
+		if ( r == 0 ) fprintf(stderr, "#%d: skip\n", context->tid);
 	}
 	
-	fprintf(stderr, "worker exiting #%d\n", context->tid);
+	fprintf(stderr, "#%d: exiting...\n", context->tid);
 	delete context;
 	return 0;
 }

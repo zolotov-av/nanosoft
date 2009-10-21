@@ -2,6 +2,7 @@
 #include <arpa/inet.h>
 #include <sys/epoll.h>
 #include <iostream>
+#include <stdio.h>
 #include <exception>
 #include <nanosoft/asyncserver.h>
 
@@ -112,5 +113,5 @@ void AsyncServer::onEvent(uint32_t events)
 */
 void AsyncServer::onError(const char *message)
 {
-	cerr << "[AsyncServer]: " << message << endl;
+	fprintf(stderr, "#%d [AsyncServer]: %s\n", getWorkerId(), message);
 }
