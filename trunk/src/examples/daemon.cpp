@@ -84,6 +84,7 @@ public:
 	*/
 	void onTerminate()
 	{
+		cerr << "TestStream::onTerminate()\n";
 		XMLWriter::flush();
 		shutdown(READ | WRITE);
 		daemon->removeObject(this);
@@ -151,7 +152,7 @@ public:
 	*/
 	void onTerminate()
 	{
-		cerr << "MyServer::onTerminate()...";
+		cerr << "MyServer::onTerminate()\n";
 		daemon->removeObject(this);
 		delete this;
 	}

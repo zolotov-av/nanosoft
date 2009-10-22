@@ -11,6 +11,7 @@
 #include <signal.h>
 
 using namespace std;
+using namespace nanosoft;
 
 #define DEFAULT_WORKER_STACK_SIZE (sizeof(size_t) * 1024 * 1024)
 
@@ -18,9 +19,14 @@ using namespace std;
 * Конструктор демона
 * @param maxStreams максимальное число одновременных виртуальных потоков
 */
-NetDaemon::NetDaemon(int maxObjects): workerStackSize(DEFAULT_WORKER_STACK_SIZE)
+NetDaemon::NetDaemon(int maxObjects):
+	workerStackSize(DEFAULT_WORKER_STACK_SIZE),
+	workerCount(0),
+	activeCount(0),
+	count(0)
 {
 	epoll = epoll_create(maxObjects);
+	stdcheck( pthread_mutex_init(&mutex, 0) == 0 );
 }
 
 /**
@@ -30,6 +36,21 @@ NetDaemon::~NetDaemon()
 {
 	int r = ::close(epoll);
 	if ( r < 0 ) stderror();
+	stdcheck( pthread_mutex_destroy(&mutex) == 0 );
+}
+
+/**
+* Получить монопольный доступ к NetDaemon
+*/
+void NetDaemon::lock() {
+	stdcheck( pthread_mutex_lock(&mutex) == 0 );
+}
+
+/**
+* Освободить NetDaemon
+*/
+void NetDaemon::unlock() {
+	stdcheck( pthread_mutex_unlock(&mutex) == 0 );
 }
 
 /**
@@ -87,13 +108,17 @@ void NetDaemon::setWorkerStackSize(size_t size)
 */
 bool NetDaemon::addObject(AsyncObject *object)
 {
-	fprintf(stderr, "addObject enter, count: %d\n", objects.size());
+	//fprintf(stderr, "addObject enter, count: %d\n", objects.size());
 	struct epoll_event event;
-	objects[object->fd] = object;
-	event.events = object->getEventsMask();
-	event.data.fd = object->fd;
-	bool r = epoll_ctl(epoll, EPOLL_CTL_ADD, object->fd, &event) == 0;
-	fprintf(stderr, "addObject leave, count: %d\n", objects.size());
+	lock();
+		objects[object->fd] = object;
+		count ++;
+		fprintf(stderr, "AddObject(%d), count = %d\n", object->fd, count);
+		event.events = object->getEventsMask();
+		event.data.fd = object->fd;
+		bool r = epoll_ctl(epoll, EPOLL_CTL_ADD, object->fd, &event) == 0;
+	unlock();
+	//fprintf(stderr, "addObject leave, count: %d\n", objects.size());
 	return r;
 }
 
@@ -102,12 +127,23 @@ bool NetDaemon::addObject(AsyncObject *object)
 */
 bool NetDaemon::removeObject(AsyncObject *object)
 {
-	fprintf(stderr, "#%d: NetDaemon::removeObject\n", object->workerId);
-	if ( objects.erase(object->fd) > 0 )
+	//fprintf(stderr, "#%d: NetDaemon::removeObject\n", object->workerId);
+	lock();
+	fprintf(stderr, "removeObject(%d) enter, count = %d\n", object->fd, count);
+	map_objects_t::iterator pos = objects.find(object->fd);
+	if ( pos != objects.end() )
 	{
+		fprintf(stderr, "objects.erase(%d) = %d\n", object->fd, objects.erase(object->fd));
 		if ( epoll_ctl(epoll, EPOLL_CTL_DEL, object->fd, 0) != 0 ) stderror();
+		count --;
+		if ( count == 0 ) stopWorkers();
 	}
-	if ( objects.empty() ) stopWorkers();
+	else
+	{
+		fprintf(stderr, "objects.find(%d) == end() o.O\n");
+	}
+	fprintf(stderr, "removeObject(%d) leave, count = %d\n", object->fd, count);
+	unlock();
 }
 
 /**
@@ -115,7 +151,7 @@ bool NetDaemon::removeObject(AsyncObject *object)
 */
 bool NetDaemon::resetObject(AsyncObject *object)
 {
-	fprintf(stderr, "#%d: NetDaemon::resetObject()\n", object->workerId);
+	fprintf(stderr, "#%d: NetDaemon::resetObject(%d)\n", object->workerId, object->fd);
 	struct epoll_event event;
 	event.events = object->getEventsMask();
 	event.data.fd = object->fd;
@@ -125,41 +161,123 @@ bool NetDaemon::resetObject(AsyncObject *object)
 	}
 }
 
-struct Context
+/**
+* Действие активного цикла
+*/
+void NetDaemon::doActiveAction(worker_t *worker)
 {
-	NetDaemon *d;
-	int tid;
-};
+	struct epoll_event event;
+	int r = epoll_wait(epoll, &event, 1, -1);
+	if ( r > 0 )
+	{
+		lock();
+			AsyncObject *obj = objects[event.data.fd];
+		unlock();
+		obj->workerId = worker->workerId;
+		obj->onEvent(event.events);
+		lock();
+		if ( objects[event.data.fd] != 0 )
+		{
+			fprintf(stderr, "#%d: resetObject\n", worker->workerId);
+			resetObject(obj);
+		}
+		unlock();
+	}
+	if ( r < 0 ) fprintf(stderr, "#%d: %s\n", worker->workerId, nanosoft::stderror());
+	if ( r == 0 ) fprintf(stderr, "#%d: skip\n", worker->workerId);
+}
+
+/**
+* Действие спящего цикла
+*/
+void NetDaemon::doSleepAction(worker_t *worker)
+{
+	if ( ! worker->checked ) {
+		worker->checked = true;
+		lock();
+			activeCount --;
+			if ( activeCount == 0 )
+			{
+				iter = objects.begin();
+				setWorkersState(TERMINATE);
+			}
+		unlock();
+		return;
+	}
+	
+	fprintf(stderr, "#%d: doSleepAction\n", worker->workerId);
+	
+	// просто засыпаем на как можно больший срок
+	// лишь сигнал нас должен разбудить
+	struct timespec tm;
+	tm.tv_sec = 999999999;
+	tm.tv_nsec = 0;
+	nanosleep(&tm, 0);
+}
+
+/**
+* Действие завещающего цикла
+*/
+void NetDaemon::doTerminateAction(worker_t *worker)
+{
+	if ( ! worker->checked )
+	{
+		worker->checked = true;
+		lock();
+			activeCount ++;
+		unlock();
+		return;
+	}
+	fprintf(stderr, "#%d: doTerminateAction\n", worker->workerId);
+	
+	AsyncObject *obj;
+	lock();
+		if ( iter != objects.end() )
+		{
+			obj = iter->second;
+			++ iter;
+		}
+		else
+		{
+			setWorkersState(ACTIVE);
+			obj = 0;
+		}
+	unlock();
+	if ( obj )
+	{
+		obj->workerId = worker->workerId;
+		obj->onTerminate();
+	}
+}
 
 /**
 * Точка входа в воркер
 */
-void* NetDaemon::workerEntry(void *pContext)
+void* NetDaemon::workerEntry(void *pWorker)
 {
-	struct epoll_event event;
-	Context *context = static_cast<Context *>(pContext);
-	NetDaemon *daemon = context->d;
+	worker_t *worker = static_cast<worker_t *>(pWorker);
+	NetDaemon *daemon = worker->daemon;
 	
-	while ( daemon->active )
+	fprintf(stderr, "#%d: worker started\n", worker->workerId);
+	
+	while ( daemon->count > 0 && worker->status != INACTIVE )
 	{
-		int r = epoll_wait(daemon->epoll, &event, 1, -1);
-		if ( r > 0 )
+		switch ( worker->status )
 		{
-			AsyncObject *obj = daemon->objects[event.data.fd];
-			obj->workerId = context->tid;
-			obj->onEvent(event.events);
-			if ( daemon->objects[event.data.fd] != 0 )
-			{
-				fprintf(stderr, "#%d: resetObject\n", context->tid);
-				daemon->resetObject(obj);
-			}
+		case ACTIVE:
+			daemon->doActiveAction(worker);
+			break;
+		case SLEEP:
+			daemon->doSleepAction(worker);
+			break;
+		case TERMINATE:
+			daemon->doTerminateAction(worker);
+			break;
 		}
-		if ( r < 0 ) fprintf(stderr, "#%d: %s\n", context->tid, nanosoft::stderror());
-		if ( r == 0 ) fprintf(stderr, "#%d: skip\n", context->tid);
 	}
 	
-	fprintf(stderr, "#%d: exiting...\n", context->tid);
-	delete context;
+	fprintf(stderr, "#%d: worker exited\n", worker->workerId);
+	
 	return 0;
 }
 
@@ -168,17 +286,36 @@ void* NetDaemon::workerEntry(void *pContext)
 */
 void NetDaemon::startWorkers()
 {
-	workers = new worker_info[workerCount];
+	workers = new worker_t[workerCount];
 	for(int i = 0; i < workerCount; i++)
 	{
-		Context *context = new Context;
-		context->d = this;
-		context->tid = i + 1;
+		workers[i].daemon = this;
+		workers[i].workerId = i + 1;
+		workers[i].status = ACTIVE;
+		lock();
+		activeCount++;
+		unlock();
 		pthread_attr_init(&workers[i].attr);
 		pthread_attr_setstacksize(&workers[i].attr, getWorkerStackSize());
 		pthread_attr_setdetachstate(&workers[i].attr, PTHREAD_CREATE_JOINABLE);
-		pthread_create(&workers[i].thread, &workers[i].attr, workerEntry, context);
+		pthread_create(&workers[i].thread, &workers[i].attr, workerEntry, &workers[i]);
 	}
+}
+
+/**
+* Сменить статус воркеров
+*/
+void NetDaemon::setWorkersState(worker_status_t status)
+{
+	for(int i = 0; i < workerCount; i++)
+	{
+		workers[i].status = status;
+		workers[i].checked = false;
+		pthread_kill(workers[i].thread, SIGHUP);
+	}
+	main.status = status;
+	main.checked = false;
+	pthread_kill(main.thread, SIGHUP);
 }
 
 /**
@@ -187,12 +324,7 @@ void NetDaemon::startWorkers()
 void NetDaemon::stopWorkers()
 {
 	cerr << "NetDaemon::stopWorkers()...\n";
-	active = false;
-	for(int i = 0; i < workerCount; i++)
-	{
-		pthread_kill(workers[i].thread, SIGHUP);
-	}
-	kill(master_pid, SIGHUP);
+	setWorkersState(INACTIVE);
 }
 
 /**
@@ -237,13 +369,15 @@ void NetDaemon::killObjects()
 */
 int NetDaemon::run()
 {
-	master_pid = getpid();
-	active = true;
 	startWorkers();
-	Context *context = new Context;
-	context->d = this;
-	context->tid = 0;
-	workerEntry(context);
+	main.daemon = this;
+	main.workerId = 0;
+	main.thread = pthread_self();
+	main.status = ACTIVE;
+	lock();
+		activeCount++;
+	unlock();
+	workerEntry(&main);
 	waitWorkers();
 	freeWorkers();
 	return 0;
@@ -255,6 +389,6 @@ int NetDaemon::run()
 void NetDaemon::terminate()
 {
 	onError("terminate...");
-	state = terminating;
-	killObjects();
+	//killObjects();
+	setWorkersState(SLEEP);
 }

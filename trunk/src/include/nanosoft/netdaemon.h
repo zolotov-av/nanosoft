@@ -15,29 +15,14 @@ class NetDaemon
 {
 private:
 	/**
-	* Состояние демона
-	*/
-	enum state_t {
-		/**
-		* Работает - нормальное состояние
-		*/
-		running,
-		
-		/**
-		* Завершение - демон в состоянии завершения работы
-		*/
-		terminating
-	} state;
-	
-	/**
 	* Файловый дескриптор epoll
 	*/
 	int epoll;
 	
 	/**
-	* PID основного процесса
+	* mutex
 	*/
-	pid_t master_pid;
+	pthread_mutex_t mutex;
 	
 	typedef std::map<int, AsyncObject*> map_objects_t;
 	
@@ -47,21 +32,106 @@ private:
 	map_objects_t objects;
 	
 	/**
+	* Число объектов в epoll
+	*/
+	int count;
+	
+	/**
+	* Итератор объектов для корректного останова
+	*/
+	map_objects_t::iterator iter;
+	
+	/**
 	* Число потоков-воркеров
 	*/
 	int workerCount;
 	
 	/**
-	* Список воркеров
+	* Число активных воркеров
 	*/
-	struct worker_info { pthread_t thread; pthread_attr_t attr; } *workers;
+	int activeCount;
 	
 	/**
-	* Признак активности демона
-	* TRUE - демон работает
-	* FALSE - демон остановлен или в процессе остановки
+	* Статус воркера
 	*/
-	bool active;
+	enum worker_status_t {
+		/**
+		* Поток не запущен
+		*/
+		INACTIVE,
+		
+		/**
+		* Поток в обычном рабочем цикле
+		*/
+		ACTIVE,
+		
+		/**
+		* Подготовка к останову - уснуть и ждать останова других потоков
+		*/
+		SLEEP,
+		
+		/**
+		* Останов - послать всем объектам событие onTerminate()
+		*/
+		TERMINATE
+	};
+	
+	/**
+	* Информация о воркере
+	*/
+	struct worker_t {
+		/**
+		* Ссылка на демона
+		*/
+		NetDaemon *daemon;
+		
+		/**
+		* ID воркера
+		*/
+		int workerId;
+		
+		/**
+		* ID потока
+		*/
+		pthread_t thread;
+		
+		/**
+		* Атрибуты потока
+		*/
+		pthread_attr_t attr;
+		
+		/**
+		* Текущий статус воркера
+		*/
+		worker_status_t status;
+		
+		bool checked;
+	};
+	
+	/**
+	* Главный поток
+	*/
+	worker_t main;
+	
+	/**
+	* Список воркеров
+	*/
+	worker_t *workers;
+	
+	/**
+	* Действие активного цикла
+	*/
+	void doActiveAction(worker_t *worker);
+	
+	/**
+	* Действие спящего цикла
+	*/
+	void doSleepAction(worker_t *worker);
+	
+	/**
+	* Действие завещающего цикла
+	*/
+	void doTerminateAction(worker_t *worker);
 	
 	/**
 	* Точка входа в воркер
@@ -83,6 +153,11 @@ protected:
 	* Запустить воркеров
 	*/
 	void startWorkers();
+	
+	/**
+	* Сменить статус воркеров
+	*/
+	void setWorkersState(worker_status_t status);
 	
 	/**
 	* Остановить воркеров
@@ -108,6 +183,17 @@ protected:
 	* Обработка системной ошибки
 	*/
 	void stderror();
+	
+	/**
+	* Получить монопольный доступ к NetDaemon
+	*/
+	void lock();
+	
+	/**
+	* Освободить NetDaemon
+	*/
+	void unlock();
+	
 public:
 	/**
 	* Конструктор демона
