@@ -46,6 +46,12 @@ AC_ARG_WITH(mysql, AS_HELP_STRING([--with-mysql=PREFIX], [MySQL client library])
 AC_CHECK_LIB(mysqlclient_r, mysql_real_connect, [], [AC_ERROR(MySQL client library required)])
 AC_CHECK_LIB(mysqlclient_r, mysql_real_query, [], [AC_ERROR(MySQL client library required)])
 
+AC_ARG_WITH(udns, AS_HELP_STRING([--with-udns=PREFIX], [UDNS (DNS Resolver Library)]), [
+		CPPFLAGS="$CPPFLAGS  -I$withval/include"
+		LDFLAGS="$LDFLAGS -L$withval/lib -Wl,-rpath=$withval/lib"
+	])
+# TODO AC_CHECK_LIB(udns, main, [], [AC_ERROR(UDNS (DNS Resolver Library) required)])
+
 # Checks for libraries.
 
 # Checks for header files.

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <mysql/mysql.h>
+#include <pthread.h>
 #include <stdio.h>
 
 namespace nanosoft
@@ -12,11 +13,16 @@ namespace nanosoft
 	*/
 	class MySQL
 	{
-	private:
+	protected:
 		/**
 		* Соединение с MySQL сервером
 		*/
 		MYSQL *conn;
+		
+		/**
+		* Mutex для thread-safe доступа к БД
+		*/
+		pthread_mutex_t mutex;
 		
 		/**
 		* Набор данных
@@ -48,6 +54,17 @@ namespace nanosoft
 			*/
 			MYSQL_ROW values;
 		};
+		
+		/**
+		* Получить монопольный доступ к БД
+		*/
+		void lock();
+		
+		/**
+		* Освободить БД
+		*/
+		void unlock();
+		
 	public:
 		/**
 		* Умный указатель на набор данных
@@ -175,6 +192,23 @@ namespace nanosoft
 		* Экранировать строку и заключить её в кавычки
 		*/
 		std::string quote(const std::string &text);
+		
+		/**
+		* Выполнить произвольный SQL-запрос
+		* @param sql текст одного SQL-запроса
+		* @param len длина запроса
+		* @return указатель на набор данных
+		*/
+		MySQL::result queryRaw(const char *sql, size_t len);
+		
+		/**
+		* Выполнить произвольный SQL-запрос
+		* @param sql текст одного SQL-запроса
+		* @return указатель на набор данных
+		*/
+		MySQL::result queryRaw(const std::string &sql) {
+			return queryRaw(sql.c_str(), sql.length());
+		}
 		
 		/**
 		* Выполнить произвольный SQL-запрос

@@ -1230,6 +1230,7 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-gsasl=PREFIX     GNU SASL library
   --with-mysql=PREFIX     MySQL client library
+  --with-udns=PREFIX      UDNS (DNS Resolver Library)
 
 Some influential environment variables:
   CC          C compiler command
@@ -4444,6 +4445,17 @@ echo "$as_me: error: MySQL client library required" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
+
+
+# Check whether --with-udns was given.
+if test "${with_udns+set}" = set; then
+  withval=$with_udns;
+		CPPFLAGS="$CPPFLAGS  -I$withval/include"
+		LDFLAGS="$LDFLAGS -L$withval/lib -Wl,-rpath=$withval/lib"
+
+fi
+
+# TODO AC_CHECK_LIB(udns, main, [], [AC_ERROR(UDNS (DNS Resolver Library) required)])
 
 # Checks for libraries.
 
