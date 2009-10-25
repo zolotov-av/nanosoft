@@ -1,10 +1,10 @@
 #ifndef NANOSOFT_MYSQL_H
 #define NANOSOFT_MYSQL_H
 
-#include <string>
+#include <nanosoft/mutex.h>
 #include <mysql/mysql.h>
-#include <pthread.h>
 #include <stdio.h>
+#include <string>
 
 namespace nanosoft
 {
@@ -22,7 +22,7 @@ namespace nanosoft
 		/**
 		* Mutex для thread-safe доступа к БД
 		*/
-		pthread_mutex_t mutex;
+		Mutex mutex;
 		
 		/**
 		* Набор данных
@@ -54,16 +54,6 @@ namespace nanosoft
 			*/
 			MYSQL_ROW values;
 		};
-		
-		/**
-		* Получить монопольный доступ к БД
-		*/
-		void lock();
-		
-		/**
-		* Освободить БД
-		*/
-		void unlock();
 		
 	public:
 		/**
@@ -145,16 +135,6 @@ namespace nanosoft
 		* Деструктор
 		*/
 		~MySQL();
-		
-		/**
-		* Инициализация потока
-		*/
-		void threadInit();
-		
-		/**
-		* Финализация потока
-		*/
-		void threadEnd();
 		
 		/**
 		* Соединение сервером

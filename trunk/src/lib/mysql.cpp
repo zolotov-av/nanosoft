@@ -24,7 +24,6 @@ namespace nanosoft
 	*/
 	MySQL::MySQL(): conn(0)
 	{
-		stdcheck( pthread_mutex_init(&mutex, 0) == 0 );
 	}
 	
 	/**
@@ -33,37 +32,6 @@ namespace nanosoft
 	MySQL::~MySQL()
 	{
 		close();
-		stdcheck( pthread_mutex_destroy(&mutex) == 0 );
-	}
-	
-	/**
-	* Получить монопольный доступ к NetDaemon
-	*/
-	void MySQL::lock() {
-		stdcheck( pthread_mutex_lock(&mutex) == 0 );
-	}
-	
-	/**
-	* Освободить NetDaemon
-	*/
-	void MySQL::unlock() {
-		stdcheck( pthread_mutex_unlock(&mutex) == 0 );
-	}
-	
-	/**
-	* Инициализация потока
-	*/
-	void MySQL::threadInit()
-	{
-		mysql_thread_init();
-	}
-	
-	/**
-	* Финализация потока
-	*/
-	void MySQL::threadEnd()
-	{
-		mysql_thread_end();
 	}
 	
 	/**
@@ -131,13 +99,13 @@ namespace nanosoft
 	*/
 	MySQL::result MySQL::queryRaw(const char *sql, size_t len)
 	{
-		lock();
+		mutex.lock();
 		
 		int status = mysql_real_query(conn, sql, len);
 		if ( status ) {
 			fprintf(stderr, "[MySQL] %s\n", mysql_error(conn));
 			
-			unlock();
+			mutex.unlock();
 			return 0;
 		}
 		
@@ -150,7 +118,7 @@ namespace nanosoft
 			r->values = mysql_fetch_row(res);
 			if ( r->values ) r->lengths = mysql_fetch_lengths(res);
 			
-			unlock();
+			mutex.unlock();
 			return r;
 		}
 		
@@ -158,7 +126,7 @@ namespace nanosoft
 			fprintf(stderr, "[MySQL] %s\n", mysql_error(conn));
 		}
 		
-		unlock();
+		mutex.unlock();
 		return 0;
 	}
 	

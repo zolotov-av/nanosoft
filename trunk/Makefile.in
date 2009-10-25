@@ -59,6 +59,7 @@ NANOSOFT_OBJECTS+=xmlnscontext.o
 NANOSOFT_OBJECTS+=base64.o
 NANOSOFT_OBJECTS+=error.o
 NANOSOFT_OBJECTS+=mysql.o
+NANOSOFT_OBJECTS+=mutex.o
 
 LIBNETD_OBJECTS=netdaemon.o
 LIBNETD_OBJECTS+=asyncobject.o
@@ -121,6 +122,7 @@ install-headers:
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/saslserver.h $(INCLUDEDIR)/nanosoft/saslserver.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/gsaslserver.h $(INCLUDEDIR)/nanosoft/gsaslserver.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/mysql.h $(INCLUDEDIR)/nanosoft/mysql.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/mutex.h $(INCLUDEDIR)/nanosoft/mutex.h
 
 install-linux: forker miniget wait time masterd nsu miniget2 showpath libnanosoft.a
 	$(MKDIR) -p $(BINDIR) $(LIBDIR) $(INCLUDEDIR)/nanosoft
@@ -250,8 +252,11 @@ base64.o: $(srclib)/base64.cpp $(srcinc)/nanosoft/base64.h
 error.o: $(srclib)/error.cpp $(srcinc)/nanosoft/error.h
 	$(CXX) -c $(srclib)/error.cpp
 
-mysql.o: $(srclib)/mysql.cpp $(srcinc)/nanosoft/mysql.h
+mysql.o: $(srclib)/mysql.cpp $(srcinc)/nanosoft/mysql.h $(srcinc)/nanosoft/mutex.h
 	$(CXX) -c $(srclib)/mysql.cpp
+
+mutex.o: $(srclib)/mutex.cpp $(srcinc)/nanosoft/mutex.h
+	$(CXX) -c $(srclib)/mutex.cpp
 
 # libnetd modules
 daemon: $(srcexm)/daemon.cpp libnetd.a libnanosoft.a
