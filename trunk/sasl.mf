@@ -16,23 +16,23 @@ endif
 
 .PHONY: install-sasl-headers
 install-sasl-headers: $(NANOSOFT_SASL_INSTALL)
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/saslserver.h $(INCLUDEDIR)/nanosoft/saslserver.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/saslserver.h $(INCLUDEDIR)/nanosoft/saslserver.h
 
 install-cyrus-sasl-headers:
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/cyrussaslserver.h $(INCLUDEDIR)/nanosoft/cyrussaslserver.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/cyrussaslserver.h $(INCLUDEDIR)/nanosoft/cyrussaslserver.h
 
 install-gnu-sasl-headers:
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/gsaslserver.h $(INCLUDEDIR)/nanosoft/gsaslserver.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/gsaslserver.h $(INCLUDEDIR)/nanosoft/gsaslserver.h
 
 libns_sasl.a: $(NANOSOFT_SASL)
 	$(AR) rc libns_sasl.a $(NANOSOFT_SASL)
 	$(RANLIB) libns_sasl.a
 
-saslserver.o: $(srcdir)/libnetd/saslserver.cpp $(srcinc)/nanosoft/saslserver.h
-	$(CXX) -c $(srcdir)/libnetd/saslserver.cpp
+saslserver.o: $(ns_srcdir)/libnetd/saslserver.cpp $(ns_srcinc)/nanosoft/saslserver.h
+	$(CXX) -c $(ns_srcdir)/libnetd/saslserver.cpp
 
-cyrussaslserver.o: $(srcdir)/libnetd/cyrussaslserver.cpp $(srcinc)/nanosoft/cyrussaslserver.h $(srcinc)/nanosoft/saslserver.h
-	$(CXX) -c $(srcdir)/libnetd/cyrussaslserver.cpp
+cyrussaslserver.o: $(ns_srcdir)/libnetd/cyrussaslserver.cpp $(ns_srcdir)/nanosoft/cyrussaslserver.h $(ns_srcdir)/nanosoft/saslserver.h
+	$(CXX) -c $(ns_srcdir)/libnetd/cyrussaslserver.cpp
 
-gsaslserver.o: $(srcdir)/libnetd/gsaslserver.cpp $(srcinc)/nanosoft/gsaslserver.h $(srcinc)/nanosoft/saslserver.h
-	$(CXX) -c $(srcdir)/libnetd/gsaslserver.cpp
+gsaslserver.o: $(ns_srcdir)/libnetd/gsaslserver.cpp $(ns_srcdir)/nanosoft/gsaslserver.h $(ns_srcdir)/nanosoft/saslserver.h
+	$(CXX) -c $(ns_srcdir)/libnetd/gsaslserver.cpp

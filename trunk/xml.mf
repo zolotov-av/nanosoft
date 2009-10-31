@@ -14,14 +14,14 @@ libns_xml.a: $(NANOSOFT_XML)
 	$(AR) rc libns_xml.a $(NANOSOFT_XML)
 	$(RANLIB) libns_xml.a
 
-xmlnscontext.o: $(srclib)/xmlnscontext.cpp $(srcinc)/nanosoft/xmlnscontext.h $(srcinc)/nanosoft/xmlnsmanager.h
-	$(CXX) -c $(srclib)/xmlnscontext.cpp
+xmlnscontext.o: $(ns_srclib)/xmlnscontext.cpp $(ns_srcinc)/nanosoft/xmlnscontext.h $(ns_srcinc)/nanosoft/xmlnsmanager.h
+	$(CXX) -c $(ns_srclib)/xmlnscontext.cpp
 
-xmlnsmanager.o: $(srclib)/xmlnsmanager.cpp $(srcinc)/nanosoft/xmlnsmanager.h
-	$(CXX) -c $(srclib)/xmlnsmanager.cpp
+xmlnsmanager.o: $(ns_srclib)/xmlnsmanager.cpp $(ns_srcinc)/nanosoft/xmlnsmanager.h
+	$(CXX) -c $(ns_srclib)/xmlnsmanager.cpp
 
-xmlparser.o: $(srclib)/xmlparser.cpp $(srcinc)/nanosoft/xmlparser.h
-	$(CXX) -c $(srclib)/xmlparser.cpp
+xmlparser.o: $(ns_srclib)/xmlparser.cpp $(ns_srcinc)/nanosoft/xmlparser.h
+	$(CXX) -c $(ns_srclib)/xmlparser.cpp
 
-xmlwriter.o: $(srclib)/xmlwriter.cpp $(srcinc)/nanosoft/xmlwriter.h
-	$(CXX) -c $(srclib)/xmlwriter.cpp
+xmlwriter.o: $(ns_srclib)/xmlwriter.cpp $(ns_srcinc)/nanosoft/xmlwriter.h
+	$(CXX) -c $(ns_srclib)/xmlwriter.cpp

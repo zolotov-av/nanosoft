@@ -6,27 +6,27 @@ NANOSOFT_NETD+=asyncserver.o
 NANOSOFT_NETD+=asyncxmlstream.o
 
 install-netd-headers:
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncobject.h $(INCLUDEDIR)/nanosoft/asyncobject.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncstream.h $(INCLUDEDIR)/nanosoft/asyncstream.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncxmlstream.h $(INCLUDEDIR)/nanosoft/asyncxmlstream.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncserver.h $(INCLUDEDIR)/nanosoft/asyncserver.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/netdaemon.h $(INCLUDEDIR)/nanosoft/netdaemon.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/asyncobject.h $(INCLUDEDIR)/nanosoft/asyncobject.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/asyncstream.h $(INCLUDEDIR)/nanosoft/asyncstream.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/asyncxmlstream.h $(INCLUDEDIR)/nanosoft/asyncxmlstream.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/asyncserver.h $(INCLUDEDIR)/nanosoft/asyncserver.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/netdaemon.h $(INCLUDEDIR)/nanosoft/netdaemon.h
 
 libns_netd.a: $(NANOSOFT_NETD)
 	$(AR) rc libns_netd.a $(NANOSOFT_NETD)
 	$(RANLIB) libns_netd.a
 
-netdaemon.o: $(srcdir)/libnetd/netdaemon.cpp $(srcinc)/nanosoft/netdaemon.h
-	$(CXX) -c $(srcdir)/libnetd/netdaemon.cpp
+netdaemon.o: $(ns_srcdir)/libnetd/netdaemon.cpp $(ns_srcinc)/nanosoft/netdaemon.h
+	$(CXX) -c $(ns_srcdir)/libnetd/netdaemon.cpp
 
-asyncxmlstream.o: $(srcdir)/libnetd/asyncxmlstream.cpp $(srcinc)/nanosoft/asyncxmlstream.h $(srcinc)/nanosoft/asyncstream.h $(srcinc)/nanosoft/asyncobject.h $(srcinc)/nanosoft/xmlwriter.h $(srcinc)/nanosoft/xmlparser.h
-	$(CXX) -c $(srcdir)/libnetd/asyncxmlstream.cpp
+asyncxmlstream.o: $(ns_srcdir)/libnetd/asyncxmlstream.cpp $(ns_srcinc)/nanosoft/asyncxmlstream.h $(ns_srcinc)/nanosoft/asyncstream.h $(ns_srcinc)/nanosoft/asyncobject.h $(ns_srcinc)/nanosoft/xmlwriter.h $(ns_srcinc)/nanosoft/xmlparser.h
+	$(CXX) -c $(ns_srcdir)/libnetd/asyncxmlstream.cpp
 	
-asyncstream.o: $(srcdir)/libnetd/asyncstream.cpp $(srcinc)/nanosoft/asyncstream.h $(srcinc)/nanosoft/asyncobject.h
-	$(CXX) -c $(srcdir)/libnetd/asyncstream.cpp
+asyncstream.o: $(ns_srcdir)/libnetd/asyncstream.cpp $(ns_srcinc)/nanosoft/asyncstream.h $(ns_srcinc)/nanosoft/asyncobject.h
+	$(CXX) -c $(ns_srcdir)/libnetd/asyncstream.cpp
 
-asyncserver.o: $(srcdir)/libnetd/asyncserver.cpp $(srcinc)/nanosoft/asyncserver.h $(srcinc)/nanosoft/asyncobject.h
-	$(CXX) -c $(srcdir)/libnetd/asyncserver.cpp
+asyncserver.o: $(ns_srcdir)/libnetd/asyncserver.cpp $(ns_srcinc)/nanosoft/asyncserver.h $(ns_srcinc)/nanosoft/asyncobject.h
+	$(CXX) -c $(ns_srcdir)/libnetd/asyncserver.cpp
 
-asyncobject.o: $(srcdir)/libnetd/asyncobject.cpp $(srcinc)/nanosoft/asyncobject.h
-	$(CXX) -c $(srcdir)/libnetd/asyncobject.cpp
+asyncobject.o: $(ns_srcdir)/libnetd/asyncobject.cpp $(ns_srcinc)/nanosoft/asyncobject.h
+	$(CXX) -c $(ns_srcdir)/libnetd/asyncobject.cpp

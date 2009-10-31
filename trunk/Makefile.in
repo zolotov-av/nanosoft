@@ -1,14 +1,14 @@
 
 root = @srcdir@
-srcdir = $(root)/src
-srcbin = $(srcdir)/progs
-srclib = $(srcdir)/lib
-srcinc = $(srcdir)/include
-srcexm = $(srcdir)/examples
+ns_srcdir = $(root)/src
+ns_srcbin = $(ns_srcdir)/progs
+ns_srclib = $(ns_srcdir)/lib
+ns_srcinc = $(ns_srcdir)/include
+ns_srcexm = $(ns_srcdir)/examples
 
 config = ./src/include/nanosoft/config.h
 
-CPPFLAGS = @CPPFLAGS@ -I$(srcinc) -I./src/include
+CPPFLAGS = @CPPFLAGS@ -I$(ns_ns_srcinc) -I./src/include
 LDFLAGS = @LDFLAGS@ -L.
 CFLAGS = @CFLAGS@ $(CPPFLAGS) -L.
 CXXFLAGS = @CXXFLAGS@ $(CPPFLAGS)  -L.
@@ -100,55 +100,55 @@ all-linux: $(LINUX_PROGS) $(LINUX_EXAMPLES) libnanosoft.a
 
 # PROGRAMS
 
-forker: $(srcbin)/forker.c
-	$(CC) $(srcbin)/forker.c -o forker
+forker: $(ns_srcbin)/forker.c
+	$(CC) $(ns_srcbin)/forker.c -o forker
 
-wait: $(srcbin)/wait.c
-	$(CC) $(srcbin)/wait.c -o wait
+wait: $(ns_srcbin)/wait.c
+	$(CC) $(ns_srcbin)/wait.c -o wait
 
-time: $(srcbin)/time.c
-	$(CC) $(srcbin)/time.c -o time
+time: $(ns_srcbin)/time.c
+	$(CC) $(ns_srcbin)/time.c -o time
 
-nsu: $(srcbin)/nsu.c
-	$(CC) $(srcbin)/nsu.c -o nsu
+nsu: $(ns_srcbin)/nsu.c
+	$(CC) $(ns_srcbin)/nsu.c -o nsu
 
-masterd: $(srcbin)/masterd.c libnanosoft.a
-	$(CC) $(srcbin)/masterd.c -lnanosoft -o masterd
+masterd: $(ns_srcbin)/masterd.c libnanosoft.a
+	$(CC) $(ns_srcbin)/masterd.c -lnanosoft -o masterd
 
-miniget: $(srcbin)/miniget.c libnanosoft.a
-	$(CC) $(srcbin)/miniget.c -lnanosoft -o miniget
+miniget: $(ns_srcbin)/miniget.c libnanosoft.a
+	$(CC) $(ns_srcbin)/miniget.c -lnanosoft -o miniget
 
-miniget2: $(srcbin)/miniget.cpp libnanosoft.a
-	$(CXX) $(srcbin)/miniget.cpp -lnanosoft -lstdc++ $(NETWORK_LIBS) -o miniget2
+miniget2: $(ns_srcbin)/miniget.cpp libnanosoft.a
+	$(CXX) $(ns_srcbin)/miniget.cpp -lnanosoft -lstdc++ $(NETWORK_LIBS) -o miniget2
 
-minisend: $(srcbin)/minisend.cpp libnanosoft.a
-	$(CXX) $(srcbin)/minisend.cpp -lnanosoft -lstdc++ $(NETWORK_LIBS) -o minisend
+minisend: $(ns_srcbin)/minisend.cpp libnanosoft.a
+	$(CXX) $(ns_srcbin)/minisend.cpp -lnanosoft -lstdc++ $(NETWORK_LIBS) -o minisend
 
-showpath: $(srcbin)/showpath.c
-	$(CXX) $(srcbin)/showpath.c -o showpath
+showpath: $(ns_srcbin)/showpath.c
+	$(CXX) $(ns_srcbin)/showpath.c -o showpath
 
 # EXAMPLES
 
-parse_url: $(srcexm)/parse_url.c libnanosoft.a
-	$(CC) $(srcexm)/parse_url.c -lnanosoft -o parse_url
+parse_url: $(ns_srcexm)/parse_url.c libnanosoft.a
+	$(CC) $(ns_srcexm)/parse_url.c -lnanosoft -o parse_url
 
-streams: $(srcexm)/streams.cpp libnanosoft.a
-	$(CXX) $(srcexm)/streams.cpp -lnanosoft -lstdc++ -o streams
+streams: $(ns_srcexm)/streams.cpp libnanosoft.a
+	$(CXX) $(ns_srcexm)/streams.cpp -lnanosoft -lstdc++ -o streams
 
-options: $(srcexm)/options.cpp  libnanosoft.a
-	$(CXX) $(srcexm)/options.cpp -lnanosoft -lstdc++ -o options
+options: $(ns_srcexm)/options.cpp  libnanosoft.a
+	$(CXX) $(ns_srcexm)/options.cpp -lnanosoft -lstdc++ -o options
 
-string: $(srcexm)/string.cpp libnanosoft.a
-	$(CXX) $(srcexm)/string.cpp -lnanosoft -lstdc++ -o string
+string: $(ns_srcexm)/string.cpp libnanosoft.a
+	$(CXX) $(ns_srcexm)/string.cpp -lnanosoft -lstdc++ -o string
 
-pools: $(srcexm)/pools.cpp libnanosoft.a
-	$(CXX) $(srcexm)/pools.cpp -lnanosoft -o pools
+pools: $(ns_srcexm)/pools.cpp libnanosoft.a
+	$(CXX) $(ns_srcexm)/pools.cpp -lnanosoft -o pools
 
-mysql: $(srcexm)/mysql.cpp libnanosoft.a
-	$(CXX) $(srcexm)/mysql.cpp -lnanosoft -lpthread $(LDFLAGS) $(MYSQL_LIBS) $(LIBS) -o mysql
+mysql: $(ns_srcexm)/mysql.cpp libnanosoft.a
+	$(CXX) $(ns_srcexm)/mysql.cpp -lnanosoft -lpthread $(LDFLAGS) $(MYSQL_LIBS) $(LIBS) -o mysql
 
-daemon: $(srcexm)/daemon.cpp libnanosoft.a
-	$(CXX) $(srcexm)/daemon.cpp -o daemon -lpthread -lnanosoft -lexpat
+daemon: $(ns_srcexm)/daemon.cpp libnanosoft.a
+	$(CXX) $(ns_srcexm)/daemon.cpp -o daemon -lpthread -lnanosoft -lexpat
 
 include $(root)/core.mf
 include $(root)/xml.mf

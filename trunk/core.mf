@@ -20,65 +20,65 @@ endif
 
 .PHONY: install-core-headers
 install-core-headers:
-	$(INSTALL_INC) $(srcdir)/include/nanoini.h $(INCLUDEDIR)/nanoini.h
-	$(INSTALL_INC) $(srcdir)/include/nanostr.h $(INCLUDEDIR)/nanostr.h
-	$(INSTALL_INC) $(srcdir)/include/nanourl.h $(INCLUDEDIR)/nanourl.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanoini.h $(INCLUDEDIR)/nanoini.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanostr.h $(INCLUDEDIR)/nanostr.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanourl.h $(INCLUDEDIR)/nanourl.h
 	$(INSTALL_INC) $(config) $(INCLUDEDIR)/nanosoft/config.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/fstream.h $(INCLUDEDIR)/nanosoft/fstream.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/http.h $(INCLUDEDIR)/nanosoft/http.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/options.h $(INCLUDEDIR)/nanosoft/options.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/socket.h $(INCLUDEDIR)/nanosoft/socket.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/stream.h $(INCLUDEDIR)/nanosoft/stream.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/string.h $(INCLUDEDIR)/nanosoft/string.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/simplepool.h $(INCLUDEDIR)/nanosoft/simplepool.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/doublepool.h $(INCLUDEDIR)/nanosoft/doublepool.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/base64.h $(INCLUDEDIR)/nanosoft/base64.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/error.h $(INCLUDEDIR)/nanosoft/error.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/mysql.h $(INCLUDEDIR)/nanosoft/mysql.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/mutex.h $(INCLUDEDIR)/nanosoft/mutex.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/fstream.h $(INCLUDEDIR)/nanosoft/fstream.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/http.h $(INCLUDEDIR)/nanosoft/http.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/options.h $(INCLUDEDIR)/nanosoft/options.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/socket.h $(INCLUDEDIR)/nanosoft/socket.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/stream.h $(INCLUDEDIR)/nanosoft/stream.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/string.h $(INCLUDEDIR)/nanosoft/string.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/simplepool.h $(INCLUDEDIR)/nanosoft/simplepool.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/doublepool.h $(INCLUDEDIR)/nanosoft/doublepool.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/base64.h $(INCLUDEDIR)/nanosoft/base64.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/error.h $(INCLUDEDIR)/nanosoft/error.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/mysql.h $(INCLUDEDIR)/nanosoft/mysql.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/mutex.h $(INCLUDEDIR)/nanosoft/mutex.h
 
 libns_core.a: $(NANOSOFT_CORE)
 	$(AR) rc libns_core.a $(NANOSOFT_CORE)
 	$(RANLIB) libns_core.a
 
-nanoini.o: $(srclib)/nanoini.c $(srcinc)/nanoini.h
-	$(CC) -c $(srclib)/nanoini.c
+nanoini.o: $(ns_srclib)/nanoini.c $(ns_srcinc)/nanoini.h
+	$(CC) -c $(ns_srclib)/nanoini.c
 
-nanostr.o: $(srclib)/nanostr.c $(srcinc)/nanostr.h
-	$(CC) -c $(srclib)/nanostr.c
+nanostr.o: $(ns_srclib)/nanostr.c $(ns_srcinc)/nanostr.h
+	$(CC) -c $(ns_srclib)/nanostr.c
 
-nanourl.o: $(srclib)/nanourl.c $(srcinc)/nanourl.h
-	$(CC) -c $(srclib)/nanourl.c
+nanourl.o: $(ns_srclib)/nanourl.c $(ns_srcinc)/nanourl.h
+	$(CC) -c $(ns_srclib)/nanourl.c
 
-string.o: $(srclib)/string.cpp $(srcinc)/nanosoft/string.h
-	$(CXX) -c $(srclib)/string.cpp
+string.o: $(ns_srclib)/string.cpp $(ns_srcinc)/nanosoft/string.h
+	$(CXX) -c $(ns_srclib)/string.cpp
 
-options.o: $(srclib)/options.cpp $(srcinc)/nanosoft/options.h
-	$(CXX) -c $(srclib)/options.cpp
+options.o: $(ns_srclib)/options.cpp $(ns_srcinc)/nanosoft/options.h
+	$(CXX) -c $(ns_srclib)/options.cpp
 
-fstream.o: $(srclib)/fstream.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/fstream.h
-	$(CXX) -c $(srclib)/fstream.cpp
+fstream.o: $(ns_srclib)/fstream.cpp $(ns_srcinc)/nanosoft/stream.h $(ns_srcinc)/nanosoft/fstream.h
+	$(CXX) -c $(ns_srclib)/fstream.cpp
 
-socket.o: $(srclib)/socket.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket.h $(config)
-	$(CXX) -c $(srclib)/socket.cpp
+socket.o: $(ns_srclib)/socket.cpp $(ns_srcinc)/nanosoft/stream.h $(ns_srcinc)/nanosoft/socket.h $(config)
+	$(CXX) -c $(ns_srclib)/socket.cpp
 
-http.o: $(srclib)/http.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket.h $(srcinc)/nanosoft/http.h $(srcinc)/nanourl.h
-	$(CXX) -c $(srclib)/http.cpp
+http.o: $(ns_srclib)/http.cpp $(ns_srcinc)/nanosoft/stream.h $(ns_srcinc)/nanosoft/socket.h $(ns_srcinc)/nanosoft/http.h $(ns_srcinc)/nanourl.h
+	$(CXX) -c $(ns_srclib)/http.cpp
 
-simplepool.o: $(srclib)/simplepool.cpp $(srcinc)/nanosoft/simplepool.h
-	$(CXX) -c $(srclib)/simplepool.cpp
+simplepool.o: $(ns_srclib)/simplepool.cpp $(ns_srcinc)/nanosoft/simplepool.h
+	$(CXX) -c $(ns_srclib)/simplepool.cpp
 
-doublepool.o: $(srclib)/doublepool.cpp $(srcinc)/nanosoft/simplepool.h $(srcinc)/nanosoft/doublepool.h
-	$(CXX) -c $(srclib)/doublepool.cpp
+doublepool.o: $(ns_srclib)/doublepool.cpp $(ns_srcinc)/nanosoft/simplepool.h $(ns_srcinc)/nanosoft/doublepool.h
+	$(CXX) -c $(ns_srclib)/doublepool.cpp
 
-base64.o: $(srclib)/base64.cpp $(srcinc)/nanosoft/base64.h
-	$(CXX) -c $(srclib)/base64.cpp
+base64.o: $(ns_srclib)/base64.cpp $(ns_srcinc)/nanosoft/base64.h
+	$(CXX) -c $(ns_srclib)/base64.cpp
 
-error.o: $(srclib)/error.cpp $(srcinc)/nanosoft/error.h
-	$(CXX) -c $(srclib)/error.cpp
+error.o: $(ns_srclib)/error.cpp $(ns_srcinc)/nanosoft/error.h
+	$(CXX) -c $(ns_srclib)/error.cpp
 
-mysql.o: $(srclib)/mysql.cpp $(srcinc)/nanosoft/mysql.h $(srcinc)/nanosoft/mutex.h
-	$(CXX) -c $(srclib)/mysql.cpp
+mysql.o: $(ns_srclib)/mysql.cpp $(ns_srcinc)/nanosoft/mysql.h $(ns_srcinc)/nanosoft/mutex.h
+	$(CXX) -c $(ns_srclib)/mysql.cpp
 
-mutex.o: $(srclib)/mutex.cpp $(srcinc)/nanosoft/mutex.h
-	$(CXX) -c $(srclib)/mutex.cpp
+mutex.o: $(ns_srclib)/mutex.cpp $(ns_srcinc)/nanosoft/mutex.h
+	$(CXX) -c $(ns_srclib)/mutex.cpp
