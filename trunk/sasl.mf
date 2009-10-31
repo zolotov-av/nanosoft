@@ -31,8 +31,8 @@ libns_sasl.a: $(NANOSOFT_SASL)
 saslserver.o: $(ns_srcdir)/libnetd/saslserver.cpp $(ns_srcinc)/nanosoft/saslserver.h
 	$(CXX) -c $(ns_srcdir)/libnetd/saslserver.cpp
 
-cyrussaslserver.o: $(ns_srcdir)/libnetd/cyrussaslserver.cpp $(ns_srcdir)/nanosoft/cyrussaslserver.h $(ns_srcdir)/nanosoft/saslserver.h
+cyrussaslserver.o: $(ns_srcdir)/libnetd/cyrussaslserver.cpp $(ns_srcinc)/nanosoft/cyrussaslserver.h $(ns_srcinc)/nanosoft/saslserver.h
 	$(CXX) -c $(ns_srcdir)/libnetd/cyrussaslserver.cpp
 
-gsaslserver.o: $(ns_srcdir)/libnetd/gsaslserver.cpp $(ns_srcdir)/nanosoft/gsaslserver.h $(ns_srcdir)/nanosoft/saslserver.h
+gsaslserver.o: $(ns_srcdir)/libnetd/gsaslserver.cpp $(ns_srcinc)/nanosoft/gsaslserver.h $(ns_srcinc)/nanosoft/saslserver.h
 	$(CXX) -c $(ns_srcdir)/libnetd/gsaslserver.cpp
