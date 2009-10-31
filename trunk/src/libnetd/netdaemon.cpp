@@ -113,7 +113,7 @@ bool NetDaemon::addObject(AsyncObject *object)
 	lock();
 		objects[object->fd] = object;
 		count ++;
-		fprintf(stderr, "AddObject(%d), count = %d\n", object->fd, count);
+		//fprintf(stderr, "AddObject(%d), count = %d\n", object->fd, count);
 		event.events = object->getEventsMask();
 		event.data.fd = object->fd;
 		bool r = epoll_ctl(epoll, EPOLL_CTL_ADD, object->fd, &event) == 0;
@@ -127,22 +127,21 @@ bool NetDaemon::addObject(AsyncObject *object)
 */
 bool NetDaemon::removeObject(AsyncObject *object)
 {
-	//fprintf(stderr, "#%d: NetDaemon::removeObject\n", object->workerId);
 	lock();
-	fprintf(stderr, "removeObject(%d) enter, count = %d\n", object->fd, count);
+	//fprintf(stderr, "#%d NetDaemon::removeObject(%d) enter, count = %d\n", object->workerId, object->fd, count);
 	map_objects_t::iterator pos = objects.find(object->fd);
 	if ( pos != objects.end() )
 	{
-		fprintf(stderr, "objects.erase(%d) = %d\n", object->fd, objects.erase(object->fd));
+		objects.erase(object->fd);
 		if ( epoll_ctl(epoll, EPOLL_CTL_DEL, object->fd, 0) != 0 ) stderror();
 		count --;
 		if ( count == 0 ) stopWorkers();
 	}
 	else
 	{
-		fprintf(stderr, "objects.find(%d) == end() o.O\n");
+		fprintf(stderr, "#%d NetDaemon::removeObject(%d): not found o.O\n", object->workerId, object->fd);
 	}
-	fprintf(stderr, "removeObject(%d) leave, count = %d\n", object->fd, count);
+	//fprintf(stderr, "#%d removeObject(%d) leave, count = %d\n", object->workerId, object->fd, count);
 	unlock();
 }
 
@@ -151,7 +150,7 @@ bool NetDaemon::removeObject(AsyncObject *object)
 */
 bool NetDaemon::resetObject(AsyncObject *object)
 {
-	fprintf(stderr, "#%d: NetDaemon::resetObject(%d)\n", object->workerId, object->fd);
+	//fprintf(stderr, "#%d: NetDaemon::resetObject(%d)\n", object->workerId, object->fd);
 	struct epoll_event event;
 	event.events = object->getEventsMask();
 	event.data.fd = object->fd;
@@ -176,9 +175,8 @@ void NetDaemon::doActiveAction(worker_t *worker)
 		obj->workerId = worker->workerId;
 		obj->onEvent(event.events);
 		lock();
-		if ( objects[event.data.fd] != 0 )
+		if ( objects.find(event.data.fd) != objects.end() )
 		{
-			fprintf(stderr, "#%d: resetObject\n", worker->workerId);
 			resetObject(obj);
 		}
 		unlock();
@@ -381,6 +379,20 @@ int NetDaemon::run()
 	waitWorkers();
 	freeWorkers();
 	return 0;
+}
+
+/**
+* Вернуть ID текущего воркера
+*/
+int NetDaemon::wid()
+{
+	pthread_t tid = pthread_self();
+	for(int i = 0; i < workerCount; i++)
+	{
+		if ( pthread_equal(workers[i].thread, tid) ) return i + 1;
+	}
+	if ( pthread_equal(main.thread, tid) ) return 0;
+	return -1;
 }
 
 /**

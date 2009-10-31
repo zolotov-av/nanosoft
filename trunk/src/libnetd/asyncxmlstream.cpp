@@ -44,7 +44,7 @@ void AsyncXMLStream::onRead()
 */
 void AsyncXMLStream::onError(const char *message)
 {
-	cerr << "[AsyncXMLStream]: " << message << endl;
+	cerr << "#" << getWorkerId() << " [AsyncXMLStream]: " << message << endl;
 }
 
 /**
