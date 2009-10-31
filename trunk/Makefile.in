@@ -1,5 +1,6 @@
 
-srcdir = @srcdir@/src
+root = @srcdir@
+srcdir = $(root)/src
 srcbin = $(srcdir)/progs
 srclib = $(srcdir)/lib
 srcinc = $(srcdir)/include
@@ -40,35 +41,11 @@ HOST = @host@
 HOST_OS = @host_os@
 
 NETWORK_LIBS = @NETWORK_LIBS@
+SASL = @SASL@
+SASL_LIBS = @SASL_LIBS@
 
-NANOSOFT_OBJECTS=nanoini.o
-NANOSOFT_OBJECTS+=nanostr.o
-NANOSOFT_OBJECTS+=nanourl.o
-NANOSOFT_OBJECTS+=nanoini.o
-NANOSOFT_OBJECTS+=string.o
-NANOSOFT_OBJECTS+=options.o
-NANOSOFT_OBJECTS+=fstream.o
-NANOSOFT_OBJECTS+=socket.o
-NANOSOFT_OBJECTS+=http.o
-NANOSOFT_OBJECTS+=simplepool.o
-NANOSOFT_OBJECTS+=doublepool.o
-NANOSOFT_OBJECTS+=xmlparser.o
-NANOSOFT_OBJECTS+=xmlwriter.o
-NANOSOFT_OBJECTS+=xmlnsmanager.o
-NANOSOFT_OBJECTS+=xmlnscontext.o
-NANOSOFT_OBJECTS+=base64.o
-NANOSOFT_OBJECTS+=error.o
-NANOSOFT_OBJECTS+=mysql.o
-NANOSOFT_OBJECTS+=mutex.o
-
-LIBNETD_OBJECTS=netdaemon.o
-LIBNETD_OBJECTS+=asyncobject.o
-LIBNETD_OBJECTS+=asyncstream.o
-LIBNETD_OBJECTS+=asyncserver.o
-LIBNETD_OBJECTS+=asyncxmlstream.o
-LIBNETD_OBJECTS+=saslserver.o
-#LIBNETD_OBJECTS+=cyrussaslserver.o
-LIBNETD_OBJECTS+=gsaslserver.o
+WITH_MYSQL = @WITH_MYSQL@
+MYSQL_LIBS = @MYSQL_LIBS@
 
 LINUX_PROGS=forker
 LINUX_PROGS+=miniget
@@ -86,8 +63,10 @@ LINUX_EXAMPLES+=options
 LINUX_EXAMPLES+=string
 LINUX_EXAMPLES+=daemon
 LINUX_EXAMPLES+=pools
-LINUX_EXAMPLES+=mysql
 
+ifeq ($(WITH_MYSQL), yes)
+LINUX_EXAMPLES+=mysql
+endif
 
 all: all-$(HOST_OS)
 	date "+%d.%m.%Y %H:%M:%S" > build
@@ -95,34 +74,7 @@ all: all-$(HOST_OS)
 .PHONY: install install-linux install-mingw32 install-headers
 install: install-$(HOST_OS) install-headers
 
-install-headers:
-	$(INSTALL_INC) $(srcdir)/include/nanoini.h $(INCLUDEDIR)/nanoini.h
-	$(INSTALL_INC) $(srcdir)/include/nanostr.h $(INCLUDEDIR)/nanostr.h
-	$(INSTALL_INC) $(srcdir)/include/nanourl.h $(INCLUDEDIR)/nanourl.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/config.h $(INCLUDEDIR)/nanosoft/config.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/fstream.h $(INCLUDEDIR)/nanosoft/fstream.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/http.h $(INCLUDEDIR)/nanosoft/http.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/options.h $(INCLUDEDIR)/nanosoft/options.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/socket.h $(INCLUDEDIR)/nanosoft/socket.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/stream.h $(INCLUDEDIR)/nanosoft/stream.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/string.h $(INCLUDEDIR)/nanosoft/string.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/simplepool.h $(INCLUDEDIR)/nanosoft/simplepool.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/doublepool.h $(INCLUDEDIR)/nanosoft/doublepool.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlparser.h $(INCLUDEDIR)/nanosoft/xmlparser.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlwriter.h $(INCLUDEDIR)/nanosoft/xmlwriter.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlnsmanager.h $(INCLUDEDIR)/nanosoft/xmlnsmanager.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlnscontext.h $(INCLUDEDIR)/nanosoft/xmlnscontext.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/base64.h $(INCLUDEDIR)/nanosoft/base64.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/error.h $(INCLUDEDIR)/nanosoft/error.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncobject.h $(INCLUDEDIR)/nanosoft/asyncobject.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncstream.h $(INCLUDEDIR)/nanosoft/asyncstream.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncxmlstream.h $(INCLUDEDIR)/nanosoft/asyncxmlstream.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/asyncserver.h $(INCLUDEDIR)/nanosoft/asyncserver.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/netdaemon.h $(INCLUDEDIR)/nanosoft/netdaemon.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/saslserver.h $(INCLUDEDIR)/nanosoft/saslserver.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/gsaslserver.h $(INCLUDEDIR)/nanosoft/gsaslserver.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/mysql.h $(INCLUDEDIR)/nanosoft/mysql.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/mutex.h $(INCLUDEDIR)/nanosoft/mutex.h
+install-headers: install-core-headers install-xml-headers install-netd-headers install-sasl-headers
 
 install-linux: forker miniget wait time masterd nsu miniget2 showpath libnanosoft.a
 	$(MKDIR) -p $(BINDIR) $(LIBDIR) $(INCLUDEDIR)/nanosoft
@@ -135,7 +87,6 @@ install-linux: forker miniget wait time masterd nsu miniget2 showpath libnanosof
 	$(INSTALL_BIN) miniget2 $(BINDIR)/miniget2
 	$(INSTALL_BIN) showpath $(BINDIR)/showpath
 	$(INSTALL_LIB) libnanosoft.a $(LIBDIR)/libnanosoft.a
-	$(INSTALL_LIB) libnetd.a $(LIBDIR)/libnetd.a
 
 install-mingw32: libnanosoft.a miniget2
 	$(INSTALL_BIN) miniget2 $(BINDIR)/miniget2
@@ -144,7 +95,7 @@ install-mingw32: libnanosoft.a miniget2
 all-mingw32: libnanosoft.a miniget2 parse_url streams options string
 	echo > all-mingw32
 
-all-linux: $(LINUX_PROGS) $(LINUX_EXAMPLES) libnanosoft.a libnetd.a
+all-linux: $(LINUX_PROGS) $(LINUX_EXAMPLES) libnanosoft.a
 	echo > all-linux
 
 # PROGRAMS
@@ -196,101 +147,17 @@ pools: $(srcexm)/pools.cpp libnanosoft.a
 mysql: $(srcexm)/mysql.cpp libnanosoft.a
 	$(CXX) $(srcexm)/mysql.cpp -lnanosoft -lpthread $(LDFLAGS) $(LIBS) -o mysql
 
-# LIBRARY
+daemon: $(srcexm)/daemon.cpp libnanosoft.a
+	$(CXX) $(srcexm)/daemon.cpp -o daemon -lpthread -lnanosoft -lexpat
 
-libnanosoft.a: $(NANOSOFT_OBJECTS)
-	$(AR) rc libnanosoft.a $(NANOSOFT_OBJECTS)
+include $(root)/core.mf
+include $(root)/xml.mf
+include $(root)/netd.mf
+include $(root)/sasl.mf
+
+libnanosoft.a: $(NANOSOFT_CORE) $(NANOSOFT_XML) $(NANOSOFT_NETD) $(NANOSOFT_SASL)
+	$(AR) rc libnanosoft.a $(NANOSOFT_CORE) $(NANOSOFT_XML) $(NANOSOFT_NETD) $(NANOSOFT_SASL)
 	$(RANLIB) libnanosoft.a
-
-# MODULES
-
-nanoini.o: $(srclib)/nanoini.c $(srcinc)/nanoini.h
-	$(CC) -c $(srclib)/nanoini.c
-
-nanostr.o: $(srclib)/nanostr.c $(srcinc)/nanostr.h
-	$(CC) -c $(srclib)/nanostr.c
-
-nanourl.o: $(srclib)/nanourl.c $(srcinc)/nanourl.h
-	$(CC) -c $(srclib)/nanourl.c
-
-string.o: $(srclib)/string.cpp $(srcinc)/nanosoft/string.h
-	$(CXX) -c $(srclib)/string.cpp
-
-options.o: $(srclib)/options.cpp $(srcinc)/nanosoft/options.h
-	$(CXX) -c $(srclib)/options.cpp
-
-fstream.o: $(srclib)/fstream.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/fstream.h
-	$(CXX) -c $(srclib)/fstream.cpp
-
-socket.o: $(srclib)/socket.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket.h $(config)
-	$(CXX) -c $(srclib)/socket.cpp
-
-http.o: $(srclib)/http.cpp $(srcinc)/nanosoft/stream.h $(srcinc)/nanosoft/socket.h $(srcinc)/nanosoft/http.h $(srcinc)/nanourl.h
-	$(CXX) -c $(srclib)/http.cpp
-
-simplepool.o: $(srclib)/simplepool.cpp $(srcinc)/nanosoft/simplepool.h
-	$(CXX) -c $(srclib)/simplepool.cpp
-
-doublepool.o: $(srclib)/doublepool.cpp $(srcinc)/nanosoft/simplepool.h $(srcinc)/nanosoft/doublepool.h
-	$(CXX) -c $(srclib)/doublepool.cpp
-
-xmlnscontext.o: $(srclib)/xmlnscontext.cpp $(srcinc)/nanosoft/xmlnscontext.h $(srcinc)/nanosoft/xmlnsmanager.h
-	$(CXX) -c $(srclib)/xmlnscontext.cpp
-
-xmlnsmanager.o: $(srclib)/xmlnsmanager.cpp $(srcinc)/nanosoft/xmlnsmanager.h
-	$(CXX) -c $(srclib)/xmlnsmanager.cpp
-
-xmlparser.o: $(srclib)/xmlparser.cpp $(srcinc)/nanosoft/xmlparser.h
-	$(CXX) -c $(srclib)/xmlparser.cpp
-
-xmlwriter.o: $(srclib)/xmlwriter.cpp $(srcinc)/nanosoft/xmlwriter.h
-	$(CXX) -c $(srclib)/xmlwriter.cpp
-
-base64.o: $(srclib)/base64.cpp $(srcinc)/nanosoft/base64.h
-	$(CXX) -c $(srclib)/base64.cpp
-
-error.o: $(srclib)/error.cpp $(srcinc)/nanosoft/error.h
-	$(CXX) -c $(srclib)/error.cpp
-
-mysql.o: $(srclib)/mysql.cpp $(srcinc)/nanosoft/mysql.h $(srcinc)/nanosoft/mutex.h
-	$(CXX) -c $(srclib)/mysql.cpp
-
-mutex.o: $(srclib)/mutex.cpp $(srcinc)/nanosoft/mutex.h
-	$(CXX) -c $(srclib)/mutex.cpp
-
-# libnetd modules
-daemon: $(srcexm)/daemon.cpp libnetd.a libnanosoft.a
-	$(CXX) $(srcexm)/daemon.cpp -o daemon -lpthread -lnetd -lnanosoft -lexpat
-
-libnetd.a: $(LIBNETD_OBJECTS)
-	$(AR) rc libnetd.a $(LIBNETD_OBJECTS)
-	$(RANLIB) libnetd.a
-
-netdaemon.o: $(srcdir)/libnetd/netdaemon.cpp $(srcinc)/nanosoft/netdaemon.h
-	$(CXX) -c $(srcdir)/libnetd/netdaemon.cpp
-
-asyncxmlstream.o: $(srcdir)/libnetd/asyncxmlstream.cpp $(srcinc)/nanosoft/asyncxmlstream.h $(srcinc)/nanosoft/asyncstream.h $(srcinc)/nanosoft/asyncobject.h $(srcinc)/nanosoft/xmlwriter.h $(srcinc)/nanosoft/xmlparser.h
-	$(CXX) -c $(srcdir)/libnetd/asyncxmlstream.cpp
-	
-asyncstream.o: $(srcdir)/libnetd/asyncstream.cpp $(srcinc)/nanosoft/asyncstream.h $(srcinc)/nanosoft/asyncobject.h
-	$(CXX) -c $(srcdir)/libnetd/asyncstream.cpp
-
-asyncserver.o: $(srcdir)/libnetd/asyncserver.cpp $(srcinc)/nanosoft/asyncserver.h $(srcinc)/nanosoft/asyncobject.h
-	$(CXX) -c $(srcdir)/libnetd/asyncserver.cpp
-
-asyncobject.o: $(srcdir)/libnetd/asyncobject.cpp $(srcinc)/nanosoft/asyncobject.h
-	$(CXX) -c $(srcdir)/libnetd/asyncobject.cpp
-
-cyrussaslserver.o: $(srcdir)/libnetd/cyrussaslserver.cpp $(srcinc)/nanosoft/cyrussaslserver.h $(srcinc)/nanosoft/saslserver.h
-	$(CXX) -c $(srcdir)/libnetd/cyrussaslserver.cpp
-
-gsaslserver.o: $(srcdir)/libnetd/gsaslserver.cpp $(srcinc)/nanosoft/gsaslserver.h $(srcinc)/nanosoft/saslserver.h
-	$(CXX) -c $(srcdir)/libnetd/gsaslserver.cpp
-
-saslserver.o: $(srcdir)/libnetd/saslserver.cpp $(srcinc)/nanosoft/saslserver.h
-	$(CXX) -c $(srcdir)/libnetd/saslserver.cpp
-
-# CLEAN
 
 .PHONY: clean distclean
 
@@ -299,4 +166,4 @@ distclean: clean
 
 clean:
 	rm -f *.o build all-linux all-mingw32
-	rm -f $(LINUX_PROGS) $(LINUX_EXAMPLES) libnanosoft.a libnetd.a
+	rm -f $(LINUX_PROGS) $(LINUX_EXAMPLES) lib*.a

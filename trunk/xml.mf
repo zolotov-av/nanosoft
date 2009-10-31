@@ -1,0 +1,27 @@
+
+NANOSOFT_XML+=xmlparser.o
+NANOSOFT_XML+=xmlwriter.o
+NANOSOFT_XML+=xmlnsmanager.o
+NANOSOFT_XML+=xmlnscontext.o
+
+install-xml-headers:
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlparser.h $(INCLUDEDIR)/nanosoft/xmlparser.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlwriter.h $(INCLUDEDIR)/nanosoft/xmlwriter.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlnsmanager.h $(INCLUDEDIR)/nanosoft/xmlnsmanager.h
+	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlnscontext.h $(INCLUDEDIR)/nanosoft/xmlnscontext.h
+
+libns_xml.a: $(NANOSOFT_XML)
+	$(AR) rc libns_xml.a $(NANOSOFT_XML)
+	$(RANLIB) libns_xml.a
+
+xmlnscontext.o: $(srclib)/xmlnscontext.cpp $(srcinc)/nanosoft/xmlnscontext.h $(srcinc)/nanosoft/xmlnsmanager.h
+	$(CXX) -c $(srclib)/xmlnscontext.cpp
+
+xmlnsmanager.o: $(srclib)/xmlnsmanager.cpp $(srcinc)/nanosoft/xmlnsmanager.h
+	$(CXX) -c $(srclib)/xmlnsmanager.cpp
+
+xmlparser.o: $(srclib)/xmlparser.cpp $(srcinc)/nanosoft/xmlparser.h
+	$(CXX) -c $(srclib)/xmlparser.cpp
+
+xmlwriter.o: $(srclib)/xmlwriter.cpp $(srcinc)/nanosoft/xmlwriter.h
+	$(CXX) -c $(srclib)/xmlwriter.cpp

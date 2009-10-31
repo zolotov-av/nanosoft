@@ -31,32 +31,75 @@ AC_CHECK_TOOL(AR, ar, ar)
 AC_CHECK_TOOL(RANLIB, ranlib, ranlib)
 AC_CHECK_TOOL(MKDIR, mkdir, mkdir)
 
+SASL=none
+SASL_LIBS=""
+AC_ARG_WITH(sasl, AS_HELP_STRING([--with-sasl=TYPE], [switch SASL library (cyrus, gnu, none)]), [
+		SASL=$withval
+		case "$SASL" in
+		gnu)
+			AC_DEFINE(WITH_GNU_SASL, 1)
+			SASL_LIBS="-lgsasl"
+			;;
+		cyrus)
+			AC_DEFINE(WITH_CYRUS_SASL, 1)
+			SASL_LIBS="-lsasl2"
+			;;
+		none)
+			;;
+		*)
+			AC_ERROR([switch SASL library (cyrus, gnu, none)])
+			;;
+		esac
+	])
+AC_SUBST(SASL)
+AC_SUBST(SASL_LIBS)
+
 AC_ARG_WITH(gsasl, AS_HELP_STRING([--with-gsasl=PREFIX], [GNU SASL library]), [
 		CPPFLAGS="$CPPFLAGS  -I$withval/include"
 		LDFLAGS="$LDFLAGS -L$withval/lib -Wl,-rpath=$withval/lib"
 	])
-# TODO AC_CHECK_HEADER(gsasl.h, [], [AC_ERROR(GNU SASL library required)])
-AC_CHECK_LIB(gsasl, main, [], [AC_ERROR(GNU SASL library required)])
+AC_CHECK_LIB(gsasl, main, [], [
+		if test "$SASL" = "gnu"; then
+			AC_ERROR(GNU SASL library required)
+		fi
+	])
 
-AC_ARG_WITH(mysql, AS_HELP_STRING([--with-mysql=PREFIX], [MySQL client library]), [
+AC_ARG_WITH(cyrus-sasl, AS_HELP_STRING([--with-cyrus-sasl=PREFIX], [Cyrus SASL library]), [
 		CPPFLAGS="$CPPFLAGS  -I$withval/include"
 		LDFLAGS="$LDFLAGS -L$withval/lib -Wl,-rpath=$withval/lib"
 	])
-# TODO AC_CHECK_HEADER(mysql.h, [], [AC_ERROR(MySQL client library required)])
-AC_CHECK_LIB(mysqlclient_r, mysql_real_connect, [], [AC_ERROR(MySQL client library required)])
-AC_CHECK_LIB(mysqlclient_r, mysql_real_query, [], [AC_ERROR(MySQL client library required)])
+AC_CHECK_LIB(sasl2, main, [], [
+		if test "$SASL" = "cyrus"; then
+			AC_ERROR(Cyrus SASL library required)
+		fi
+	])
+
+WITH_MYSQL=no
+MYSQL_LIBS=""
+AC_ARG_WITH(mysql, AS_HELP_STRING([--with-mysql=PREFIX], [MySQL client library]), [
+		if test "$withval" != "yes"; then
+			CPPFLAGS="$CPPFLAGS  -I$withval/include"
+			LDFLAGS="$LDFLAGS -L$withval/lib -Wl,-rpath=$withval/lib"
+		fi
+		WITH_MYSQL=yes
+	])
+AC_CHECK_LIB(mysqlclient_r, mysql_real_connect, [
+		MYSQL_LIBS="-lmysqlclient_r"
+		WITH_MYSQL="yes"
+	], [
+		if test "$WITH_MYSQL" = "yes"; then
+			AC_ERROR(MySQL client library not found)
+		fi
+	])
+AC_SUBST(WITH_MYSQL)
+AC_SUBST(MYSQL_LIBS)
+
 
 AC_ARG_WITH(udns, AS_HELP_STRING([--with-udns=PREFIX], [UDNS (DNS Resolver Library)]), [
 		CPPFLAGS="$CPPFLAGS  -I$withval/include"
 		LDFLAGS="$LDFLAGS -L$withval/lib -Wl,-rpath=$withval/lib"
 	])
 # TODO AC_CHECK_LIB(udns, main, [], [AC_ERROR(UDNS (DNS Resolver Library) required)])
-
-# Checks for libraries.
-
-# Checks for header files.
-
-# Checks for typedefs, structures, and compiler characteristics.
 
 # Checks for library functions.
 AC_CHECK_FUNC(gai_strerror, [AC_DEFINE(HAVE_GAI_STRERROR)])
