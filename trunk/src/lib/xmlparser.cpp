@@ -63,6 +63,7 @@ namespace nanosoft
 	{
 		XML_ParserFree(parser);
 		initParser();
+		resetNeed = false;
 	}
 	
 	/**
