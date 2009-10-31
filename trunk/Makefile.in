@@ -145,7 +145,7 @@ pools: $(srcexm)/pools.cpp libnanosoft.a
 	$(CXX) $(srcexm)/pools.cpp -lnanosoft -o pools
 
 mysql: $(srcexm)/mysql.cpp libnanosoft.a
-	$(CXX) $(srcexm)/mysql.cpp -lnanosoft -lpthread $(LDFLAGS) $(LIBS) -o mysql
+	$(CXX) $(srcexm)/mysql.cpp -lnanosoft -lpthread $(LDFLAGS) $(MYSQL_LIBS) $(LIBS) -o mysql
 
 daemon: $(srcexm)/daemon.cpp libnanosoft.a
 	$(CXX) $(srcexm)/daemon.cpp -o daemon -lpthread -lnanosoft -lexpat
