@@ -23,7 +23,7 @@ install-core-headers:
 	$(INSTALL_INC) $(srcdir)/include/nanoini.h $(INCLUDEDIR)/nanoini.h
 	$(INSTALL_INC) $(srcdir)/include/nanostr.h $(INCLUDEDIR)/nanostr.h
 	$(INSTALL_INC) $(srcdir)/include/nanourl.h $(INCLUDEDIR)/nanourl.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/config.h $(INCLUDEDIR)/nanosoft/config.h
+	$(INSTALL_INC) $(config) $(INCLUDEDIR)/nanosoft/config.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/fstream.h $(INCLUDEDIR)/nanosoft/fstream.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/http.h $(INCLUDEDIR)/nanosoft/http.h
 	$(INSTALL_INC) $(srcdir)/include/nanosoft/options.h $(INCLUDEDIR)/nanosoft/options.h
