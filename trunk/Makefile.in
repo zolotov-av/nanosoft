@@ -8,7 +8,7 @@ ns_srcexm = $(ns_srcdir)/examples
 
 config = ./src/include/nanosoft/config.h
 
-CPPFLAGS = @CPPFLAGS@ -I$(ns_ns_srcinc) -I./src/include
+CPPFLAGS = @CPPFLAGS@ -I$(ns_srcinc) -I./src/include
 LDFLAGS = @LDFLAGS@ -L.
 CFLAGS = @CFLAGS@ $(CPPFLAGS) -L.
 CXXFLAGS = @CXXFLAGS@ $(CPPFLAGS)  -L.
