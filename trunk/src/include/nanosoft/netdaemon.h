@@ -5,8 +5,14 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <map>
+#include <queue>
 #include <nanosoft/asyncobject.h>
 #include <nanosoft/mutex.h>
+
+/**
+* Callback таймера
+*/
+typedef void (*timer_callback_t) (int wid, void *data);
 
 /**
 * Главный класс сетевого демона
@@ -23,6 +29,62 @@ private:
 	* mutex
 	*/
 	nanosoft::Mutex mutex;
+	
+	struct timer
+	{
+		/**
+		* Время когда надо активировать таймер
+		*/
+		int expires;
+		
+		/**
+		* Callback таймера
+		*/
+		timer_callback_t callback;
+		
+		/**
+		* Указатель на пользовательские данные
+		*/
+		void *data;
+		
+		/**
+		* Конструктор по умолчанию
+		*/
+		timer() {
+		}
+		
+		/**
+		* Конструктор
+		*/
+		timer(int aExpires, timer_callback_t aCallback, void *aData):
+			expires(aExpires), callback(aCallback), data(aData)
+		{
+		}
+		
+		/**
+		* Оператор сравнения для приоритетной очереди
+		*/
+		bool operator < (const timer &t) const {
+			return expires < t.expires;
+		}
+		
+		/**
+		* Запустить таймер
+		*/
+		void fire(int wid) {
+			callback(wid, data);
+		}
+	};
+	
+	/**
+	* Очередь таймеров
+	*/
+	typedef std::priority_queue<timer> timers_queue_t;
+	
+	/**
+	* Таймеры
+	*/
+	timers_queue_t timers;
 	
 	typedef std::map<int, AsyncObject*> map_objects_t;
 	
@@ -50,6 +112,11 @@ private:
 	* Число активных воркеров
 	*/
 	int activeCount;
+	
+	/**
+	* Число таймеров в очереди
+	*/
+	int timerCount;
 	
 	/**
 	* Статус воркера
@@ -148,6 +215,17 @@ private:
 	*/
 	size_t workerStackSize;
 	
+	/**
+	* Вернуть время следущего таймера
+	* @return время (Unix time) следующего таймера или -1 если таймеров нет
+	*/
+	int nextTimer();
+	
+	/**
+	* Обработать таймеры
+	*/
+	void processTimers(int wid);
+	
 protected:
 	/**
 	* Запустить воркеров
@@ -240,6 +318,14 @@ public:
 	* Завершить работу демона
 	*/
 	void terminate();
+	
+	/**
+	* Установить таймер
+	* @param expires время запуска таймера
+	* @param callback функция обратного вызова
+	* @param data указатель на пользовательские данные
+	*/
+	void setTimer(int expires, timer_callback_t callback, void *data);
 	
 	/**
 	* Обработчик ошибок

@@ -99,7 +99,7 @@ AC_ARG_WITH(udns, AS_HELP_STRING([--with-udns=PREFIX], [UDNS (DNS Resolver Libra
 		CPPFLAGS="$CPPFLAGS  -I$withval/include"
 		LDFLAGS="$LDFLAGS -L$withval/lib -Wl,-rpath=$withval/lib"
 	])
-# TODO AC_CHECK_LIB(udns, main, [], [AC_ERROR(UDNS (DNS Resolver Library) required)])
+AC_CHECK_LIB(udns, main, [], [AC_ERROR(UDNS (DNS Resolver Library) required)])
 
 # Checks for library functions.
 AC_CHECK_FUNC(gai_strerror, [AC_DEFINE(HAVE_GAI_STRERROR)])

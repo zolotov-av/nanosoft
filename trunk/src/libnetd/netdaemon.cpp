@@ -23,6 +23,7 @@ NetDaemon::NetDaemon(int maxObjects):
 	workerStackSize(DEFAULT_WORKER_STACK_SIZE),
 	workerCount(0),
 	activeCount(0),
+	timerCount(0),
 	count(0)
 {
 	epoll = epoll_create(maxObjects);
@@ -150,7 +151,7 @@ bool NetDaemon::resetObject(AsyncObject *object)
 void NetDaemon::doActiveAction(worker_t *worker)
 {
 	struct epoll_event event;
-	int r = epoll_wait(epoll, &event, 1, -1);
+	int r = epoll_wait(epoll, &event, 1, nextTimer());
 	if ( r > 0 )
 	{
 		mutex.lock();
@@ -166,7 +167,7 @@ void NetDaemon::doActiveAction(worker_t *worker)
 		mutex.unlock();
 	}
 	if ( r < 0 ) fprintf(stderr, "#%d: %s\n", worker->workerId, nanosoft::stderror());
-	if ( r == 0 ) fprintf(stderr, "#%d: skip\n", worker->workerId);
+	if ( r == 0 ) processTimers(worker->workerId);
 }
 
 /**
@@ -387,4 +388,69 @@ void NetDaemon::terminate()
 	onError("terminate...");
 	//killObjects();
 	setWorkersState(SLEEP);
+}
+
+/**
+* Установить таймер
+* @param expires время запуска таймера
+* @param callback функция обратного вызова
+* @param data указатель на пользовательские данные
+*/
+void NetDaemon::setTimer(int expires, timer_callback_t callback, void *data)
+{
+	bool hup = false;
+	mutex.lock();
+		timers.push(timer(expires, callback, data));
+		hup = timerCount = 0;
+		timerCount++;
+	mutex.unlock();
+	if ( hup )
+	{
+		for(int i = 0; i < workerCount; i++)
+		{
+			pthread_kill(workers[i].thread, SIGHUP);
+		}
+		pthread_kill(main.thread, SIGHUP);
+	}
+}
+
+/**
+* Вернуть время следущего таймера
+* @return время (Unix time) следующего таймера или -1 если таймеров нет
+*/
+int NetDaemon::nextTimer()
+{
+	int timeout = -1;
+	int expires;
+	if ( timerCount > 0 ) {
+		mutex.lock();
+			expires = timers.top().expires - time(0);
+		mutex.unlock();
+		timeout = expires > 0 ? expires * 1000 : 0;
+	}
+	return timeout;
+}
+
+/**
+* Обработать таймеры
+*/
+void NetDaemon::processTimers(int wid)
+{
+	timer t;
+	time_t now = time(0);
+	while ( timerCount > 0 )
+	{
+		bool process = false;
+		mutex.lock();
+			t = timers.top();
+			if ( t.expires <= now )
+			{
+				timers.pop();
+				timerCount --;
+				process = true;
+			}
+		mutex.unlock();
+		if ( process ) t.fire(wid);
+		else break;
+	}
 }

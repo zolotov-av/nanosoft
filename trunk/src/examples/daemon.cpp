@@ -178,9 +178,18 @@ void on_signal(int sig)
 	}
 }
 
+void timer(int wid, void *data)
+{
+	time_t now = time(0);
+	printf("#%d timer: %s\n", wid, ctime(&now));
+	static_cast<NetDaemon*>(data)->setTimer(now + 5, timer, data);
+}
+
 int main()
 {
 	mydaemon.setWorkerCount(2);
+	
+	mydaemon.setTimer(time(0) + 1, timer, &mydaemon);
 	
 	MyServer *server = new MyServer(&mydaemon);
 	server->bind(4000);
