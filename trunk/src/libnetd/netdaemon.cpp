@@ -26,7 +26,6 @@ NetDaemon::NetDaemon(int maxObjects):
 	count(0)
 {
 	epoll = epoll_create(maxObjects);
-	stdcheck( pthread_mutex_init(&mutex, 0) == 0 );
 }
 
 /**
@@ -36,21 +35,6 @@ NetDaemon::~NetDaemon()
 {
 	int r = ::close(epoll);
 	if ( r < 0 ) stderror();
-	stdcheck( pthread_mutex_destroy(&mutex) == 0 );
-}
-
-/**
-* Получить монопольный доступ к NetDaemon
-*/
-void NetDaemon::lock() {
-	stdcheck( pthread_mutex_lock(&mutex) == 0 );
-}
-
-/**
-* Освободить NetDaemon
-*/
-void NetDaemon::unlock() {
-	stdcheck( pthread_mutex_unlock(&mutex) == 0 );
 }
 
 /**
@@ -110,14 +94,14 @@ bool NetDaemon::addObject(AsyncObject *object)
 {
 	//fprintf(stderr, "addObject enter, count: %d\n", objects.size());
 	struct epoll_event event;
-	lock();
+	mutex.lock();
 		objects[object->fd] = object;
 		count ++;
 		//fprintf(stderr, "AddObject(%d), count = %d\n", object->fd, count);
 		event.events = object->getEventsMask();
 		event.data.fd = object->fd;
 		bool r = epoll_ctl(epoll, EPOLL_CTL_ADD, object->fd, &event) == 0;
-	unlock();
+	mutex.unlock();
 	//fprintf(stderr, "addObject leave, count: %d\n", objects.size());
 	return r;
 }
@@ -127,7 +111,7 @@ bool NetDaemon::addObject(AsyncObject *object)
 */
 bool NetDaemon::removeObject(AsyncObject *object)
 {
-	lock();
+	mutex.lock();
 	//fprintf(stderr, "#%d NetDaemon::removeObject(%d) enter, count = %d\n", object->workerId, object->fd, count);
 	map_objects_t::iterator pos = objects.find(object->fd);
 	if ( pos != objects.end() )
@@ -142,7 +126,7 @@ bool NetDaemon::removeObject(AsyncObject *object)
 		fprintf(stderr, "#%d NetDaemon::removeObject(%d): not found o.O\n", object->workerId, object->fd);
 	}
 	//fprintf(stderr, "#%d removeObject(%d) leave, count = %d\n", object->workerId, object->fd, count);
-	unlock();
+	mutex.unlock();
 }
 
 /**
@@ -169,17 +153,17 @@ void NetDaemon::doActiveAction(worker_t *worker)
 	int r = epoll_wait(epoll, &event, 1, -1);
 	if ( r > 0 )
 	{
-		lock();
+		mutex.lock();
 			AsyncObject *obj = objects[event.data.fd];
-		unlock();
+		mutex.unlock();
 		obj->workerId = worker->workerId;
 		obj->onEvent(event.events);
-		lock();
-		if ( objects.find(event.data.fd) != objects.end() )
-		{
-			resetObject(obj);
-		}
-		unlock();
+		mutex.lock();
+			if ( objects.find(event.data.fd) != objects.end() )
+			{
+				resetObject(obj);
+			}
+		mutex.unlock();
 	}
 	if ( r < 0 ) fprintf(stderr, "#%d: %s\n", worker->workerId, nanosoft::stderror());
 	if ( r == 0 ) fprintf(stderr, "#%d: skip\n", worker->workerId);
@@ -192,14 +176,14 @@ void NetDaemon::doSleepAction(worker_t *worker)
 {
 	if ( ! worker->checked ) {
 		worker->checked = true;
-		lock();
+		mutex.lock();
 			activeCount --;
 			if ( activeCount == 0 )
 			{
 				iter = objects.begin();
 				setWorkersState(TERMINATE);
 			}
-		unlock();
+		mutex.unlock();
 		return;
 	}
 	
@@ -221,15 +205,15 @@ void NetDaemon::doTerminateAction(worker_t *worker)
 	if ( ! worker->checked )
 	{
 		worker->checked = true;
-		lock();
+		mutex.lock();
 			activeCount ++;
-		unlock();
+		mutex.unlock();
 		return;
 	}
 	fprintf(stderr, "#%d: doTerminateAction\n", worker->workerId);
 	
 	AsyncObject *obj;
-	lock();
+	mutex.lock();
 		if ( iter != objects.end() )
 		{
 			obj = iter->second;
@@ -240,7 +224,7 @@ void NetDaemon::doTerminateAction(worker_t *worker)
 			setWorkersState(ACTIVE);
 			obj = 0;
 		}
-	unlock();
+	mutex.unlock();
 	if ( obj )
 	{
 		obj->workerId = worker->workerId;
@@ -290,9 +274,9 @@ void NetDaemon::startWorkers()
 		workers[i].daemon = this;
 		workers[i].workerId = i + 1;
 		workers[i].status = ACTIVE;
-		lock();
-		activeCount++;
-		unlock();
+		mutex.lock();
+			activeCount++;
+		mutex.unlock();
 		pthread_attr_init(&workers[i].attr);
 		pthread_attr_setstacksize(&workers[i].attr, getWorkerStackSize());
 		pthread_attr_setdetachstate(&workers[i].attr, PTHREAD_CREATE_JOINABLE);
@@ -372,9 +356,9 @@ int NetDaemon::run()
 	main.workerId = 0;
 	main.thread = pthread_self();
 	main.status = ACTIVE;
-	lock();
+	mutex.lock();
 		activeCount++;
-	unlock();
+	mutex.unlock();
 	workerEntry(&main);
 	waitWorkers();
 	freeWorkers();

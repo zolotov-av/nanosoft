@@ -4,9 +4,9 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <pthread.h>
 #include <map>
 #include <nanosoft/asyncobject.h>
+#include <nanosoft/mutex.h>
 
 /**
 * Главный класс сетевого демона
@@ -22,7 +22,7 @@ private:
 	/**
 	* mutex
 	*/
-	pthread_mutex_t mutex;
+	nanosoft::Mutex mutex;
 	
 	typedef std::map<int, AsyncObject*> map_objects_t;
 	
@@ -183,16 +183,6 @@ protected:
 	* Обработка системной ошибки
 	*/
 	void stderror();
-	
-	/**
-	* Получить монопольный доступ к NetDaemon
-	*/
-	void lock();
-	
-	/**
-	* Освободить NetDaemon
-	*/
-	void unlock();
 	
 public:
 	/**
