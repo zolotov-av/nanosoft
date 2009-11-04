@@ -9,20 +9,10 @@
 
 namespace nanosoft
 {
-	MYSQL *mysql_init_struct = MySQL::init();
-	
-	MYSQL * MySQL::init()
-	{
-		MYSQL *m = mysql_init(0);
-		if ( m ) return m;
-		fprintf(stderr, "MySQL initialization fault\n");
-		return 0;
-	}
-	
 	/**
 	* Конструктор
 	*/
-	MySQL::MySQL(): conn(0)
+	MySQL::MySQL()
 	{
 	}
 	
@@ -48,8 +38,7 @@ namespace nanosoft
 	*/
 	bool MySQL::connect(const std::string &host, const std::string &database, const std::string &user, const std::string &password, int port)
 	{
-		conn = mysql_real_connect(mysql_init_struct, host.c_str(), user.c_str(), password.c_str(), database.c_str(), port, 0, 0);
-		if ( conn ) return true;
+		if ( mysql_real_connect(mysql_init(&conn), host.c_str(), user.c_str(), password.c_str(), database.c_str(), port, 0, 0) ) return true;
 		fprintf(stderr, "[MySQL] connection fault\n");
 		return false;
 	}
@@ -67,8 +56,7 @@ namespace nanosoft
 	*/
 	bool MySQL::connectUnix(const std::string &sock, const std::string &database, const std::string &user, const std::string &password)
 	{
-		conn = mysql_real_connect(mysql_init_struct, 0, user.c_str(), password.c_str(), database.c_str(), 0, sock.c_str(), 0);
-		if ( conn ) return true;
+		if ( mysql_real_connect(mysql_init(&conn), 0, user.c_str(), password.c_str(), database.c_str(), 0, sock.c_str(), 0) ) return true;
 		fprintf(stderr, "[MySQL] connection fault\n");
 		return false;
 	}
@@ -79,7 +67,7 @@ namespace nanosoft
 	std::string MySQL::escape(const std::string &text)
 	{
 		char *buf = new char[text.length() * 2 + 1];
-		size_t len = mysql_real_escape_string(conn, buf, text.c_str(), text.length());
+		size_t len = mysql_real_escape_string(&conn, buf, text.c_str(), text.length());
 		return std::string(buf, len);
 	}
 	
@@ -101,19 +89,19 @@ namespace nanosoft
 	{
 		mutex.lock();
 		
-		int status = mysql_real_query(conn, sql, len);
+		int status = mysql_real_query(&conn, sql, len);
 		if ( status ) {
-			fprintf(stderr, "[MySQL] %s\n", mysql_error(conn));
+			fprintf(stderr, "[MySQL] %s\n", mysql_error(&conn));
 			
 			mutex.unlock();
 			return 0;
 		}
 		
-		MYSQL_RES *res = mysql_store_result(conn);
-		if ( res || mysql_field_count(conn) > 0 ) {
+		MYSQL_RES *res = mysql_store_result(&conn);
+		if ( res || mysql_field_count(&conn) > 0 ) {
 			ResultSet *r = new ResultSet;
 			r->res = res;
-			r->field_count = mysql_field_count(conn);
+			r->field_count = mysql_field_count(&conn);
 			r->fields = mysql_fetch_fields(res);
 			r->values = mysql_fetch_row(res);
 			if ( r->values ) r->lengths = mysql_fetch_lengths(res);
@@ -122,8 +110,8 @@ namespace nanosoft
 			return r;
 		}
 		
-		if ( mysql_errno(conn) ) {
-			fprintf(stderr, "[MySQL] %s\n", mysql_error(conn));
+		if ( mysql_errno(&conn) ) {
+			fprintf(stderr, "[MySQL] %s\n", mysql_error(&conn));
 		}
 		
 		mutex.unlock();
@@ -153,11 +141,7 @@ namespace nanosoft
 	*/
 	void MySQL::close()
 	{
-		if ( conn )
-		{
-			mysql_close(conn);
-			conn = 0;
-		}
+		mysql_close(&conn);
 	}
 	
 	void MySQL::result::next()

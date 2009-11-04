@@ -17,7 +17,7 @@ namespace nanosoft
 		/**
 		* Соединение с MySQL сервером
 		*/
-		MYSQL *conn;
+		MYSQL conn;
 		
 		/**
 		* Mutex для thread-safe доступа к БД
@@ -119,12 +119,6 @@ namespace nanosoft
 			*/
 			bool isNull(const char *name);
 		};
-		
-		/**
-		* Инициализация библиотеки MySQL
-		* @note обычно вызывается автоматически
-		*/
-		static MYSQL * init();
 		
 		/**
 		* Конструктор
