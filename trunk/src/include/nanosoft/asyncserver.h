@@ -22,6 +22,18 @@ protected:
 	*/
 	virtual void onEvent(uint32_t events);
 	
+	/**
+	* Событие ошибки
+	*
+	* Вызывается в случае возникновения какой-либо ошибки
+	*/
+	virtual void onError(const char *message);
+	
+	/**
+	* Принять входящее соединение
+	*/
+	virtual AsyncObject* onAccept() = 0;
+	
 public:
 	/**
 	* Конструктор
@@ -52,18 +64,6 @@ public:
 	* Закрыть сокет
 	*/
 	void close();
-	
-	/**
-	* Событие ошибки
-	*
-	* Вызывается в случае возникновения какой-либо ошибки
-	*/
-	virtual void onError(const char *message);
-	
-	/**
-	* Принять входящее соединение
-	*/
-	virtual AsyncObject* onAccept() = 0;
 };
 
 #endif // NANOSOFT_ASYNCSERVER_H
