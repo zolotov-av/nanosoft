@@ -5,10 +5,10 @@ NANOSOFT_XML+=xmlnsmanager.o
 NANOSOFT_XML+=xmlnscontext.o
 
 install-xml-headers:
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlparser.h $(INCLUDEDIR)/nanosoft/xmlparser.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlwriter.h $(INCLUDEDIR)/nanosoft/xmlwriter.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlnsmanager.h $(INCLUDEDIR)/nanosoft/xmlnsmanager.h
-	$(INSTALL_INC) $(srcdir)/include/nanosoft/xmlnscontext.h $(INCLUDEDIR)/nanosoft/xmlnscontext.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/xmlparser.h $(INCLUDEDIR)/nanosoft/xmlparser.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/xmlwriter.h $(INCLUDEDIR)/nanosoft/xmlwriter.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/xmlnsmanager.h $(INCLUDEDIR)/nanosoft/xmlnsmanager.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/xmlnscontext.h $(INCLUDEDIR)/nanosoft/xmlnscontext.h
 
 libns_xml.a: $(NANOSOFT_XML)
 	$(AR) rc libns_xml.a $(NANOSOFT_XML)
