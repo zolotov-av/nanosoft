@@ -63,6 +63,7 @@ LINUX_EXAMPLES+=options
 LINUX_EXAMPLES+=string
 LINUX_EXAMPLES+=daemon
 LINUX_EXAMPLES+=pools
+LINUX_EXAMPLES+=mparser
 
 ifeq ($(WITH_MYSQL), yes)
 LINUX_EXAMPLES+=mysql
@@ -150,13 +151,17 @@ mysql: $(ns_srcexm)/mysql.cpp libnanosoft.a
 daemon: $(ns_srcexm)/daemon.cpp libnanosoft.a
 	$(CXX) $(ns_srcexm)/daemon.cpp -o daemon -lpthread -lnanosoft -lexpat
 
+mparser: $(ns_srcexm)/mparser.cpp $(ns_srcinc)/nanosoft/mparser.h
+	$(CXX) $(ns_srcexm)/mparser.cpp -o mparser
+
 include $(root)/core.mf
 include $(root)/xml.mf
 include $(root)/netd.mf
 include $(root)/sasl.mf
+include $(root)/math.mf
 
-libnanosoft.a: $(NANOSOFT_CORE) $(NANOSOFT_XML) $(NANOSOFT_NETD) $(NANOSOFT_SASL)
-	$(AR) rc libnanosoft.a $(NANOSOFT_CORE) $(NANOSOFT_XML) $(NANOSOFT_NETD) $(NANOSOFT_SASL)
+libnanosoft.a: $(NANOSOFT_CORE) $(NANOSOFT_XML) $(NANOSOFT_NETD) $(NANOSOFT_SASL) $(NANOSOFT_MATH)
+	$(AR) rc libnanosoft.a $(NANOSOFT_CORE) $(NANOSOFT_XML) $(NANOSOFT_NETD) $(NANOSOFT_SASL) $(NANOSOFT_MATH)
 	$(RANLIB) libnanosoft.a
 
 .PHONY: clean distclean
