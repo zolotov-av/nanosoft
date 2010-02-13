@@ -7,6 +7,8 @@
 
 namespace nanosoft
 {
+	template <class type> class MathVar;
+	
 	/**
 	* Абстрактный класс реализации метематической функции
 	*/
@@ -32,12 +34,12 @@ namespace nanosoft
 		/**
 		* Вычислить функцию
 		*/
-		virtual type eval(type x) = 0;
+		virtual type eval() = 0;
 		
 		/**
 		* Вернуть производную функции
 		*/
-		virtual MathFunctionImpl<type>* derive() = 0;
+		virtual MathFunctionImpl<type>* derive(const MathVar<type> &var) = 0;
 		
 		/**
 		* Вернуть в виде строки
@@ -83,22 +85,17 @@ namespace nanosoft
 		/**
 		* Вычислить функцию
 		*/
-		type eval(type x) { return func->eval(x); }
+		type eval() { return func->eval(); }
 		
 		/**
 		* Вернуть производную функции
 		*/
-		MathFunction<type> derive() { return func->derive(); }
+		MathFunction<type> derive(const MathVar<type> &var) { return func->derive(var); }
 		
 		/**
 		* Вернуть функцию в виде строки
 		*/
 		std::string toString() { return func->toString(); }
-		
-		/**
-		* Вычислить функцию
-		*/
-		type operator () (type x) { return func->eval(x); }
 	};
 	
 	/**
@@ -111,8 +108,8 @@ namespace nanosoft
 		type c;
 	public:
 		MathConst(type v): c(v) { }
-		type eval(type x) { return c; }
-		MathFunctionImpl<type>* derive() { return new MathConst<type>(0); }
+		type eval() { return c; }
+		MathFunctionImpl<type>* derive(const MathVar<type> &var) { return new MathConst<type>(0); }
 		
 		/**
 		* Вернуть в виде строки
@@ -124,6 +121,66 @@ namespace nanosoft
 		}
 	};
 	
+	/**
+	* Класс переменной
+	*/
+	template <class type>
+	class MathVar: public MathFunctionImpl<type>
+	{
+	private:
+		/**
+		* Имя переменной
+		*/
+		const char *name;
+		
+		/**
+		* Значение переменной
+		*/
+		type value;
+	public:
+		/**
+		* Конструктор переменной
+		*/
+		MathVar(const char *n): name(n) {}
+		
+		/**
+		* Вернуть название переменной
+		*/
+		const char *getName() { return name; }
+		
+		/**
+		* Вернуть значение переменной
+		*/
+		type getValue() { return value; }
+		
+		/**
+		* Установить значение переменной
+		*/
+		void setValue(const type &v) { value = v; }
+		
+		/**
+		* Вычислить значение переменной
+		*/
+		type eval() { return value; }
+		
+		/**
+		* Вернуть производную
+		*/
+		MathFunctionImpl<type>* derive(const MathVar<type> &var) {
+			return new MathConst<type>(&var == this ? 1 : 0);
+		}
+		
+		/**
+		* Вернуть в виде строки
+		*/
+		std::string toString() {
+			return name;
+		}
+	};
+	
+	/**
+	* Функция f(x) = -x
+	*/
 	template <class type>
 	class MathNeg: public MathFunctionImpl<type>
 	{
@@ -131,8 +188,8 @@ namespace nanosoft
 		MathFunction<type> a;
 	public:
 		MathNeg(MathFunction<type> A): a(A) { }
-		type eval(type x) { return - a.eval(x); }
-		MathFunctionImpl<type>* derive() { return new MathNeg(a.derive()); }
+		type eval() { return - a.eval(); }
+		MathFunctionImpl<type>* derive(const MathVar<type> &var) { return new MathNeg(a.derive(var)); }
 		
 		/**
 		* Вернуть в виде строки
@@ -153,8 +210,10 @@ namespace nanosoft
 		MathFunction<type> b;
 	public:
 		MathSum(const MathFunction<type> A, const MathFunction<type> B): a(A), b(B) { }
-		type eval(type x) { return a.eval(x) + b.eval(x); }
-		MathFunctionImpl<type>* derive() { return new MathSum<type>(a.derive(), b.derive()); }
+		type eval() { return a.eval() + b.eval(); }
+		MathFunctionImpl<type>* derive(const MathVar<type> &var) {
+			return new MathSum<type>(a.derive(var), b.derive(var));
+		}
 		
 		/**
 		* Вернуть в виде строки
@@ -175,11 +234,11 @@ namespace nanosoft
 		MathFunction<type> b;
 	public:
 		MathMult(const MathFunction<type> A, const MathFunction<type> B): a(A), b(B) { }
-		type eval(type x) { return a.eval(x) * b.eval(x); }
-		MathFunctionImpl<type>* derive() {
+		type eval() { return a.eval() * b.eval(); }
+		MathFunctionImpl<type>* derive(const MathVar<type> &var) {
 			return new MathSum<type>(
-				new MathMult(a.derive(), b),
-				new MathMult(a, b.derive())
+				new MathMult(a.derive(var), b),
+				new MathMult(a, b.derive(var))
 			);
 		}
 		
@@ -197,15 +256,18 @@ namespace nanosoft
 	template <class type>
 	class MathCos: public MathFunctionImpl<type>
 	{
+	private:
+		MathFunction<type> a;
 	public:
-		type eval(type x) { return cos(x); }
-		MathFunctionImpl<type>* derive();
+		MathCos(const MathFunction<type> A): a(A) { }
+		type eval() { return cos(a.eval()); }
+		MathFunctionImpl<type>* derive(const MathVar<type> &var);
 		
 		/**
 		* Вернуть в виде строки
 		*/
 		std::string toString() {
-			return "cos(x)";
+			return "cos(" + a.toString() + ")";
 		}
 	};
 	
@@ -215,28 +277,39 @@ namespace nanosoft
 	template <class type>
 	class MathSin: public MathFunctionImpl<type>
 	{
+	private:
+		MathFunction<type> a;
 	public:
-		type eval(type x) { return sin(x); }
-		MathFunctionImpl<type>* derive();
+		MathSin(const MathFunction<type> A): a(A) { }
+		type eval() { return sin(a.eval()); }
+		MathFunctionImpl<type>* derive(const MathVar<type> &var);
 		
 		/**
 		* Вернуть в виде строки
 		*/
 		std::string toString() {
-			return "sin(x)";
+			return "sin(" + a.toString() + ")";
 		}
 	};
 	
+	/**
+	* Производная sin(x)
+	*/
 	template <class type>
-	MathFunctionImpl<type>* MathSin<type>::derive()
+	MathFunctionImpl<type>* MathSin<type>::derive(const MathVar<type> &var)
 	{
-		return new MathCos<type>();
+		return new MathMult<type>(new MathCos<type>(a), a.derive(var));
 	}
 	
+	/**
+	* Производная cos(x)
+	*/
 	template <class type>
-	MathFunctionImpl<type>* MathCos<type>::derive()
+	MathFunctionImpl<type>* MathCos<type>::derive(const MathVar<type> &var)
 	{
-		return new MathNeg<type>(new MathSin<type>());
+		return new MathNeg<type>(
+			new MathMult<type>(new MathSin<type>(a), a.derive(var))
+		);
 	}
 	
 	/**
@@ -300,17 +373,17 @@ namespace nanosoft
 	/**
 	* Функция sin(x)
 	*/
-	template <class type> MathFunction<type> sin()
+	template <class type> MathFunction<type> sin(MathFunction<type> x)
 	{
-		return new MathSin<type>();
+		return new MathSin<type>(x);
 	}
 	
 	/**
 	* Функция cos(x)
 	*/
-	template <class type> MathFunction<type> cos()
+	template <class type> MathFunction<type> cos(MathFunction<type> x)
 	{
-		return new MathCos<type>();
+		return new MathCos<type>(x);
 	}
 }
 
