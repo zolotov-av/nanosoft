@@ -304,6 +304,27 @@ namespace nanosoft
 	};
 	
 	/**
+	* Функция F(x,y) = x - y
+	*/
+	class MathSub: public MathFunctionImpl
+	{
+	private:
+		MathFunction a;
+		MathFunction b;
+	public:
+		MathSub(const MathFunction &A, const MathFunction &B): a(A), b(B) { }
+		double eval() { return a.eval() - b.eval(); }
+		MathFunction derive(const MathVar &var) { return a.derive(var) - b.derive(var); }
+		
+		/**
+		* Вернуть в виде строки
+		*/
+		std::string toString() {
+			return a.toString() + " - " + b.toString();
+		}
+	};
+	
+	/**
 	* Функция F(x,y) = x * y
 	*/
 	class MathMult: public MathFunctionImpl
@@ -429,6 +450,30 @@ namespace nanosoft
 	MathFunction operator + (double a, const MathFunction &b)
 	{
 		return new MathSum(a, b);
+	}
+	
+	/**
+	* Разность функций
+	*/
+	MathFunction operator - (const MathFunction &a, const MathFunction &b)
+	{
+		return new MathSub(a, b);
+	}
+	
+	/**
+	* Сумма функции и константы
+	*/
+	MathFunction operator - (const MathFunction &a, double b)
+	{
+		return new MathSub(a, b);
+	}
+	
+	/**
+	* Сумма функции и константы
+	*/
+	MathFunction operator - (double a, const MathFunction &b)
+	{
+		return new MathSub(a, b);
 	}
 	
 	/**

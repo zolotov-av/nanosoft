@@ -182,6 +182,21 @@ namespace nanosoft
 	MathFunction operator + (double a, const MathFunction &b);
 	
 	/**
+	* Разность функций
+	*/
+	MathFunction operator - (const MathFunction &a, const MathFunction &b);
+	
+	/**
+	* Сумма функции и константы
+	*/
+	MathFunction operator - (const MathFunction &a, double b);
+	
+	/**
+	* Сумма функции и константы
+	*/
+	MathFunction operator - (double a, const MathFunction &b);
+	
+	/**
 	* Произведение функций
 	*/
 	MathFunction operator * (const MathFunction &a, const MathFunction &b);
