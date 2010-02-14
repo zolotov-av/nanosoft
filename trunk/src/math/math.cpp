@@ -8,6 +8,163 @@
 namespace nanosoft
 {
 	/**
+	* Функция-константа
+	*/
+	class MathConst: public MathFunctionImpl
+	{
+	private:
+		/**
+		* Значение константы
+		*/
+		double c;
+	public:
+		/**
+		* Конструктор
+		*/
+		MathConst(double value): c(value) { }
+		
+		/**
+		* Вычисление функции
+		*/
+		double eval() { return c; }
+		
+		/**
+		* Вернуть производную функции
+		*/
+		MathFunction derive(const MathVar &var) { return new MathConst(0); }
+		
+		/**
+		* Вернуть в виде строки
+		*/
+		std::string toString() {
+			char buf[80];
+			int len = sprintf(buf, "%f", c);
+			return std::string(buf, len);
+		}
+	};
+	
+	/**
+	* Класс переменной
+	*/
+	class MathVarImpl: public MathFunctionImpl
+	{
+	private:
+		/**
+		* Имя переменной
+		*/
+		const char *name;
+		
+		/**
+		* Значение переменной
+		*/
+		double value;
+	public:
+		/**
+		* Конструктор переменной
+		*/
+		MathVarImpl(const char *n, double v);
+		
+		/**
+		* Деструктор переменной
+		*/
+		~MathVarImpl();
+		
+		/**
+		* Вернуть название переменной
+		*/
+		const char *getName();
+		
+		/**
+		* Вернуть значение переменной
+		*/
+		double getValue();
+		
+		/**
+		* Установить значение переменной
+		*/
+		void setValue(double v);
+		
+		/**
+		* Вычислить значение переменной
+		*/
+		double eval();
+		
+		/**
+		* Вернуть производную
+		*/
+		MathFunction derive(const MathVar &var);
+		
+		/**
+		* Вернуть в виде строки
+		*/
+		std::string toString();
+	};
+	
+	/**
+	* Конструктор переменной
+	*/
+	MathVarImpl::MathVarImpl(const char *n, double v)
+	{
+		name = n;
+		value = v;
+	}
+	
+	/**
+	* Деструктор переменной
+	*/
+	MathVarImpl::~MathVarImpl()
+	{
+	}
+	
+	/**
+	* Вернуть название переменной
+	*/
+	const char * MathVarImpl::getName()
+	{
+		return name;
+	}
+	
+	/**
+	* Вернуть значение переменной
+	*/
+	double MathVarImpl::getValue()
+	{
+		return value;
+	}
+	
+	/**
+	* Установить значение переменной
+	*/
+	void MathVarImpl::setValue(double v)
+	{
+		value = v;
+	}
+	
+	/**
+	* Вычислить значение переменной
+	*/
+	double MathVarImpl::eval()
+	{
+		return value;
+	}
+	
+	/**
+	* Вернуть производную
+	*/
+	MathFunction MathVarImpl::derive(const MathVar &var)
+	{
+		return new MathConst(var == this ? 1 : 0);
+	}
+	
+	/**
+	* Вернуть в виде строки
+	*/
+	std::string MathVarImpl::toString()
+	{
+		return name;
+	}
+	
+	/**
 	* Конструктор по умолчанию
 	*/
 	MathFunctionImpl::MathFunctionImpl()
@@ -40,63 +197,53 @@ namespace nanosoft
 	}
 	
 	/**
-	* Функция-константа
+	* Конструктор
 	*/
-	class MathConst: public MathFunctionImpl
+	MathVar::MathVar()
 	{
-	private:
-		/**
-		* Значение константы
-		*/
-		double c;
-	public:
-		/**
-		* Конструктор
-		*/
-		MathConst(double value): c(value) { }
-		
-		/**
-		* Вычисление функции
-		*/
-		double eval() { return c; }
-		
-		/**
-		* Вернуть производную функции
-		*/
-		MathFunctionImpl* derive(const MathVar &var) { return new MathConst(0); }
-		
-		/**
-		* Вернуть в виде строки
-		*/
-		std::string toString() {
-			char buf[80];
-			int len = sprintf(buf, "%f", c);
-			return std::string(buf, len);
-		}
-	};
+		var = 0;
+	}
 	
 	/**
-	* Конструктор переменной
+	* Конструктор
 	*/
-	MathVar::MathVar(const char *n)
+	MathVar::MathVar(const char *name, double value)
 	{
-		name = n;
+		var = new MathVarImpl(name, value);
+		var->lock();
+	}
+	
+	/**
+	* Конструктор копий
+	*/
+	MathVar::MathVar(const MathVar &v)
+	{
+		var = v.var;
+		var->lock();
+	}
+	
+	/**
+	* Деструктор
+	*/
+	MathVar::~MathVar()
+	{
+		if ( var ) var->release();
 	}
 	
 	/**
 	* Вернуть название переменной
 	*/
-	const char * MathVar::getName()
+	const char * MathVar::getName() const
 	{
-		return name;
+		return var->getName();
 	}
 	
 	/**
 	* Вернуть значение переменной
 	*/
-	double MathVar::getValue()
+	double MathVar::getValue() const
 	{
-		return value;
+		return var->getValue();
 	}
 	
 	/**
@@ -104,31 +251,15 @@ namespace nanosoft
 	*/
 	void MathVar::setValue(double v)
 	{
-		value = v;
+		var->setValue(v);
 	}
 	
 	/**
-	* Вычислить значение переменной
+	* Вернуть функцию f(x) = x
 	*/
-	double MathVar::eval()
+	MathVar::operator MathFunction ()
 	{
-		return value;
-	}
-	
-	/**
-	* Вернуть производную
-	*/
-	MathFunctionImpl* MathVar::derive(const MathVar &var)
-	{
-		return new MathConst(&var == this ? 1 : 0);
-	}
-	
-	/**
-	* Вернуть в виде строки
-	*/
-	std::string MathVar::toString()
-	{
-		return name;
+		return MathFunction(var);
 	}
 	
 	/**
@@ -141,7 +272,7 @@ namespace nanosoft
 	public:
 		MathNeg(MathFunction A): a(A) { }
 		double eval() { return - a.eval(); }
-		MathFunctionImpl* derive(const MathVar &var) { return new MathNeg(a.derive(var)); }
+		MathFunction derive(const MathVar &var) { return new MathNeg(a.derive(var)); }
 		
 		/**
 		* Вернуть в виде строки
@@ -160,11 +291,9 @@ namespace nanosoft
 		MathFunction a;
 		MathFunction b;
 	public:
-		MathSum(const MathFunction A, const MathFunction B): a(A), b(B) { }
+		MathSum(const MathFunction &A, const MathFunction &B): a(A), b(B) { }
 		double eval() { return a.eval() + b.eval(); }
-		MathFunctionImpl* derive(const MathVar &var) {
-			return new MathSum(a.derive(var), b.derive(var));
-		}
+		MathFunction derive(const MathVar &var) { return a.derive(var) + b.derive(var); }
 		
 		/**
 		* Вернуть в виде строки
@@ -183,14 +312,9 @@ namespace nanosoft
 		MathFunction a;
 		MathFunction b;
 	public:
-		MathMult(const MathFunction A, const MathFunction B): a(A), b(B) { }
+		MathMult(const MathFunction &A, const MathFunction &B): a(A), b(B) { }
 		double eval() { return a.eval() * b.eval(); }
-		MathFunctionImpl* derive(const MathVar &var) {
-			return new MathSum(
-				new MathMult(a.derive(var), b),
-				new MathMult(a, b.derive(var))
-			);
-		}
+		MathFunction derive(const MathVar &var) { return a.derive(var) * b + a * b.derive(var); }
 		
 		/**
 		* Вернуть в виде строки
@@ -208,9 +332,9 @@ namespace nanosoft
 	private:
 		MathFunction a;
 	public:
-		MathCos(const MathFunction A): a(A) { }
+		MathCos(const MathFunction &A): a(A) { }
 		double eval() { return ::cos(a.eval()); }
-		MathFunctionImpl* derive(const MathVar &var);
+		MathFunction derive(const MathVar &var) { return - sin(a) * a.derive(var); }
 		
 		/**
 		* Вернуть в виде строки
@@ -228,9 +352,9 @@ namespace nanosoft
 	private:
 		MathFunction a;
 	public:
-		MathSin(const MathFunction A): a(A) { }
+		MathSin(const MathFunction &A): a(A) { }
 		double eval() { return ::sin(a.eval()); }
-		MathFunctionImpl* derive(const MathVar &var);
+		MathFunction derive(const MathVar &var) { return cos(a) * a.derive(var); }
 		
 		/**
 		* Вернуть в виде строки
@@ -239,24 +363,6 @@ namespace nanosoft
 			return "sin(" + a.toString() + ")";
 		}
 	};
-	
-	/**
-	* Производная sin(x)
-	*/
-	MathFunctionImpl* MathSin::derive(const MathVar &var)
-	{
-		return new MathMult(new MathCos(a), a.derive(var));
-	}
-	
-	/**
-	* Производная cos(x)
-	*/
-	MathFunctionImpl* MathCos::derive(const MathVar &var)
-	{
-		return new MathNeg(
-			new MathMult(new MathSin(a), a.derive(var))
-		);
-	}
 	
 	/**
 	* Конструктор константной функции
@@ -268,9 +374,43 @@ namespace nanosoft
 	}
 	
 	/**
+	* Конструктор функции
+	*/
+	MathFunction::MathFunction(MathFunctionImpl *impl)
+	{
+		func = impl;
+		if ( func ) func->lock();
+	}
+	
+	/**
+	* Конструктор копии
+	*/
+	MathFunction::MathFunction(const MathFunction &f)
+	{
+		func = f.func;
+		if ( func ) func->lock();
+	}
+	
+	/**
+	* Деструктор функции
+	*/
+	MathFunction::~MathFunction()
+	{
+		if ( func ) func->release();
+	}
+	
+	/**
+	* Унарный оператор вычитания
+	*/
+	MathFunction operator - (const MathFunction &a)
+	{
+		return new MathNeg(a);
+	}
+	
+	/**
 	* Сумма функций
 	*/
-	MathFunction operator + (MathFunction a, MathFunction b)
+	MathFunction operator + (const MathFunction &a, const MathFunction &b)
 	{
 		return new MathSum(a, b);
 	}
@@ -278,23 +418,23 @@ namespace nanosoft
 	/**
 	* Сумма функции и константы
 	*/
-	MathFunction operator + (MathFunction a, double b)
+	MathFunction operator + (const MathFunction &a, double b)
 	{
-		return new MathSum(a, MathFunction(b));
+		return new MathSum(a, b);
 	}
 	
 	/**
 	* Сумма функции и константы
 	*/
-	MathFunction operator + (double a, MathFunction b)
+	MathFunction operator + (double a, const MathFunction &b)
 	{
-		return new MathSum(MathFunction(a), b);
+		return new MathSum(a, b);
 	}
 	
 	/**
 	* Произведение функций
 	*/
-	MathFunction operator * (MathFunction a, MathFunction b)
+	MathFunction operator * (const MathFunction &a, const MathFunction &b)
 	{
 		return new MathMult(a, b);
 	}
@@ -302,23 +442,23 @@ namespace nanosoft
 	/**
 	* Произведение функции и константы
 	*/
-	MathFunction operator * (MathFunction a, double b)
+	MathFunction operator * (const MathFunction &a, double b)
 	{
-		return new MathMult(a, MathFunction(b));
+		return new MathMult(a, b);
 	}
 	
 	/**
 	* Произведение функции и константы
 	*/
-	MathFunction operator * (double a, MathFunction b)
+	MathFunction operator * (double a, const MathFunction &b)
 	{
-		return new MathMult(MathFunction(a), b);
+		return new MathMult(a, b);
 	}
 	
 	/**
 	* Функция sin(x)
 	*/
-	MathFunction sin(MathFunction x)
+	MathFunction sin(const MathFunction &x)
 	{
 		return new MathSin(x);
 	}
@@ -326,7 +466,7 @@ namespace nanosoft
 	/**
 	* Функция cos(x)
 	*/
-	MathFunction cos(MathFunction x)
+	MathFunction cos(const MathFunction &x)
 	{
 		return new MathCos(x);
 	}

@@ -7,10 +7,13 @@
 
 namespace nanosoft
 {
-	class MathVar;
-	
 	/**
 	* Абстрактный класс реализации метематической функции
+	*
+	* Внутренняя структура для объявления пользовательских функций.
+	*
+	* Для непосредственных вычислений используйте классы
+	* MathFunction, MathVar и функции sin(), cos() и т.п.
 	*/
 	class MathFunctionImpl
 	{
@@ -19,6 +22,7 @@ namespace nanosoft
 		* Счетчик ссылок
 		*/
 		int ref_count;
+		std::string id;
 	public:
 		/**
 		* Конструктор по умолчанию
@@ -39,7 +43,7 @@ namespace nanosoft
 		* Вернуть производную функции
 		* @param var переменная по которой производиться дифференцирование
 		*/
-		virtual MathFunctionImpl* derive(const MathVar &var) = 0;
+		virtual class MathFunction derive(const class MathVar &var) = 0;
 		
 		/**
 		* Вернуть в виде строки
@@ -58,7 +62,59 @@ namespace nanosoft
 	};
 	
 	/**
-	* Класс математичекой функции
+	* Класс-контейнер для переменной математичекой функции
+	*/
+	class MathVar
+	{
+	private:
+		class MathVarImpl *var;
+	public:
+		MathVar();
+		MathVar(const char *name, double value = 0.0);
+		MathVar(const MathVar &v);
+		~MathVar();
+		
+		/**
+		* Вернуть название переменной
+		*/
+		const char *getName() const;
+		
+		/**
+		* Вернуть значение переменной
+		*/
+		double getValue() const;
+		
+		/**
+		* Установить значение переменной
+		*/
+		void setValue(double v);
+		
+		/**
+		* Сравнение переменных
+		* Внимание, сравнивается не значение, а "имя" переменной
+		*/
+		bool operator == (const MathVar v) const { return var == v.var; }
+		
+		/**
+		* Сравнение переменных
+		* Внимание, сравнивается не значение, а "имя" переменной
+		*/
+		bool operator == (const MathVarImpl *v) const { return var == v; }
+		
+		/**
+		* Сравнение переменных
+		* Внимание, сравнивается не значение, а "имя" переменной
+		*/
+		bool operator != (const MathVar v) const { return var != v.var; }
+		
+		/**
+		* Вернуть функцию f(x) = x
+		*/
+		operator class MathFunction ();
+	};
+	
+	/**
+	* Класс-контейнер для математичекой функции
 	*/
 	class MathFunction
 	{
@@ -76,7 +132,17 @@ namespace nanosoft
 		/**
 		* Конструктор функции
 		*/
-		MathFunction(MathFunctionImpl *impl) { func = impl; }
+		MathFunction(MathFunctionImpl *impl);
+		
+		/**
+		* Конструктор копии
+		*/
+		MathFunction(const MathFunction &f);
+		
+		/**
+		* Деструктор функции
+		*/
+		~MathFunction();
 		
 		/**
 		* Вычислить функцию
@@ -96,96 +162,49 @@ namespace nanosoft
 	};
 	
 	/**
-	* Класс переменной
+	* Унарный оператор вычитания
 	*/
-	class MathVar: public MathFunctionImpl
-	{
-	private:
-		/**
-		* Имя переменной
-		*/
-		const char *name;
-		
-		/**
-		* Значение переменной
-		*/
-		double value;
-	public:
-		/**
-		* Конструктор переменной
-		*/
-		MathVar(const char *n);
-		
-		/**
-		* Вернуть название переменной
-		*/
-		const char *getName();
-		
-		/**
-		* Вернуть значение переменной
-		*/
-		double getValue();
-		
-		/**
-		* Установить значение переменной
-		*/
-		void setValue(double v);
-		
-		/**
-		* Вычислить значение переменной
-		*/
-		double eval();
-		
-		/**
-		* Вернуть производную
-		*/
-		MathFunctionImpl* derive(const MathVar &var);
-		
-		/**
-		* Вернуть в виде строки
-		*/
-		std::string toString();
-	};
+	MathFunction operator - (const MathFunction &a);
 	
 	/**
 	* Сумма функций
 	*/
-	MathFunction operator + (MathFunction a, MathFunction b);
+	MathFunction operator + (const MathFunction &a, const MathFunction &b);
 	
 	/**
 	* Сумма функции и константы
 	*/
-	MathFunction operator + (MathFunction a, double b);
+	MathFunction operator + (const MathFunction &a, double b);
 	
 	/**
 	* Сумма функции и константы
 	*/
-	MathFunction operator + (double a, MathFunction b);
+	MathFunction operator + (double a, const MathFunction &b);
 	
 	/**
 	* Произведение функций
 	*/
-	MathFunction operator * (MathFunction a, MathFunction b);
+	MathFunction operator * (const MathFunction &a, const MathFunction &b);
 	
 	/**
 	* Произведение функции и константы
 	*/
-	MathFunction operator * (MathFunction a, double b);
+	MathFunction operator * (const MathFunction &a, double b);
 	
 	/**
 	* Произведение функции и константы
 	*/
-	MathFunction operator * (double a, MathFunction b);
+	MathFunction operator * (double a, const MathFunction &b);
 	
 	/**
 	* Функция sin(x)
 	*/
-	MathFunction sin(MathFunction x);
+	MathFunction sin(const MathFunction &x);
 	
 	/**
 	* Функция cos(x)
 	*/
-	MathFunction cos(MathFunction x);
+	MathFunction cos(const MathFunction &x);
 }
 
 #endif // NANOSOFT_MATH_H
