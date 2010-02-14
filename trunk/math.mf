@@ -1,5 +1,5 @@
 
-#NANOSOFT_MATH=mparser.o
+NANOSOFT_MATH=math.o
 #NANOSOFT_MATH+=asyncobject.o
 #NANOSOFT_MATH+=asyncstream.o
 #NANOSOFT_MATH+=asyncserver.o
@@ -7,11 +7,11 @@
 #NANOSOFT_MATH+=asyncdns.o
 
 install-math-headers:
-	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/mparser.h $(INCLUDEDIR)/nanosoft/mparser.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/math.h $(INCLUDEDIR)/nanosoft/math.h
 
-#libns_math.a: $(NANOSOFT_MATH)
-#	$(AR) rc libns_math.a $(NANOSOFT_MATH)
-#	$(RANLIB) libns_math.a
+libns_math.a: $(NANOSOFT_MATH)
+	$(AR) rc libns_math.a $(NANOSOFT_MATH)
+	$(RANLIB) libns_math.a
 
-#mparser.o: $(ns_srcdir)/math/mparser.cpp $(ns_srcinc)/nanosoft/mparser.h
-#	$(CXX) -c $(ns_srcdir)/math/mparser.cpp
+math.o: $(ns_srcdir)/math/math.cpp $(ns_srcinc)/nanosoft/math.h
+	$(CXX) -c $(ns_srcdir)/math/math.cpp

@@ -151,8 +151,8 @@ mysql: $(ns_srcexm)/mysql.cpp libnanosoft.a
 daemon: $(ns_srcexm)/daemon.cpp libnanosoft.a
 	$(CXX) $(ns_srcexm)/daemon.cpp -o daemon -lpthread -lnanosoft -lexpat
 
-mparser: $(ns_srcexm)/mparser.cpp $(ns_srcinc)/nanosoft/mparser.h
-	$(CXX) $(ns_srcexm)/mparser.cpp -o mparser
+mparser: $(ns_srcexm)/mparser.cpp $(ns_srcinc)/nanosoft/math.h libns_math.a
+	$(CXX) $(ns_srcexm)/mparser.cpp -o mparser -lns_math
 
 include $(root)/core.mf
 include $(root)/xml.mf
