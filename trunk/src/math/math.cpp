@@ -294,6 +294,12 @@ namespace nanosoft
 		std::string getType() { return "neg"; }
 		double eval() { return - a.eval(); }
 		MathFunction derive(const MathVar &var) { return new MathNeg(a.derive(var)); }
+		MathFunction optimize() {
+			MathFunction x = a.optimize();
+			if ( a.getType() == "const" ) return -a.eval();
+			MathNeg *xn = x.cast<MathNeg>();
+			return xn ? xn->a : (-x);
+		}
 		
 		/**
 		* Вернуть в виде строки
