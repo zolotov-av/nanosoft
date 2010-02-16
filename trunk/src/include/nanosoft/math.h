@@ -35,6 +35,11 @@ namespace nanosoft
 		virtual ~MathFunctionImpl();
 		
 		/**
+		* Вернуть тип функции
+		*/
+		virtual std::string getType() = 0;
+		
+		/**
 		* Вычисление значения функции
 		*/
 		virtual double eval() = 0;
@@ -44,6 +49,11 @@ namespace nanosoft
 		* @param var переменная по которой производиться дифференцирование
 		*/
 		virtual class MathFunction derive(const class MathVar &var) = 0;
+		
+		/**
+		* Вернуть оптимизированную функцию
+		*/
+		virtual class MathFunction optimize();
 		
 		/**
 		* Вернуть в виде строки
@@ -145,6 +155,11 @@ namespace nanosoft
 		~MathFunction();
 		
 		/**
+		* Вернуть тип функции
+		*/
+		std::string getType() { return func->getType(); }
+		
+		/**
 		* Вычислить функцию
 		*/
 		double eval() { return func->eval(); }
@@ -156,9 +171,17 @@ namespace nanosoft
 		MathFunction derive(const MathVar &var) { return func->derive(var); }
 		
 		/**
+		* Вернуть оптимизированную функцию
+		*/
+		MathFunction optimize() { return func->optimize(); }
+		
+		/**
 		* Вернуть функцию в виде строки
 		*/
 		std::string toString() { return func->toString(); }
+		
+		template <class type>
+		type* cast() { return dynamic_cast<type*>(func); }
 	};
 	
 	/**

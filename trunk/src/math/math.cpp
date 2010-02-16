@@ -4,6 +4,7 @@
 
 #include <string>
 #include <stdio.h>
+#include <iostream>
 
 namespace nanosoft
 {
@@ -22,6 +23,11 @@ namespace nanosoft
 		* Конструктор
 		*/
 		MathConst(double value): c(value) { }
+		
+		/**
+		* Вернуть тип функции
+		*/
+		std::string getType() { return "const"; }
 		
 		/**
 		* Вычисление функции
@@ -68,6 +74,11 @@ namespace nanosoft
 		* Деструктор переменной
 		*/
 		~MathVarImpl();
+		
+		/**
+		* Вернуть тип функции
+		*/
+		std::string getType() { return "var"; }
 		
 		/**
 		* Вернуть название переменной
@@ -180,6 +191,15 @@ namespace nanosoft
 	}
 	
 	/**
+	* Вернуть оптимизированную функцию
+	*/
+	MathFunction MathFunctionImpl::optimize()
+	{
+		// default optimization: no optimization
+		return this;
+	}
+	
+	/**
 	* Увеличить счетчик ссылок
 	*/
 	void MathFunctionImpl::lock()
@@ -271,6 +291,7 @@ namespace nanosoft
 		MathFunction a;
 	public:
 		MathNeg(MathFunction A): a(A) { }
+		std::string getType() { return "neg"; }
 		double eval() { return - a.eval(); }
 		MathFunction derive(const MathVar &var) { return new MathNeg(a.derive(var)); }
 		
@@ -292,8 +313,38 @@ namespace nanosoft
 		MathFunction b;
 	public:
 		MathSum(const MathFunction &A, const MathFunction &B): a(A), b(B) { }
+		std::string getType() { return "sum"; }
 		double eval() { return a.eval() + b.eval(); }
 		MathFunction derive(const MathVar &var) { return a.derive(var) + b.derive(var); }
+		MathFunction optimize() {
+			MathFunction x = a.optimize();
+			MathFunction y = b.optimize();
+			std::cout << "x.getType() = " << x.getType() << ", y.getType() = " << y.getType() << std::endl;
+			if ( x.getType() == "const" )
+			{
+				if ( y.getType() == "const" ) return x.eval() + y.eval();
+				MathSum *ys = y.cast<MathSum>();
+				if ( ys && ys->b.getType() == "const" )
+				{
+					double c = x.eval() + ys->b.eval();
+					return c == 0.0 ? ys->a : (ys->a + c);
+				}
+				if ( x.eval() == 0.0 ) return y;
+				return y + x;
+			}
+			if ( y.getType() == "const" )
+			{
+				MathSum *xs = x.cast<MathSum>();
+				if ( xs && xs->b.getType() == "const" )
+				{
+					double c = y.eval() + xs->b.eval();
+					return c == 0.0 ? xs->a : (xs->a + c);
+				}
+				if ( y.eval() == 0.0 ) return x;
+				return x + y;
+			}
+			return y + x;
+		}
 		
 		/**
 		* Вернуть в виде строки
@@ -313,6 +364,7 @@ namespace nanosoft
 		MathFunction b;
 	public:
 		MathSub(const MathFunction &A, const MathFunction &B): a(A), b(B) { }
+		std::string getType() { return "sub"; }
 		double eval() { return a.eval() - b.eval(); }
 		MathFunction derive(const MathVar &var) { return a.derive(var) - b.derive(var); }
 		
@@ -334,6 +386,7 @@ namespace nanosoft
 		MathFunction b;
 	public:
 		MathMult(const MathFunction &A, const MathFunction &B): a(A), b(B) { }
+		std::string getType() { return "mult"; }
 		double eval() { return a.eval() * b.eval(); }
 		MathFunction derive(const MathVar &var) { return a.derive(var) * b + a * b.derive(var); }
 		
@@ -354,6 +407,7 @@ namespace nanosoft
 		MathFunction a;
 	public:
 		MathCos(const MathFunction &A): a(A) { }
+		std::string getType() { return "cos"; }
 		double eval() { return ::cos(a.eval()); }
 		MathFunction derive(const MathVar &var) { return - sin(a) * a.derive(var); }
 		
@@ -374,6 +428,7 @@ namespace nanosoft
 		MathFunction a;
 	public:
 		MathSin(const MathFunction &A): a(A) { }
+		std::string getType() { return "sin"; }
 		double eval() { return ::sin(a.eval()); }
 		MathFunction derive(const MathVar &var) { return cos(a) * a.derive(var); }
 		
