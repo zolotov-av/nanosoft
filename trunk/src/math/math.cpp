@@ -4,7 +4,6 @@
 
 #include <string>
 #include <stdio.h>
-#include <iostream>
 
 namespace nanosoft
 {
@@ -324,7 +323,6 @@ namespace nanosoft
 		MathFunction optimize() {
 			MathFunction x = a.optimize();
 			MathFunction y = b.optimize();
-			std::cout << "x.getType() = " << x.getType() << ", y.getType() = " << y.getType() << std::endl;
 			if ( x.getType() == "const" )
 			{
 				if ( x.eval() == 0.0 ) return y;

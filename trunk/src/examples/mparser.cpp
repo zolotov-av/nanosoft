@@ -24,7 +24,7 @@ int main()
 	printf("g(x,y) = %s\n", g.toString().c_str());
 	
 	// t(x,y) = f'y(x,y)
-	MathFunction t = (f.derive(x) + f.derive(y)).optimize();
+	MathFunction t = (f.derive(y)).optimize();
 	printf("t(x,y) = %s\n\n", t.toString().c_str());
 	
 	x.setValue(1);
