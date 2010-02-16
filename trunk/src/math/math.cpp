@@ -287,9 +287,8 @@ namespace nanosoft
 	*/
 	class MathNeg: public MathFunctionImpl
 	{
-	private:
-		MathFunction a;
 	public:
+		MathFunction a;
 		MathNeg(MathFunction A): a(A) { }
 		std::string getType() { return "neg"; }
 		double eval() { return - a.eval(); }
@@ -328,6 +327,7 @@ namespace nanosoft
 			std::cout << "x.getType() = " << x.getType() << ", y.getType() = " << y.getType() << std::endl;
 			if ( x.getType() == "const" )
 			{
+				if ( x.eval() == 0.0 ) return y;
 				if ( y.getType() == "const" ) return x.eval() + y.eval();
 				MathSum *ys = y.cast<MathSum>();
 				if ( ys && ys->b.getType() == "const" )
@@ -335,8 +335,8 @@ namespace nanosoft
 					double c = x.eval() + ys->b.eval();
 					return c == 0.0 ? ys->a : (ys->a + c);
 				}
-				if ( x.eval() == 0.0 ) return y;
-				return y + x;
+				MathNeg *yn = y.cast<MathNeg>();
+				return yn ? (x - yn->a) : (y + x);
 			}
 			if ( y.getType() == "const" )
 			{
