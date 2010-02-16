@@ -349,7 +349,17 @@ namespace nanosoft
 				if ( y.eval() == 0.0 ) return x;
 				return x + y;
 			}
-			return y + x;
+			
+			MathNeg *xn = x.cast<MathNeg>();
+			MathNeg *yn = y.cast<MathNeg>();
+			if ( xn )
+			{
+				if ( yn ) return -(xn->a + yn->a);
+				return y - xn->a;
+			}
+			if ( yn ) return x - yn->a;
+			
+			return x + y;
 		}
 		
 		/**
