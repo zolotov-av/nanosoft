@@ -395,6 +395,60 @@ namespace nanosoft
 		std::string getType() { return "mult"; }
 		double eval() { return a.eval() * b.eval(); }
 		MathFunction derive(const MathVar &var) { return a.derive(var) * b + a * b.derive(var); }
+		MathFunction optimize() {
+			MathFunction x = a.optimize();
+			MathFunction y = b.optimize();
+			if ( x.getType() == "const" )
+			{
+				if ( x.eval() == 0.0 ) return 0.0;
+				if ( x.eval() == 1.0 ) return y;
+				if ( y.getType() == "const" ) return x.eval() * y.eval();
+				
+				MathMult *ym = y.cast<MathMult>();
+				if ( ym && ym->b.getType() == "const" )
+				{
+					double c = x.eval() * ym->b.eval();
+					if ( c == 0.0 ) return 0.0;
+					if ( c == 1.0 ) return ym->a;
+					return ym->a * c;
+				}
+				
+				MathNeg *yn = y.cast<MathNeg>();
+				if ( yn ) return yn->a * (-x.eval());
+				
+				return y * x;
+			}
+			if ( y.getType() == "const" )
+			{
+				if ( y.eval() == 0.0 ) return 0.0;
+				if ( y.eval() == 1.0 ) return x;
+				
+				MathMult *xm = x.cast<MathMult>();
+				if ( xm && xm->b.getType() == "const" )
+				{
+					double c = y.eval() * xm->b.eval();
+					if ( c == 0.0 ) return 0.0;
+					if ( c == 1.0 ) return xm->a;
+					return xm->a * c;
+				}
+				
+				MathNeg *xn = x.cast<MathNeg>();
+				if ( xn ) return xn->a * (-y.eval());
+				
+				return x * y;
+			}
+			
+			MathNeg *xn = x.cast<MathNeg>();
+			MathNeg *yn = y.cast<MathNeg>();
+			if ( xn )
+			{
+				if ( yn ) return xn->a * yn->a;
+				return - (xn->a * y);
+			}
+			if ( yn ) return - (x * yn->a);
+			
+			return x * y;
+		}
 		
 		/**
 		* Вернуть в виде строки

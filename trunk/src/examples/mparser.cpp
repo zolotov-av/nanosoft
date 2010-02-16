@@ -20,11 +20,11 @@ int main()
 	printf("f(x,y) = %s\n", f.toString().c_str());
 	
 	// g(x,y) = f'x(x,y)
-	MathFunction g = f.derive(x);
+	MathFunction g = f.derive(x).optimize();
 	printf("g(x,y) = %s\n", g.toString().c_str());
 	
 	// t(x,y) = f'y(x,y)
-	MathFunction t = f.derive(y);
+	MathFunction t = (f.derive(x) + f.derive(y)).optimize();
 	printf("t(x,y) = %s\n\n", t.toString().c_str());
 	
 	x.setValue(1);
