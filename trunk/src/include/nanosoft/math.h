@@ -250,6 +250,11 @@ namespace nanosoft
 	* Функция cos(x)
 	*/
 	MathFunction cos(const MathFunction &x);
+	
+	/**
+	* Функция exp(x)
+	*/
+	MathFunction exp(const MathFunction &x);
 }
 
 #endif // NANOSOFT_MATH_H

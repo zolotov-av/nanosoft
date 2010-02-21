@@ -557,6 +557,76 @@ namespace nanosoft
 	};
 	
 	/**
+	* Функция F(x) = exp(x)
+	*/
+	class MathExp: public MathFunctionImpl
+	{
+	private:
+		MathFunction a;
+	public:
+		MathExp(const MathFunction &A): a(A) { }
+		std::string getType() { return "exp"; }
+		double eval() { return ::exp(a.eval()); }
+		MathFunction derive(const MathVar &var) { return exp(a) * a.derive(var); }
+		MathFunction optimize() { return exp(a.optimize()); }
+		
+		/**
+		* Вернуть в виде строки
+		*/
+		std::string toString() {
+			return "exp(" + a.toString() + ")";
+		}
+	};
+#if 0
+	/**
+	* Функция F(x) = ln(x) (натуральный логарифм)
+	*/
+	class MathLn: public MathFunctionImpl
+	{
+	private:
+		MathFunction a;
+	public:
+		MathExp(const MathFunction &A): a(A) { }
+		std::string getType() { return "ln"; }
+		double eval() { return ::ln(a.eval()); }
+		MathFunction derive(const MathVar &var) { return a.derive(var) / a; }
+		MathFunction optimize() { return exp(a.optimize()); }
+		
+		/**
+		* Вернуть в виде строки
+		*/
+		std::string toString() {
+			return "exp(" + a.toString() + ")";
+		}
+	};
+	
+	/**
+	* Функция F(x,y) = x^y
+	*/
+	class MathPow: public MathFunctionImpl
+	{
+	private:
+		MathFunction a;
+		MathFunction b;
+	public:
+		MathPow(const MathFunction &A; const MathFunction &B): a(A), b(B) { }
+		std::string getType() { return "pow"; }
+		double eval() { return ::pow(a.eval(), b.eval()); }
+		MathFunction derive(const MathVar &var) {
+			return b * pow(a, b-1) * a.derive(var) + pow(a, b) * ln(a) * b.derive(var);
+		}
+		MathFunction optimize() { return exp(a.optimize()); }
+		
+		/**
+		* Вернуть в виде строки
+		*/
+		std::string toString() {
+			return "exp(" + a.toString() + ")";
+		}
+	};
+#endif
+	
+	/**
 	* Конструктор константной функции
 	*/
 	MathFunction::MathFunction(double c)
@@ -685,5 +755,13 @@ namespace nanosoft
 	MathFunction cos(const MathFunction &x)
 	{
 		return new MathCos(x);
+	}
+	
+	/**
+	* Функция exp(x)
+	*/
+	MathFunction exp(const MathFunction &x)
+	{
+		return new MathExp(x);
 	}
 }
