@@ -503,6 +503,52 @@ namespace nanosoft
 	};
 	
 	/**
+	* Функция F(x,y) = x / y
+	*/
+	class MathDiv: public MathFunctionImpl
+	{
+	private:
+		MathFunction a;
+		MathFunction b;
+	public:
+		MathDiv(const MathFunction &A, const MathFunction &B): a(A), b(B) { }
+		std::string getType() { return "mult"; }
+		double eval() { return a.eval() / b.eval(); }
+		MathFunction derive(const MathVar &var) {
+			// TODO b^2
+			return (a.derive(var) * b - a * b.derive(var)) / (b * b);
+		}
+		MathFunction optimize() {
+			MathFunction x = a.optimize();
+			MathFunction y = b.optimize();
+			
+			if ( x.getType() == "const" )
+			{
+				if ( x.eval() == 0.0 ) return 0.0;
+				if ( y.getType() == "const" ) return x.eval() * y.eval();
+				
+				return x / y;
+			}
+			
+			if ( y.getType() == "const" )
+			{
+				if ( y.eval() == 1.0 ) return x;
+				
+				return x * (1 / y);
+			}
+			
+			return x / y;
+		}
+		
+		/**
+		* Вернуть в виде строки
+		*/
+		std::string toString() {
+			return "(" + a.toString() + ") / (" + b.toString() + ")";
+		}
+	};
+	
+	/**
 	* Функция F(x) = cos(x)
 	*/
 	class MathCos: public MathFunctionImpl
@@ -739,6 +785,30 @@ namespace nanosoft
 	MathFunction operator * (double a, const MathFunction &b)
 	{
 		return new MathMult(a, b);
+	}
+	
+	/**
+	* Деление функций
+	*/
+	MathFunction operator / (const MathFunction &a, const MathFunction &b)
+	{
+		return new MathDiv(a, b);
+	}
+	
+	/**
+	* Деление функции на константу
+	*/
+	MathFunction operator / (const MathFunction &a, double b)
+	{
+		return new MathDiv(a, b);
+	}
+	
+	/**
+	* Деление константы на функцию
+	*/
+	MathFunction operator / (double a, const MathFunction &b)
+	{
+		return new MathDiv(a, b);
 	}
 	
 	/**

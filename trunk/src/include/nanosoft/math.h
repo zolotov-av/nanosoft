@@ -242,6 +242,21 @@ namespace nanosoft
 	MathFunction operator * (double a, const MathFunction &b);
 	
 	/**
+	* Деление функций
+	*/
+	MathFunction operator / (const MathFunction &a, const MathFunction &b);
+	
+	/**
+	* Деление функции на константу
+	*/
+	MathFunction operator / (const MathFunction &a, double b);
+	
+	/**
+	* Деление константы на функцию
+	*/
+	MathFunction operator / (double a, const MathFunction &b);
+	
+	/**
 	* Функция sin(x)
 	*/
 	MathFunction sin(const MathFunction &x);
