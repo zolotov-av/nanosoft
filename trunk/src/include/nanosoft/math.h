@@ -175,13 +175,20 @@ namespace nanosoft
 		*/
 		MathFunction optimize() { return func->optimize(); }
 		
+		void operator = (const MathFunction &a)
+		{
+			if ( func ) func->release();
+			func = a.func;
+			func->lock();
+		}
+		
 		/**
 		* Вернуть функцию в виде строки
 		*/
 		std::string toString() { return func->toString(); }
 		
 		template <class type>
-		type* cast() { return dynamic_cast<type*>(func); }
+		type* cast() const { return dynamic_cast<type*>(func); }
 	};
 	
 	/**

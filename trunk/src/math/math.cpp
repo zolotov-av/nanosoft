@@ -292,12 +292,7 @@ namespace nanosoft
 		std::string getType() { return "neg"; }
 		double eval() { return - a.eval(); }
 		MathFunction derive(const MathVar &var) { return new MathNeg(a.derive(var)); }
-		MathFunction optimize() {
-			MathFunction x = a.optimize();
-			if ( a.getType() == "const" ) return -a.eval();
-			MathNeg *xn = x.cast<MathNeg>();
-			return xn ? xn->a : (-x);
-		}
+		MathFunction optimize();
 		
 		/**
 		* Вернуть в виде строки
@@ -307,15 +302,16 @@ namespace nanosoft
 		}
 	};
 	
+	MathFunction sumopt(const MathFunction &a, const MathFunction &b);
+	
 	/**
 	* Функция F(x,y) = x + y
 	*/
 	class MathSum: public MathFunctionImpl
 	{
-	private:
+	public:
 		MathFunction a;
 		MathFunction b;
-	public:
 		MathSum(const MathFunction &A, const MathFunction &B): a(A), b(B) { }
 		std::string getType() { return "sum"; }
 		double eval() { return a.eval() + b.eval(); }
@@ -323,41 +319,46 @@ namespace nanosoft
 		MathFunction optimize() {
 			MathFunction x = a.optimize();
 			MathFunction y = b.optimize();
+			
+			MathSum *xs = x.cast<MathSum>();
+			MathSum *ys = y.cast<MathSum>();
+			
 			if ( x.getType() == "const" )
 			{
 				if ( x.eval() == 0.0 ) return y;
 				if ( y.getType() == "const" ) return x.eval() + y.eval();
-				MathSum *ys = y.cast<MathSum>();
 				if ( ys && ys->b.getType() == "const" )
 				{
 					double c = x.eval() + ys->b.eval();
 					return c == 0.0 ? ys->a : (ys->a + c);
 				}
-				MathNeg *yn = y.cast<MathNeg>();
-				return yn ? (x - yn->a) : (y + x);
+				return y + x;
 			}
+			
 			if ( y.getType() == "const" )
 			{
-				MathSum *xs = x.cast<MathSum>();
+				if ( y.eval() == 0.0 ) return x;
 				if ( xs && xs->b.getType() == "const" )
 				{
 					double c = y.eval() + xs->b.eval();
 					return c == 0.0 ? xs->a : (xs->a + c);
 				}
-				if ( y.eval() == 0.0 ) return x;
 				return x + y;
 			}
 			
-			MathNeg *xn = x.cast<MathNeg>();
-			MathNeg *yn = y.cast<MathNeg>();
-			if ( xn )
+			if ( xs && xs->b.getType() == "const" )
 			{
-				if ( yn ) return -(xn->a + yn->a);
-				return y - xn->a;
+				if ( ys && ys->b.getType() == "const" )
+					return sumopt(sumopt(xs->a, ys->a), (xs->b.eval() + ys->b.eval()));
+				return sumopt(sumopt(xs->a, y), xs->b.eval());
 			}
-			if ( yn ) return x - yn->a;
 			
-			return x + y;
+			if ( ys && ys->b.getType() == "const" )
+			{
+				return sumopt(sumopt(x, ys->a), ys->b.eval());
+			}
+			
+			return sumopt(x, y);
 		}
 		
 		/**
@@ -373,14 +374,16 @@ namespace nanosoft
 	*/
 	class MathSub: public MathFunctionImpl
 	{
-	private:
+	public:
 		MathFunction a;
 		MathFunction b;
-	public:
 		MathSub(const MathFunction &A, const MathFunction &B): a(A), b(B) { }
 		std::string getType() { return "sub"; }
 		double eval() { return a.eval() - b.eval(); }
 		MathFunction derive(const MathVar &var) { return a.derive(var) - b.derive(var); }
+		MathFunction optimize() {
+			return (a + (-b)).optimize();
+		}
 		
 		/**
 		* Вернуть в виде строки
@@ -389,6 +392,39 @@ namespace nanosoft
 			return a.toString() + " - " + b.toString();
 		}
 	};
+	
+	MathFunction MathNeg::optimize()
+	{
+		MathFunction x = a.optimize();
+		
+		MathConst *c = x.cast<MathConst>();
+		if ( c ) return - c->eval();
+		
+		MathSum *sum = x.cast<MathSum>();
+		if ( sum ) return - sum->a - sum->b;
+		
+		MathSub *sub = x.cast<MathSub>();
+		if ( sub ) return sub->b - sub->a;
+		
+		MathNeg *neg = x.cast<MathNeg>();
+		if ( neg ) return neg->a;
+		
+		return - x;
+	}
+	
+	/**
+	* Оптимизированное суммирование
+	*/
+	MathFunction sumopt(const MathFunction &a, const MathFunction &b)
+	{
+		MathNeg *an = a.cast<MathNeg>();
+		if ( an ) return new MathSub(b, an->a);
+		
+		MathNeg *bn = b.cast<MathNeg>();
+		if ( bn ) return new MathSub(a, bn->a);
+		
+		return new MathSum(a, b);
+	}
 	
 	/**
 	* Функция F(x,y) = x * y
@@ -478,6 +514,12 @@ namespace nanosoft
 		std::string getType() { return "cos"; }
 		double eval() { return ::cos(a.eval()); }
 		MathFunction derive(const MathVar &var) { return - sin(a) * a.derive(var); }
+		MathFunction optimize() {
+			MathFunction x = a.optimize();
+			MathNeg *neg = x.cast<MathNeg>();
+			if ( neg ) return cos(neg->a);
+			return cos(x);
+		}
 		
 		/**
 		* Вернуть в виде строки
@@ -499,6 +541,12 @@ namespace nanosoft
 		std::string getType() { return "sin"; }
 		double eval() { return ::sin(a.eval()); }
 		MathFunction derive(const MathVar &var) { return cos(a) * a.derive(var); }
+		MathFunction optimize() {
+			MathFunction x = a.optimize();
+			MathNeg *neg = x.cast<MathNeg>();
+			if ( neg ) return - sin(neg->a);
+			return sin(x);
+		}
 		
 		/**
 		* Вернуть в виде строки
