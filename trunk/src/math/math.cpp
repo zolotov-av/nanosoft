@@ -623,7 +623,7 @@ namespace nanosoft
 			return "exp(" + a.toString() + ")";
 		}
 	};
-#if 0
+	
 	/**
 	* Функция F(x) = ln(x) (натуральный логарифм)
 	*/
@@ -632,17 +632,17 @@ namespace nanosoft
 	private:
 		MathFunction a;
 	public:
-		MathExp(const MathFunction &A): a(A) { }
+		MathLn(const MathFunction &A): a(A) { }
 		std::string getType() { return "ln"; }
-		double eval() { return ::ln(a.eval()); }
+		double eval() { return ::log(a.eval()); }
 		MathFunction derive(const MathVar &var) { return a.derive(var) / a; }
-		MathFunction optimize() { return exp(a.optimize()); }
+		MathFunction optimize() { return ln(a.optimize()); }
 		
 		/**
 		* Вернуть в виде строки
 		*/
 		std::string toString() {
-			return "exp(" + a.toString() + ")";
+			return "ln(" + a.toString() + ")";
 		}
 	};
 	
@@ -655,22 +655,21 @@ namespace nanosoft
 		MathFunction a;
 		MathFunction b;
 	public:
-		MathPow(const MathFunction &A; const MathFunction &B): a(A), b(B) { }
+		MathPow(const MathFunction &A, const MathFunction &B): a(A), b(B) { }
 		std::string getType() { return "pow"; }
 		double eval() { return ::pow(a.eval(), b.eval()); }
 		MathFunction derive(const MathVar &var) {
 			return b * pow(a, b-1) * a.derive(var) + pow(a, b) * ln(a) * b.derive(var);
 		}
-		MathFunction optimize() { return exp(a.optimize()); }
+		MathFunction optimize() { return pow(a.optimize(), b.optimize()); }
 		
 		/**
 		* Вернуть в виде строки
 		*/
 		std::string toString() {
-			return "exp(" + a.toString() + ")";
+			return "(" + a.toString() + ")^(" + b.toString() + ")";
 		}
 	};
-#endif
 	
 	/**
 	* Конструктор константной функции
@@ -833,5 +832,21 @@ namespace nanosoft
 	MathFunction exp(const MathFunction &x)
 	{
 		return new MathExp(x);
+	}
+	
+	/**
+	* Функция pow(x, y) = x ^ y
+	*/
+	MathFunction pow(const MathFunction &x, const MathFunction &y)
+	{
+		return new MathPow(x, y);
+	}
+	
+	/**
+	* Функция ln(x) (натуальный логарифм)
+	*/
+	MathFunction ln(const MathFunction &x)
+	{
+		return new MathLn(x);
 	}
 }

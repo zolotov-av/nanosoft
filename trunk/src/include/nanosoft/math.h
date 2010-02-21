@@ -270,6 +270,16 @@ namespace nanosoft
 	* Функция exp(x)
 	*/
 	MathFunction exp(const MathFunction &x);
+	
+	/**
+	* Функция ln(x) (натуальный логарифм)
+	*/
+	MathFunction ln(const MathFunction &x);
+	
+	/**
+	* Функция pow(x, y) = x ^ y
+	*/
+	MathFunction pow(const MathFunction &x, const MathFunction &y);
 }
 
 #endif // NANOSOFT_MATH_H
