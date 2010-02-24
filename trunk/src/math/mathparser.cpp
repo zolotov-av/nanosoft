@@ -31,6 +31,137 @@ namespace nanosoft
 	}
 	
 	/**
+	* Вспомогательный класс парсера именованного объекта (переменных и функций)
+	*/
+	class MathHelperParser
+	{
+	public:
+		/**
+		* Конструктор
+		*/
+		MathHelperParser() { }
+		
+		/**
+		* Деструктор
+		*/
+		virtual ~MathHelperParser() { }
+		
+		/**
+		* Парсер подвыражения
+		*/
+		virtual MathFunction parse(MathParser *p, const char *&expr, const char *limit) = 0;
+	};
+	
+	/**
+	* Класс парсера переменных
+	*/
+	class MathVarParser: public MathHelperParser
+	{
+	private:
+		/**
+		* Переменная
+		*/
+		MathVar var;
+	public:
+		/**
+		* Конструктор парсера переменной
+		*/
+		MathVarParser(const MathVar &v): var(v) { }
+		
+		/**
+		* Парсер переменной
+		*/
+		MathFunction parse(MathParser *p, const char *&expr, const char *limit) {
+			return var;
+		}
+	};
+	
+	/**
+	* Класс парсера функций одной переменной
+	*/
+	class MathFunctionXParser: public MathHelperParser
+	{
+	private:
+		/**
+		* Конструктор функции одной переменной
+		*/
+		MathFunctionX func;
+	public:
+		/**
+		* Конструктор парсера функции одной переменной
+		*/
+		MathFunctionXParser(const MathFunctionX &f): func(f) { }
+		
+		/**
+		* Парсер функции одной переменной
+		*/
+		MathFunction parse(MathParser *p, const char *&expr, const char *limit)
+		{
+			MathParser::Token token;
+			
+			if ( p->parseToken(token, expr, limit) != MathParser::tok_open )
+			{
+				throw MathParserError("expected subexpression");
+			}
+			
+			MathFunction x = p->parseSum(expr, limit);
+			
+			if ( p->parseToken(token, expr, limit) != MathParser::tok_close )
+			{
+				throw MathParserError("expected end of expression");
+			}
+			
+			return func(x);
+		}
+	};
+	
+	/**
+	* Класс парсера функции двух переменных
+	*/
+	class MathFunctionXYParser: public MathHelperParser
+	{
+	private:
+		/**
+		* Конструктор функци двух переменных
+		*/
+		MathFunctionXY func;
+	public:
+		/**
+		* Конструктор парсера функции двух переменных
+		*/
+		MathFunctionXYParser(const MathFunctionXY &f): func(f) { }
+		
+		/**
+		* Парсер функции двух переменных
+		*/
+		MathFunction parse(MathParser *p, const char *&expr, const char *limit)
+		{
+			MathParser::Token token;
+			
+			if ( p->parseToken(token, expr, limit) != MathParser::tok_open )
+			{
+				throw MathParserError("expected subexpression");
+			}
+			
+			MathFunction x = p->parseSum(expr, limit);
+			
+			if ( p->parseToken(token, expr, limit) != MathParser::tok_comma )
+			{
+				throw MathParserError("expected second parameter in function");
+			}
+			
+			MathFunction y = p->parseSum(expr, limit);
+			
+			if ( p->parseToken(token, expr, limit) != MathParser::tok_close )
+			{
+				throw MathParserError("expected end of expression");
+			}
+			
+			return func(x, y);
+		}
+	};
+	
+	/**
 	* Конструктор парсера
 	*/
 	MathParser::MathParser()
@@ -42,6 +173,55 @@ namespace nanosoft
 	*/
 	MathParser::~MathParser()
 	{
+	}
+	
+	/**
+	* Добавить переменную
+	*/
+	void MathParser::set(const char *name, const MathVar &var)
+	{
+		names_t::iterator iter = names.find(name);
+		if ( iter != names.end() ) delete iter->second;
+		names[name] = new MathVarParser(var);
+	}
+	
+	/**
+	* Добавить функцию одной переменной
+	*/
+	void MathParser::set(const char *name, const MathFunctionX f)
+	{
+		names_t::iterator iter = names.find(name);
+		if ( iter != names.end() ) delete iter->second;
+		names[name] = new MathFunctionXParser(f);
+	}
+	
+	/**
+	* Добавить функцию двух переменных
+	*/
+	void MathParser::set(const char *name, const MathFunctionXY f)
+	{
+		names_t::iterator iter = names.find(name);
+		if ( iter != names.end() ) delete iter->second;
+		names[name] = new MathFunctionXYParser(f);
+	}
+	
+	/**
+	* Проверить зарегистрированное ли имя
+	*/
+	bool MathParser::isset(const char *name)
+	{
+		names_t::iterator iter = names.find(name);
+		return iter != names.end();
+	}
+	
+	/**
+	* Удалить переменную/функцию
+	*/
+	void MathParser::unset(const char *name)
+	{
+		names_t::iterator iter = names.find(name);
+		if ( iter != names.end() ) delete iter->second;
+		names.erase(iter);
 	}
 	
 	/**
@@ -116,6 +296,7 @@ namespace nanosoft
 		case '^': { expr++; return token.type = tok_pow; }
 		case '(': { expr++; return token.type = tok_open; }
 		case ')': { expr++; return token.type = tok_close; }
+		case ',': { expr++; return token.type = tok_comma; }
 		}
 		if ( c >= '0' && c <= '9' ) return parseNumber(token, expr, limit);
 		if ( c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c == '_' ) return parseName(token, expr, limit);
@@ -158,15 +339,10 @@ namespace nanosoft
 	*/
 	MathFunction MathParser::parseNamedObject(const Token &token, const char *&expr, const char *limit)
 	{
-		vardefs::iterator vi = vars.find(token.value);
-		if ( vi != vars.end() ) return vi->second;
-		
-		funcdefs::iterator fi = funcx.find(token.value);
-		if ( fi != funcx.end() )
-		{
-			return fi->second( parseSubExpr(expr, limit) );
+		names_t::iterator iter = names.find(token.value);
+		if ( iter != names.end() ) {
+			return iter->second->parse(this, expr, limit);
 		}
-		
 		throw MathParserError("unknown variable or function: " + token.value);
 	}
 	
@@ -214,6 +390,7 @@ namespace nanosoft
 			case tok_plus:
 			case tok_minus:
 			case tok_close:
+			case tok_comma:
 				expr = token.begin;
 				return mult;
 			case tok_mult:
@@ -251,6 +428,7 @@ namespace nanosoft
 			case tok_end:
 				return sum;
 			case tok_close:
+			case tok_comma:
 				expr = token.begin;
 				return sum;
 			case tok_plus:

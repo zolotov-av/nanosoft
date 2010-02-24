@@ -11,7 +11,15 @@
 
 namespace nanosoft
 {
-	typedef MathFunction (*MathFunctionX)(const MathFunction &f);
+	/**
+	* Тип конструктора функции одной переменной
+	*/
+	typedef MathFunction (*MathFunctionX)(const MathFunction &x);
+	
+	/**
+	* Типа конструктора функции двух переменных
+	*/
+	typedef MathFunction (*MathFunctionXY)(const MathFunction &x, const MathFunction &y);
 	
 	/**
 	* Класс ошибки парсера математических функций
@@ -46,7 +54,6 @@ namespace nanosoft
 	class MathParser
 	{
 	public:
-		
 		/**
 		* Типы лексем
 		*/
@@ -56,7 +63,8 @@ namespace nanosoft
 			tok_number, // число
 			tok_name, // имя переменной или функции
 			tok_plus, tok_minus, tok_mult, tok_div, tok_pow, // операторы
-			tok_open, tok_close // скобки
+			tok_open, tok_close, // скобки
+			tok_comma // запятая (разделить аргументов функции)
 		};
 		
 		/**
@@ -85,11 +93,8 @@ namespace nanosoft
 			std::string value;
 		};
 		
-		typedef std::map<std::string, MathVar> vardefs;
-		typedef std::map<std::string, MathFunctionX> funcdefs;
-		
-		vardefs vars;
-		funcdefs funcx;
+		typedef std::map<std::string, class MathHelperParser *> names_t;
+		names_t names;
 		
 		/**
 		* Парсинг лексемы
@@ -159,6 +164,31 @@ namespace nanosoft
 		* Деструктор парсера
 		*/
 		~MathParser();
+		
+		/**
+		* Добавить переменную
+		*/
+		void set(const char *name, const MathVar &var);
+		
+		/**
+		* Добавить функцию одной переменной
+		*/
+		void set(const char *name, const MathFunctionX f);
+		
+		/**
+		* Добавить функцию двух переменных
+		*/
+		void set(const char *name, const MathFunctionXY f);
+		
+		/**
+		* Проверить зарегистрированное ли имя
+		*/
+		bool isset(const char *name);
+		
+		/**
+		* Удалить переменную/функцию
+		*/
+		void unset(const char *name);
 		
 		/**
 		* Парсинг выражения

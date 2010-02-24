@@ -17,10 +17,11 @@ int main()
 	MathVar x("x"), y("y");
 	
 	MathParser p;
-	p.vars["x"] = x;
-	p.vars["y"] = y;
-	p.funcx["cos"] = cos;
-	p.funcx["sin"] = sin;
+	p.set("x", x);
+	p.set("y", y);
+	p.set("cos", cos);
+	p.set("sin", sin);
+	p.set("pow", pow);
 	
 	// f(x, y) = sin(x) * cos(y)
 	MathFunction f = p.parse("sin(x) * cos(y)");
