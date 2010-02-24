@@ -1,10 +1,6 @@
 
 NANOSOFT_MATH=math.o
-#NANOSOFT_MATH+=asyncobject.o
-#NANOSOFT_MATH+=asyncstream.o
-#NANOSOFT_MATH+=asyncserver.o
-#NANOSOFT_MATH+=asyncxmlstream.o
-#NANOSOFT_MATH+=asyncdns.o
+NANOSOFT_MATH+=mathparser.o
 
 install-math-headers:
 	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/math.h $(INCLUDEDIR)/nanosoft/math.h
@@ -15,3 +11,6 @@ libns_math.a: $(NANOSOFT_MATH)
 
 math.o: $(ns_srcdir)/math/math.cpp $(ns_srcinc)/nanosoft/math.h
 	$(CXX) -c $(ns_srcdir)/math/math.cpp
+
+mathparser.o: $(ns_srcdir)/math/mathparser.cpp $(ns_srcinc)/nanosoft/mathparser.h $(ns_srcinc)/nanosoft/math.h
+	$(CXX) -c $(ns_srcdir)/math/mathparser.cpp

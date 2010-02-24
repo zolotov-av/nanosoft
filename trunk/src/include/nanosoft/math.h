@@ -100,10 +100,15 @@ namespace nanosoft
 		void setValue(double v);
 		
 		/**
+		* Оператор копирования переменной
+		*/
+		void operator = (const MathVar &a);
+		
+		/**
 		* Сравнение переменных
 		* Внимание, сравнивается не значение, а "имя" переменной
 		*/
-		bool operator == (const MathVar v) const { return var == v.var; }
+		bool operator == (const MathVar &v) const { return var == v.var; }
 		
 		/**
 		* Сравнение переменных
@@ -115,7 +120,7 @@ namespace nanosoft
 		* Сравнение переменных
 		* Внимание, сравнивается не значение, а "имя" переменной
 		*/
-		bool operator != (const MathVar v) const { return var != v.var; }
+		bool operator != (const MathVar &v) const { return var != v.var; }
 		
 		/**
 		* Вернуть функцию f(x) = x

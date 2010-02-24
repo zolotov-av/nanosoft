@@ -1,5 +1,6 @@
 
 #include <nanosoft/math.h>
+#include <nanosoft/mathparser.h>
 #include <stdio.h>
 
 using namespace nanosoft;
@@ -15,8 +16,14 @@ int main()
 	// Объявляем переменные
 	MathVar x("x"), y("y");
 	
+	MathParser p;
+	p.vars["x"] = x;
+	p.vars["y"] = y;
+	p.funcx["cos"] = cos;
+	p.funcx["sin"] = sin;
+	
 	// f(x, y) = sin(x) * cos(y)
-	MathFunction f = sin(x) * cos(y);
+	MathFunction f = p.parse("sin(x) * cos(y)");
 	printf("f(x,y) = %s\n", f.toString().c_str());
 	
 	// g(x,y) = f'x(x,y)

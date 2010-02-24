@@ -238,7 +238,7 @@ namespace nanosoft
 	MathVar::MathVar(const MathVar &v)
 	{
 		var = v.var;
-		var->lock();
+		if ( var ) var->lock();
 	}
 	
 	/**
@@ -271,6 +271,16 @@ namespace nanosoft
 	void MathVar::setValue(double v)
 	{
 		var->setValue(v);
+	}
+	
+	/**
+	* Оператор копирования переменной
+	*/
+	void MathVar::operator = (const MathVar &a)
+	{
+		if ( var ) var->release();
+		var = a.var;
+		if ( var ) var->lock();
 	}
 	
 	/**
