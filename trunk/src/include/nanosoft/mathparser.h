@@ -12,16 +12,6 @@
 namespace nanosoft
 {
 	/**
-	* Тип конструктора функции одной переменной
-	*/
-	typedef MathFunction (*MathFunctionX)(const MathFunction &x);
-	
-	/**
-	* Типа конструктора функции двух переменных
-	*/
-	typedef MathFunction (*MathFunctionXY)(const MathFunction &x, const MathFunction &y);
-	
-	/**
 	* Класс ошибки парсера математических функций
 	*/
 	class MathParserError: public std::exception

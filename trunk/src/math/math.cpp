@@ -46,6 +46,15 @@ namespace nanosoft
 			int len = sprintf(buf, "%f", c);
 			return std::string(buf, len);
 		}
+		
+		/**
+		* Вернуть в виде строки для отладки и тестирования
+		*/
+		std::string debugString() {
+			char buf[80];
+			int len = sprintf(buf, "%.2f", c);
+			return std::string(buf, len);
+		}
 	};
 	
 	/**
@@ -108,6 +117,11 @@ namespace nanosoft
 		* Вернуть в виде строки
 		*/
 		std::string toString();
+		
+		/**
+		* Вернуть в виде строки для отладки и тестирования
+		*/
+		std::string debugString();
 	};
 	
 	/**
@@ -170,6 +184,14 @@ namespace nanosoft
 	* Вернуть в виде строки
 	*/
 	std::string MathVarImpl::toString()
+	{
+		return name;
+	}
+	
+	/**
+	* Вернуть в виде строки для отладки и тестирования
+	*/
+	std::string MathVarImpl::debugString()
 	{
 		return name;
 	}
@@ -310,9 +332,14 @@ namespace nanosoft
 		std::string toString() {
 			return "-(" + a.toString() + ")";
 		}
+		
+		/**
+		* Вернуть в виде строки для отладки и тестирования
+		*/
+		std::string debugString() {
+			return "-(" + a.debugString() + ")";
+		}
 	};
-	
-	MathFunction sumopt(const MathFunction &a, const MathFunction &b);
 	
 	/**
 	* Функция F(x,y) = x + y
@@ -337,38 +364,44 @@ namespace nanosoft
 			{
 				if ( x.eval() == 0.0 ) return y;
 				if ( y.getType() == "const" ) return x.eval() + y.eval();
-				if ( ys && ys->b.getType() == "const" )
+				if ( ys && ys->a.getType() == "const" )
 				{
-					double c = x.eval() + ys->b.eval();
-					return c == 0.0 ? ys->a : (ys->a + c);
+					double c = x.eval() + ys->a.eval();
+					if ( c == 0.0 ) return ys->b;
+					return c + ys->b;
 				}
-				return y + x;
+				return x + y;
 			}
 			
 			if ( y.getType() == "const" )
 			{
 				if ( y.eval() == 0.0 ) return x;
-				if ( xs && xs->b.getType() == "const" )
+				if ( xs && xs->a.getType() == "const" )
 				{
-					double c = y.eval() + xs->b.eval();
-					return c == 0.0 ? xs->a : (xs->a + c);
+					double c = y.eval() + xs->a.eval();
+					if ( c == 0.0 ) return xs->b;
+					return c + xs->b;
 				}
-				return x + y;
+				return y + x;
 			}
 			
-			if ( xs && xs->b.getType() == "const" )
+			if ( xs && xs->a.getType() == "const" )
 			{
-				if ( ys && ys->b.getType() == "const" )
-					return sumopt(sumopt(xs->a, ys->a), (xs->b.eval() + ys->b.eval()));
-				return sumopt(sumopt(xs->a, y), xs->b.eval());
+				if ( ys && ys->a.getType() == "const" )
+				{
+					double c = xs->a.eval() + ys->a.eval();
+					if ( c == 0.0 ) return xs->b + ys->b;
+					return c + (xs->b + ys->b);
+				}
+				return xs->a.eval() + (xs->b + y);
 			}
 			
-			if ( ys && ys->b.getType() == "const" )
+			if ( ys && ys->a.getType() == "const" )
 			{
-				return sumopt(sumopt(x, ys->a), ys->b.eval());
+				return ys->a.eval() + (x + ys->b);
 			}
 			
-			return sumopt(x, y);
+			return x + y;
 		}
 		
 		/**
@@ -376,6 +409,13 @@ namespace nanosoft
 		*/
 		std::string toString() {
 			return a.toString() + " + " + b.toString();
+		}
+		
+		/**
+		* Вернуть в виде строки для отладки и тестирования
+		*/
+		std::string debugString() {
+			return "(" + a.debugString() + " + " + b.debugString() + ")";
 		}
 	};
 	
@@ -401,6 +441,13 @@ namespace nanosoft
 		std::string toString() {
 			return a.toString() + " - " + b.toString();
 		}
+		
+		/**
+		* Вернуть в виде строки для отладки и тестирования
+		*/
+		std::string debugString() {
+			return "(" + a.debugString() + " - " + b.debugString() + ")";
+		}
 	};
 	
 	MathFunction MathNeg::optimize()
@@ -420,20 +467,6 @@ namespace nanosoft
 		if ( neg ) return neg->a;
 		
 		return - x;
-	}
-	
-	/**
-	* Оптимизированное суммирование
-	*/
-	MathFunction sumopt(const MathFunction &a, const MathFunction &b)
-	{
-		MathNeg *an = a.cast<MathNeg>();
-		if ( an ) return new MathSub(b, an->a);
-		
-		MathNeg *bn = b.cast<MathNeg>();
-		if ( bn ) return new MathSub(a, bn->a);
-		
-		return new MathSum(a, b);
 	}
 	
 	/**
@@ -547,6 +580,13 @@ namespace nanosoft
 		std::string toString() {
 			return "(" + a.toString() + ") * (" + b.toString() + ")";
 		}
+		
+		/**
+		* Вернуть в виде строки для отладки и тестирования
+		*/
+		std::string debugString() {
+			return "([" + a.debugString() + "] * [" + b.debugString() + "])";
+		}
 	};
 	
 	/**
@@ -593,7 +633,35 @@ namespace nanosoft
 		std::string toString() {
 			return "(" + a.toString() + ") / (" + b.toString() + ")";
 		}
+		
+		/**
+		* Вернуть в виде строки для отладки и тестирования
+		*/
+		std::string debugString() {
+			return "([" + a.debugString() + "] / [" + b.debugString() + "])";
+		}
 	};
+	
+	/**
+	* Оптимизатор четной функции
+	*/
+	inline MathFunction opt_even(MathFunctionX f, const MathFunction &a)
+	{
+		MathFunction x = a.optimize();
+		MathNeg *nx = x.cast<MathNeg>();
+		return f( nx ? nx->a : x);
+	}
+	
+	/**
+	* Оптимизатор нечетной функции
+	*/
+	inline MathFunction opt_odd(MathFunctionX f, const MathFunction &a)
+	{
+		MathFunction x = a.optimize();
+		MathNeg *nx = x.cast<MathNeg>();
+		if ( nx ) return - f(nx->a);
+		return f(x);
+	}
 	
 	/**
 	* Функция F(x) = cos(x)
@@ -607,18 +675,20 @@ namespace nanosoft
 		std::string getType() { return "cos"; }
 		double eval() { return ::cos(a.eval()); }
 		MathFunction derive(const MathVar &var) { return - sin(a) * a.derive(var); }
-		MathFunction optimize() {
-			MathFunction x = a.optimize();
-			MathNeg *neg = x.cast<MathNeg>();
-			if ( neg ) return cos(neg->a);
-			return cos(x);
-		}
+		MathFunction optimize() { return opt_even(cos, a); }
 		
 		/**
 		* Вернуть в виде строки
 		*/
 		std::string toString() {
 			return "cos(" + a.toString() + ")";
+		}
+		
+		/**
+		* Вернуть в виде строки для отладки и тестирования
+		*/
+		std::string debugString() {
+			return "cos(" + a.debugString() + ")";
 		}
 	};
 	
@@ -634,18 +704,20 @@ namespace nanosoft
 		std::string getType() { return "sin"; }
 		double eval() { return ::sin(a.eval()); }
 		MathFunction derive(const MathVar &var) { return cos(a) * a.derive(var); }
-		MathFunction optimize() {
-			MathFunction x = a.optimize();
-			MathNeg *neg = x.cast<MathNeg>();
-			if ( neg ) return - sin(neg->a);
-			return sin(x);
-		}
+		MathFunction optimize() { return opt_odd(sin, a); }
 		
 		/**
 		* Вернуть в виде строки
 		*/
 		std::string toString() {
 			return "sin(" + a.toString() + ")";
+		}
+		
+		/**
+		* Вернуть в виде строки для отладки и тестирования
+		*/
+		std::string debugString() {
+			return "sin(" + a.debugString() + ")";
 		}
 	};
 	
@@ -669,6 +741,13 @@ namespace nanosoft
 		std::string toString() {
 			return "exp(" + a.toString() + ")";
 		}
+		
+		/**
+		* Вернуть в виде строки для отладки и тестирования
+		*/
+		std::string debugString() {
+			return "exp(" + a.debugString() + ")";
+		}
 	};
 	
 	/**
@@ -690,6 +769,13 @@ namespace nanosoft
 		*/
 		std::string toString() {
 			return "ln(" + a.toString() + ")";
+		}
+		
+		/**
+		* Вернуть в виде строки для отладки и тестирования
+		*/
+		std::string debugString() {
+			return "ln(" + a.debugString() + ")";
 		}
 	};
 	
@@ -715,6 +801,13 @@ namespace nanosoft
 		*/
 		std::string toString() {
 			return "(" + a.toString() + ")^(" + b.toString() + ")";
+		}
+		
+		/**
+		* Вернуть в виде строки для отладки и тестирования
+		*/
+		std::string debugString() {
+			return "([" + a.debugString() + "] ^ [" + b.debugString() + "])";
 		}
 	};
 	

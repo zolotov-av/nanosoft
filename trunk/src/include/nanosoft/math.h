@@ -61,6 +61,11 @@ namespace nanosoft
 		virtual std::string toString() = 0;
 		
 		/**
+		* Вернуть в виде строки для отладки и тестирования
+		*/
+		virtual std::string debugString() = 0;
+		
+		/**
 		* Увеличить счетчик ссылок
 		*/
 		void lock();
@@ -192,9 +197,24 @@ namespace nanosoft
 		*/
 		std::string toString() const { return func->toString(); }
 		
+		/**
+		* Вернуть в виде строки для отладки и тестирования
+		*/
+		std::string debugString() const { return func->debugString(); }
+		
 		template <class type>
 		type* cast() const { return dynamic_cast<type*>(func); }
 	};
+	
+	/**
+	* Тип конструктора функции одной переменной
+	*/
+	typedef MathFunction (*MathFunctionX)(const MathFunction &x);
+	
+	/**
+	* Типа конструктора функции двух переменных
+	*/
+	typedef MathFunction (*MathFunctionXY)(const MathFunction &x, const MathFunction &y);
 	
 	/**
 	* Унарный оператор вычитания
