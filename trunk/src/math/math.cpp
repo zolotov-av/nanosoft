@@ -488,82 +488,62 @@ namespace nanosoft
 			
 			MathMult *xm = x.cast<MathMult>();
 			MathMult *ym = y.cast<MathMult>();
+			MathNeg *xn = x.cast<MathNeg>();
+			MathNeg *yn = y.cast<MathNeg>();
 			
 			if ( x.getType() == "const" )
 			{
 				if ( x.eval() == 0.0 ) return 0.0;
 				if ( x.eval() == 1.0 ) return y;
-				if ( x.eval() == -1.0 ) return - y;
+				if ( x.eval() == -1.0 ) return yn ? yn->a : (-y);
 				if ( y.getType() == "const" ) return x.eval() * y.eval();
-				
-				if ( ym && ym->b.getType() == "const" )
+				if ( yn ) return (-x.eval()) * yn->a;
+				if ( ym && ym->a.getType() == "const" )
 				{
-					double c = x.eval() * ym->b.eval();
-					if ( c == 0.0 ) return 0.0;
-					if ( c == 1.0 ) return ym->a;
-					if ( c == -1.0 ) return - ym->a;
-					return ym->a * c;
+					double c = x.eval() * ym->a.eval();
+					if ( c == 1.0 ) return ym->b;
+					if ( c == -1.0 ) return - ym->b;
+					return c * ym->b;
 				}
-				
-				MathNeg *yn = y.cast<MathNeg>();
-				if ( yn ) return yn->a * (-x.eval());
-				
-				return y * x;
+				return x * y;
 			}
 			
 			if ( y.getType() == "const" )
 			{
 				if ( y.eval() == 0.0 ) return 0.0;
 				if ( y.eval() == 1.0 ) return x;
-				if ( y.eval() == -1.0 ) return -x;
-				
-				if ( xm && xm->b.getType() == "const" )
+				if ( y.eval() == -1.0 ) return xn ? xn->a : (-x);
+				if ( xn ) return (-y.eval()) * xn->a;
+				if ( xm && xm->a.getType() == "const" )
 				{
-					double c = y.eval() * xm->b.eval();
+					double c = y.eval() * xm->a.eval();
 					if ( c == 0.0 ) return 0.0;
-					if ( c == 1.0 ) return xm->a;
-					if ( c == -1.0 ) return -xm->a;
-					return xm->a * c;
+					if ( c == 1.0 ) return xm->b;
+					if ( c == -1.0 ) return -xm->b;
+					return c * xm->b;
 				}
-				
-				MathNeg *xn = x.cast<MathNeg>();
-				if ( xn ) return xn->a * (-y.eval());
-				
-				return x * y;
+				return y * x;
 			}
 			
-			if ( xm && xm->b.getType() == "const" )
+			if ( xm && xm->a.getType() == "const" )
 			{
-				if ( ym && ym->b.getType() == "const" )
+				if ( ym && ym->a.getType() == "const" )
 				{
-					double c = xm->b.eval() + ym->b.eval();
-					if ( c == 0.0 ) return 0.0;
-					MathFunction f = xm->a * ym->a;
-					if ( c == 1.0 ) return f;
-					if ( c == -1.0 ) return -f;
-					return f * c;
+					double c = xm->a.eval() * ym->a.eval();
+					if ( c == 1.0 ) return xm->b * ym->b;
+					if ( c == -1.0 ) return -(xm->b * ym->b);
+					return c * (xm->b * ym->b);
 				}
-				
-				double c = xm->b.eval();
-				if ( c == 0.0 ) return 0.0;
-				MathFunction f = xm->a * y;
-				if ( c == 1.0 ) return f;
-				if ( c == -1.0 ) return -f;
-				return f * c;
+				if ( yn ) return (-xm->a.eval()) * (xm->b * yn->a);
+				return xm->a.eval() * (xm->b * y);
 			}
 			
-			if ( ym && ym->b.getType() == "const" )
+			if ( ym && ym->a.getType() == "const" )
 			{
-				double c = ym->b.eval();
-				if ( c == 0.0 ) return 0.0;
-				MathFunction f = x * ym->a;
-				if ( c == 1.0 ) return f;
-				if ( c == -1.0 ) return -f;
-				return f * c;
+				if ( xn ) return (-ym->a.eval()) * (xn->a * ym->b);
+				return ym->a.eval() * (x * ym->b);
 			}
 			
-			MathNeg *xn = x.cast<MathNeg>();
-			MathNeg *yn = y.cast<MathNeg>();
 			if ( xn )
 			{
 				if ( yn ) return xn->a * yn->a;

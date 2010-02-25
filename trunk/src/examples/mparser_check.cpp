@@ -226,21 +226,6 @@ void test_optimizer()
 	test_optimizer(__LINE__, ln(x), ln(x));
 	test_optimizer(__LINE__, log(x, y), log(x, y));
 	
-	printf("\nmult optimizer:\n");
-	test_optimizer(__LINE__, x * 0.0, 0.0);
-	test_optimizer(__LINE__, 0.0 * x, 0.0);
-	test_optimizer(__LINE__, x * 1, x);
-	test_optimizer(__LINE__, 1 * x, x);
-	test_optimizer(__LINE__, x * 2, x * 2);
-	test_optimizer(__LINE__, 2 * x, x * 2);
-	test_optimizer(__LINE__, x * 1 * 2, x * 2);
-	test_optimizer(__LINE__, 1 * x * 2, x * 2);
-	test_optimizer(__LINE__, 1 * 2 * x, x * 2);
-	test_optimizer(__LINE__, 1 * x * y, x * y);
-	test_optimizer(__LINE__, x * 1 * y, x * y);
-	test_optimizer(__LINE__, x * y * 1, x * y);
-	test_optimizer(__LINE__, 1 * x * 2 * y * 3, x * y * 6);
-	
 	printf("\nsin/cos optimizer:\n");
 	test_optimizer(__LINE__, cos(x), cos(x));
 	test_optimizer(__LINE__, cos(-x), cos(x));
@@ -266,6 +251,48 @@ void test_optimizer()
 	test_optimizer(__LINE__, (1.0 + x) + y, 1.0 + (x + y));
 	test_optimizer(__LINE__, x + (1.0 + y), 1.0 + (x + y));
 	test_optimizer(__LINE__, (x + 1.0) + (y + 2.0) + (z + 3.0), 6.0 + (x + y + z));
+	
+	// new tests
+	printf("\noptimize[mult]:\n");
+	test_optimizer(__LINE__, MathFunction(2.0) * 3.0, 6.0);
+	test_optimizer(__LINE__, 0.0 * x, 0.0);
+	test_optimizer(__LINE__, 1.0 * x, x);
+	test_optimizer(__LINE__, (-1.0) * x, -x);
+	test_optimizer(__LINE__, (-1.0) * (-x), x);
+	test_optimizer(__LINE__, 2.0 * x, 2.0 * x);
+	test_optimizer(__LINE__, 2.0 * (-x), (-2.0) * x);
+	test_optimizer(__LINE__, 2.0 * (3.0 * x), 6.0 * x);
+	test_optimizer(__LINE__, 2.0 * (0.0 * x), 0.0);
+	test_optimizer(__LINE__, 2.0 * (0.5 * x), x);
+	test_optimizer(__LINE__, 2.0 * (0.5 * (-x)), -x);
+	test_optimizer(__LINE__, 2.0 * ((-0.5) * x), -x);
+	test_optimizer(__LINE__, 2.0 * ((-0.5) * (-x)), x);
+	test_optimizer(__LINE__, 2.0 * (3.0 * (-x)), (-6.0) * x);
+	printf("\n");
+	test_optimizer(__LINE__, x * 0.0, 0.0);
+	test_optimizer(__LINE__, x * 1.0, x);
+	test_optimizer(__LINE__, x * (-1.0), -x);
+	test_optimizer(__LINE__, (-x) * (-1.0), x);
+	test_optimizer(__LINE__, x * 2.0, 2.0 * x);
+	test_optimizer(__LINE__, (-x) * 2.0, (-2.0) * x);
+	test_optimizer(__LINE__, (x * 2.0) * 3.0, 6.0 * x);
+	test_optimizer(__LINE__, (x * 0.5) * 2.0, x);
+	test_optimizer(__LINE__, (x * (-0.5)) * 2.0, -x);
+	test_optimizer(__LINE__, (x * (-0.5)) * (-2.0), x);
+	test_optimizer(__LINE__, ((-x) * 2.0) * 3.0, (-6.0) * x);
+	printf("\n");
+	test_optimizer(__LINE__, (x * 2.0) * (y * 3.0), 6.0 * (x * y));
+	test_optimizer(__LINE__, (x * 2.0) * (y * 0.5), x * y);
+	test_optimizer(__LINE__, (x * (-2.0)) * (y * 0.5), - (x * y));
+	test_optimizer(__LINE__, (x * 2.0) * y, 2.0 * (x * y));
+	test_optimizer(__LINE__, (x * 2.0) * (-y), (-2.0) * (x * y));
+	test_optimizer(__LINE__, x * (y * 2.0), 2.0 * (x * y));
+	test_optimizer(__LINE__, (-x) * (y * 2.0), (-2.0) * (x * y));
+	printf("\n");
+	test_optimizer(__LINE__, x * y, x * y);
+	test_optimizer(__LINE__, x * (-y), -(x * y));
+	test_optimizer(__LINE__, (-x) * y, -(x * y));
+	test_optimizer(__LINE__, (-x) * (-y), x * y);
 }
 
 int main()
