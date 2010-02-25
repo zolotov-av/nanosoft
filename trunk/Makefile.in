@@ -69,10 +69,12 @@ ifeq ($(WITH_MYSQL), yes)
 LINUX_EXAMPLES+=mysql
 endif
 
+TESTS=mparser_check
+
 all: all-$(HOST_OS)
 	date "+%d.%m.%Y %H:%M:%S" > build
 
-.PHONY: install install-linux install-mingw32 install-headers
+.PHONY: install install-linux install-mingw32 install-headers test
 install: install-$(HOST_OS) install-headers
 
 install-headers: install-core-headers install-xml-headers install-netd-headers install-sasl-headers
@@ -92,6 +94,8 @@ install-linux: forker miniget wait time masterd nsu miniget2 showpath libnanosof
 install-mingw32: libnanosoft.a miniget2
 	$(INSTALL_BIN) miniget2 $(BINDIR)/miniget2
 	$(INSTALL_LIB) libnanosoft.a $(LIBDIR)/libnanosoft.a
+
+test: mparser_test
 
 all-mingw32: libnanosoft.a miniget2 parse_url streams options string
 	echo > all-mingw32
@@ -154,6 +158,12 @@ daemon: $(ns_srcexm)/daemon.cpp libnanosoft.a
 mparser: $(ns_srcexm)/mparser.cpp $(ns_srcinc)/nanosoft/math.h libns_math.a
 	$(CXX) $(ns_srcexm)/mparser.cpp -o mparser -lns_math
 
+mparser_check: $(ns_srcexm)/mparser_check.cpp $(ns_srcinc)/nanosoft/math.h libns_math.a
+	$(CXX) $(ns_srcexm)/mparser_check.cpp -o mparser_check -lns_math
+
+mparser_test: mparser_check
+	./mparser_check
+
 include $(root)/core.mf
 include $(root)/xml.mf
 include $(root)/netd.mf
@@ -171,4 +181,4 @@ distclean: clean
 
 clean:
 	rm -f *.o build all-linux all-mingw32
-	rm -f $(LINUX_PROGS) $(LINUX_EXAMPLES) lib*.a
+	rm -f $(LINUX_PROGS) $(LINUX_EXAMPLES) $(TESTS) lib*.a

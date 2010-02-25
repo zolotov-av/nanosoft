@@ -190,7 +190,7 @@ namespace nanosoft
 		/**
 		* Вернуть функцию в виде строки
 		*/
-		std::string toString() { return func->toString(); }
+		std::string toString() const { return func->toString(); }
 		
 		template <class type>
 		type* cast() const { return dynamic_cast<type*>(func); }

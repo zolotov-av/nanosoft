@@ -464,8 +464,8 @@ namespace nanosoft
 			}
 			
 			// парсим очередной множитель
-			if ( op == tok_mult ) mult = mult * parseMult(expr, limit);
-			else mult = mult / parseMult(expr, limit);
+			if ( op == tok_mult ) mult = mult * parseAtom(expr, limit);
+			else mult = mult / parseAtom(expr, limit);
 		}
 		
 		return mult;
