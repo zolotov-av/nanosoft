@@ -337,7 +337,7 @@ namespace nanosoft
 		* Вернуть в виде строки для отладки и тестирования
 		*/
 		std::string debugString() {
-			return "-(" + a.debugString() + ")";
+			return "- " + a.debugString();
 		}
 	};
 	
@@ -565,7 +565,7 @@ namespace nanosoft
 		* Вернуть в виде строки для отладки и тестирования
 		*/
 		std::string debugString() {
-			return "([" + a.debugString() + "] * [" + b.debugString() + "])";
+			return "(" + a.debugString() + " * " + b.debugString() + ")";
 		}
 	};
 	
@@ -579,7 +579,7 @@ namespace nanosoft
 		MathFunction b;
 	public:
 		MathDiv(const MathFunction &A, const MathFunction &B): a(A), b(B) { }
-		std::string getType() { return "mult"; }
+		std::string getType() { return "div"; }
 		double eval() { return a.eval() / b.eval(); }
 		MathFunction derive(const MathVar &var) {
 			// TODO b^2
@@ -618,7 +618,7 @@ namespace nanosoft
 		* Вернуть в виде строки для отладки и тестирования
 		*/
 		std::string debugString() {
-			return "([" + a.debugString() + "] / [" + b.debugString() + "])";
+			return "(" + a.debugString() + " / " + b.debugString() + ")";
 		}
 	};
 	
@@ -787,7 +787,7 @@ namespace nanosoft
 		* Вернуть в виде строки для отладки и тестирования
 		*/
 		std::string debugString() {
-			return "([" + a.debugString() + "] ^ [" + b.debugString() + "])";
+			return "(" + a.debugString() + " ^ " + b.debugString() + ")";
 		}
 	};
 	
