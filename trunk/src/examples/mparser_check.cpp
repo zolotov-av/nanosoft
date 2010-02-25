@@ -167,6 +167,106 @@ void test_parser()
 	test_parser(__LINE__, "pow(x + y, a - b)", "(x + y)^(a - b)");
 }
 
+/**
+* Проверка оптимизатора
+*/
+void test_optimizer(int line, const MathFunction &f, const MathFunction &opt)
+{
+	count++;
+	bool ok = false;
+	try
+	{
+		MathFunction g = optimize(f);
+		
+		string orig = f.toString();
+		string gets = g.toString();
+		string should = opt.toString();
+		
+		ok = (gets == should);
+		
+		printf("%5d: OPTIMIZER: %s [ %s ]\n", line, orig.c_str(), (ok ? " OK " : "FAIL"));
+		if ( ! ok )
+		{
+			printf("       SHOULD %s\n", should.c_str());
+			printf("       BUT %s\n", gets.c_str());
+		}
+	}
+	catch(MathParserError e)
+	{
+		printf("       EXCEPTION: %s\n", e.what());
+	}
+	if ( ok ) passed ++;
+}
+
+void test_optimizer()
+{
+	printf("\noptimizer do not break function:\n");
+	test_optimizer(__LINE__, x, x);
+	test_optimizer(__LINE__, -x, -x);
+	test_optimizer(__LINE__, x + y, x + y);
+	test_optimizer(__LINE__, x + y + z, x + y + z);
+	test_optimizer(__LINE__, x - y, x - y);
+	test_optimizer(__LINE__, x - y - z, x - y - z);
+	test_optimizer(__LINE__, x * y, x * y);
+	test_optimizer(__LINE__, x * y * z, x * y * z);
+	test_optimizer(__LINE__, x + y * z, x + y * z);
+	test_optimizer(__LINE__, x * y + z, x * y + z);
+	test_optimizer(__LINE__, x / y, x / y);
+	test_optimizer(__LINE__, x / y / z, x / y / z);
+	test_optimizer(__LINE__, x + y / z, x + y / z);
+	test_optimizer(__LINE__, x / y + z, x / y + z);
+	test_optimizer(__LINE__, x * y / z, x * y / z);
+	test_optimizer(__LINE__, x / y * z, x / y * z);
+	test_optimizer(__LINE__, sin(x), sin(x));
+	test_optimizer(__LINE__, cos(x), cos(x));
+	test_optimizer(__LINE__, exp(x), exp(x));
+	test_optimizer(__LINE__, pow(x, y), pow(x, y));
+	test_optimizer(__LINE__, ln(x), ln(x));
+	test_optimizer(__LINE__, log(x, y), log(x, y));
+	
+	printf("\nsum optimizer:\n");
+	test_optimizer(__LINE__, x + 0, x);
+	test_optimizer(__LINE__, 0 + x, x);
+	test_optimizer(__LINE__, x + 1, x + 1);
+	test_optimizer(__LINE__, 1 + x, x + 1);
+	test_optimizer(__LINE__, x + 1 + 2, x + 3);
+	test_optimizer(__LINE__, 1 + x + 2, x + 3);
+	test_optimizer(__LINE__, 1 + 2 + x, x + 3);
+	test_optimizer(__LINE__, 1 + x + y, x + y + 1);
+	test_optimizer(__LINE__, x + 1 + y, x + y + 1);
+	test_optimizer(__LINE__, x + y + 1, x + y + 1);
+	test_optimizer(__LINE__, 1 + x + 2 + y + 3, x + y + 6);
+	
+	printf("\nmult optimizer:\n");
+	test_optimizer(__LINE__, x * 0.0, 0.0);
+	test_optimizer(__LINE__, 0.0 * x, 0.0);
+	test_optimizer(__LINE__, x * 1, x);
+	test_optimizer(__LINE__, 1 * x, x);
+	test_optimizer(__LINE__, x * 2, x * 2);
+	test_optimizer(__LINE__, 2 * x, x * 2);
+	test_optimizer(__LINE__, x * 1 * 2, x * 2);
+	test_optimizer(__LINE__, 1 * x * 2, x * 2);
+	test_optimizer(__LINE__, 1 * 2 * x, x * 2);
+	test_optimizer(__LINE__, 1 * x * y, x * y);
+	test_optimizer(__LINE__, x * 1 * y, x * y);
+	test_optimizer(__LINE__, x * y * 1, x * y);
+	test_optimizer(__LINE__, 1 * x * 2 * y * 3, x * y * 6);
+	
+	printf("\nneg optimizer:\n");
+	test_optimizer(__LINE__, -x, -x);
+	test_optimizer(__LINE__, - x + y, y - x);
+	test_optimizer(__LINE__, x - y, x - y);
+	test_optimizer(__LINE__, x - y - z, x - y - z);
+	test_optimizer(__LINE__, - x + y + z, y - x + z);
+	
+	printf("\nsin/cos optimizer:\n");
+	test_optimizer(__LINE__, cos(x), cos(x));
+	test_optimizer(__LINE__, cos(-x), cos(x));
+	test_optimizer(__LINE__, sin(x), sin(x));
+	test_optimizer(__LINE__, sin(-x), -sin(x));
+	test_optimizer(__LINE__, sin(-x) * sin(-y), sin(x) * sin(y));
+}
+
 int main()
 {
 	p.setVar("x", x);
@@ -178,6 +278,7 @@ int main()
 	
 	test_runtime();
 	test_parser();
+	test_optimizer();
 	
 	printf("\nPASSED: %d/%d\n", count, passed);
 	if ( count == passed ) printf("OK\n");

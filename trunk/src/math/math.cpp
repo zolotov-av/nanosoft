@@ -452,18 +452,23 @@ namespace nanosoft
 		MathFunction optimize() {
 			MathFunction x = a.optimize();
 			MathFunction y = b.optimize();
+			
+			MathMult *xm = x.cast<MathMult>();
+			MathMult *ym = y.cast<MathMult>();
+			
 			if ( x.getType() == "const" )
 			{
 				if ( x.eval() == 0.0 ) return 0.0;
 				if ( x.eval() == 1.0 ) return y;
+				if ( x.eval() == -1.0 ) return - y;
 				if ( y.getType() == "const" ) return x.eval() * y.eval();
 				
-				MathMult *ym = y.cast<MathMult>();
 				if ( ym && ym->b.getType() == "const" )
 				{
 					double c = x.eval() * ym->b.eval();
 					if ( c == 0.0 ) return 0.0;
 					if ( c == 1.0 ) return ym->a;
+					if ( c == -1.0 ) return - ym->a;
 					return ym->a * c;
 				}
 				
@@ -472,17 +477,19 @@ namespace nanosoft
 				
 				return y * x;
 			}
+			
 			if ( y.getType() == "const" )
 			{
 				if ( y.eval() == 0.0 ) return 0.0;
 				if ( y.eval() == 1.0 ) return x;
+				if ( y.eval() == -1.0 ) return -x;
 				
-				MathMult *xm = x.cast<MathMult>();
 				if ( xm && xm->b.getType() == "const" )
 				{
 					double c = y.eval() * xm->b.eval();
 					if ( c == 0.0 ) return 0.0;
 					if ( c == 1.0 ) return xm->a;
+					if ( c == -1.0 ) return -xm->a;
 					return xm->a * c;
 				}
 				
@@ -490,6 +497,36 @@ namespace nanosoft
 				if ( xn ) return xn->a * (-y.eval());
 				
 				return x * y;
+			}
+			
+			if ( xm && xm->b.getType() == "const" )
+			{
+				if ( ym && ym->b.getType() == "const" )
+				{
+					double c = xm->b.eval() + ym->b.eval();
+					if ( c == 0.0 ) return 0.0;
+					MathFunction f = xm->a * ym->a;
+					if ( c == 1.0 ) return f;
+					if ( c == -1.0 ) return -f;
+					return f * c;
+				}
+				
+				double c = xm->b.eval();
+				if ( c == 0.0 ) return 0.0;
+				MathFunction f = xm->a * y;
+				if ( c == 1.0 ) return f;
+				if ( c == -1.0 ) return -f;
+				return f * c;
+			}
+			
+			if ( ym && ym->b.getType() == "const" )
+			{
+				double c = ym->b.eval();
+				if ( c == 0.0 ) return 0.0;
+				MathFunction f = x * ym->a;
+				if ( c == 1.0 ) return f;
+				if ( c == -1.0 ) return -f;
+				return f * c;
 			}
 			
 			MathNeg *xn = x.cast<MathNeg>();
