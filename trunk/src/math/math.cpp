@@ -286,7 +286,7 @@ namespace nanosoft
 	/**
 	* Вернуть функцию f(x) = x
 	*/
-	MathVar::operator MathFunction ()
+	MathVar::operator MathFunction () const
 	{
 		return MathFunction(var);
 	}
@@ -858,5 +858,21 @@ namespace nanosoft
 	MathFunction ln(const MathFunction &x)
 	{
 		return new MathLn(x);
+	}
+	
+	/**
+	* Функция log(x, a) - логарифм числа x по основанию a
+	*/
+	MathFunction log(const MathFunction &x, const MathFunction &a)
+	{
+		return ln(x) / ln(a);
+	}
+	
+	/**
+	* Оптимизация функции
+	*/
+	MathFunction optimize(const MathFunction &f)
+	{
+		return f.optimize();
 	}
 }

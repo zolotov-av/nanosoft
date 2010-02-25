@@ -17,14 +17,12 @@ int main()
 	MathVar x("x"), y("y");
 	
 	MathParser p;
-	p.set("x", x);
-	p.set("y", y);
-	p.set("cos", cos);
-	p.set("sin", sin);
-	p.set("pow", pow);
+	p.setVar("x", x);
+	p.setVar("y", y);
+	p.setConst("R", 1);
 	
 	// f(x, y) = sin(x) * cos(y)
-	MathFunction f = p.parse("sin(x) * cos(y)");
+	MathFunction f = p.parse("optimize( R * sin(x) * cos(y) )");
 	printf("f(x,y) = %s\n", f.toString().c_str());
 	
 	// g(x,y) = f'x(x,y)

@@ -1,4 +1,3 @@
-
 #include <nanosoft/mathparser.h>
 
 #include <string>
@@ -49,7 +48,7 @@ namespace nanosoft
 		/**
 		* Парсер подвыражения
 		*/
-		virtual MathFunction parse(MathParser *p, const char *&expr, const char *limit) = 0;
+		virtual MathFunction parse(const MathParser *p, const char *&expr, const char *limit) = 0;
 	};
 	
 	/**
@@ -60,18 +59,19 @@ namespace nanosoft
 	private:
 		/**
 		* Переменная
+		* @note ага, может быть и функцией и константой
 		*/
-		MathVar var;
+		MathFunction var;
 	public:
 		/**
 		* Конструктор парсера переменной
 		*/
-		MathVarParser(const MathVar &v): var(v) { }
+		MathVarParser(const MathFunction &f): var(f) { }
 		
 		/**
 		* Парсер переменной
 		*/
-		MathFunction parse(MathParser *p, const char *&expr, const char *limit) {
+		MathFunction parse(const MathParser *p, const char *&expr, const char *limit) {
 			return var;
 		}
 	};
@@ -95,7 +95,7 @@ namespace nanosoft
 		/**
 		* Парсер функции одной переменной
 		*/
-		MathFunction parse(MathParser *p, const char *&expr, const char *limit)
+		MathFunction parse(const MathParser *p, const char *&expr, const char *limit)
 		{
 			MathParser::Token token;
 			
@@ -134,7 +134,7 @@ namespace nanosoft
 		/**
 		* Парсер функции двух переменных
 		*/
-		MathFunction parse(MathParser *p, const char *&expr, const char *limit)
+		MathFunction parse(const MathParser *p, const char *&expr, const char *limit)
 		{
 			MathParser::Token token;
 			
@@ -162,10 +162,32 @@ namespace nanosoft
 	};
 	
 	/**
+	* Вернуть тип лексемы в виде строки
+	*/
+	std::string MathParser::Token::typeString() const
+	{
+		static const char *buf[tok_comma+1] = {
+		"end",
+		"number",
+		"name",
+		"operator +",
+		"operator -",
+		"operator *",
+		"operator /",
+		"operator ^",
+		"open",
+		"close",
+		"comma"
+		};
+		return buf[type];
+	}
+	
+	/**
 	* Конструктор парсера
 	*/
 	MathParser::MathParser()
 	{
+		bindFunctions();
 	}
 	
 	/**
@@ -178,17 +200,37 @@ namespace nanosoft
 	/**
 	* Добавить переменную
 	*/
-	void MathParser::set(const char *name, const MathVar &var)
+	void MathParser::setVar(const char *name, const MathVar &value)
 	{
 		names_t::iterator iter = names.find(name);
 		if ( iter != names.end() ) delete iter->second;
-		names[name] = new MathVarParser(var);
+		names[name] = new MathVarParser(value);
+	}
+	
+	/**
+	* Добавить параметр/переменную
+	*/
+	void MathParser::setVar(const char *name, const MathFunction &value)
+	{
+		names_t::iterator iter = names.find(name);
+		if ( iter != names.end() ) delete iter->second;
+		names[name] = new MathVarParser(value);
+	}
+	
+	/**
+	* Добавить константу
+	*/
+	void MathParser::setConst(const char *name, double value)
+	{
+		names_t::iterator iter = names.find(name);
+		if ( iter != names.end() ) delete iter->second;
+		names[name] = new MathVarParser(value);
 	}
 	
 	/**
 	* Добавить функцию одной переменной
 	*/
-	void MathParser::set(const char *name, const MathFunctionX f)
+	void MathParser::setFunction(const char *name, const MathFunctionX f)
 	{
 		names_t::iterator iter = names.find(name);
 		if ( iter != names.end() ) delete iter->second;
@@ -198,7 +240,7 @@ namespace nanosoft
 	/**
 	* Добавить функцию двух переменных
 	*/
-	void MathParser::set(const char *name, const MathFunctionXY f)
+	void MathParser::setFunction(const char *name, const MathFunctionXY f)
 	{
 		names_t::iterator iter = names.find(name);
 		if ( iter != names.end() ) delete iter->second;
@@ -208,9 +250,9 @@ namespace nanosoft
 	/**
 	* Проверить зарегистрированное ли имя
 	*/
-	bool MathParser::isset(const char *name)
+	bool MathParser::isset(const char *name) const
 	{
-		names_t::iterator iter = names.find(name);
+		names_t::const_iterator iter = names.find(name);
 		return iter != names.end();
 	}
 	
@@ -225,13 +267,40 @@ namespace nanosoft
 	}
 	
 	/**
+	* Подключение функций
+	*
+	* Вызывается в констукторе для автоматического подключения
+	* функций. Чтобы добавить, удалить или переопределить
+	* какие-то функции можно переопределить эту функцию
+	*/
+	void MathParser::bindFunctions()
+	{
+		// базовые константы
+		setConst("pi", M_PI);
+		setConst("e", M_E);
+		
+		// арифметрика
+		setFunction("exp", nanosoft::exp);
+		setFunction("pow", nanosoft::pow);
+		setFunction("ln", nanosoft::ln);
+		setFunction("log", nanosoft::log);
+		
+		// тригонометрия
+		setFunction("sin", nanosoft::sin);
+		setFunction("cos", nanosoft::cos);
+		
+		// дополнительные вкусности
+		setFunction("optimize", nanosoft::optimize);
+	}
+	
+	/**
 	* Парсинг лексемы числа
 	* @param token стуктура принимающая описание лексемы
 	* @param expr выражение
 	* @param limit ограничение строки
 	* @return тип лексемы
 	*/
-	MathParser::token_type parseNumber(MathParser::Token &token, const char *&expr, const char *limit)
+	MathParser::token_type MathParser::parseNumber(MathParser::Token &token, const char *&expr, const char *limit)
 	{
 		const char *p = expr + 1;
 		while ( *p >= '0' && *p <= '9' ) p++;
@@ -241,11 +310,11 @@ namespace nanosoft
 			while ( *p >= '0' && *p <= '9' ) p++;
 		}
 		int len = p - expr;
+		token.type = MathParser::tok_number;
 		token.begin = expr;
 		token.limit = p;
-		token.value = std::string(expr, len);
 		expr = p;
-		return token.type = MathParser::tok_number;
+		return token.type;
 	}
 	
 	/**
@@ -255,7 +324,7 @@ namespace nanosoft
 	* @param limit ограничение строки
 	* @return тип лексемы
 	*/
-	MathParser::token_type parseName(MathParser::Token &token, const char *&expr, const char *limit)
+	MathParser::token_type MathParser::parseName(MathParser::Token &token, const char *&expr, const char *limit)
 	{
 		const char *p = expr + 1;
 		while ( *p >= 'A' && *p <= 'Z'
@@ -263,11 +332,11 @@ namespace nanosoft
 			|| *p >= '0' && *p <= '9'
 			|| *p == '_' ) p++;
 		int len = p - expr;
+		token.type = MathParser::tok_name;
 		token.begin = expr;
 		token.limit = p;
-		token.value = std::string(expr, len);
 		expr = p;
-		return token.type = MathParser::tok_name;
+		return token.type;
 	}
 	
 	/**
@@ -304,6 +373,24 @@ namespace nanosoft
 	}
 	
 	/**
+	* Парсинг переменной и вызова функций
+	* Если выражение содержит синтаксическую ошибку, то
+	* генерируется исключение
+	* @param name имя объекта
+	* @param expr выражение для парсинга
+	* @param limit ограничение
+	* @return математическая фунция
+	*/
+	MathFunction MathParser::parseNamedObject(const std::string &name, const char *&expr, const char *limit) const
+	{
+		names_t::const_iterator iter = names.find(name);
+		if ( iter != names.end() ) {
+			return iter->second->parse(this, expr, limit);
+		}
+		throw MathParserError("unknown variable or function: " + name);
+	}
+	
+	/**
 	* Парсинг подвыражения в скобках
 	* Если выражение содержит синтаксическую ошибку, то
 	* генерируется исключение
@@ -311,14 +398,9 @@ namespace nanosoft
 	* @param limit ограничение
 	* @return математическая фунция
 	*/
-	MathFunction MathParser::parseSubExpr(const char *&expr, const char *limit)
+	MathFunction MathParser::parseSubExpr(const char *&expr, const char *limit) const
 	{
 		Token token;
-		
-		if ( parseToken(token, expr, limit) != tok_open )
-		{
-			throw MathParserError("expected subexpression");
-		}
 		
 		MathFunction f = parseSum(expr, limit);
 		
@@ -326,24 +408,8 @@ namespace nanosoft
 		{
 			throw MathParserError("expected end of expression");
 		}
+		
 		return f;
-	}
-	
-	/**
-	* Парсинг переменной и вызова функций
-	* Если выражение содержит синтаксическую ошибку, то
-	* генерируется исключение
-	* @param expr выражение для парсинга
-	* @param limit ограничение
-	* @return математическая фунция
-	*/
-	MathFunction MathParser::parseNamedObject(const Token &token, const char *&expr, const char *limit)
-	{
-		names_t::iterator iter = names.find(token.value);
-		if ( iter != names.end() ) {
-			return iter->second->parse(this, expr, limit);
-		}
-		throw MathParserError("unknown variable or function: " + token.value);
 	}
 	
 	/**
@@ -354,17 +420,16 @@ namespace nanosoft
 	* @param limit ограничение
 	* @return математическая фунция
 	*/
-	MathFunction MathParser::parseAtom(const char *&expr, const char *limit)
+	MathFunction MathParser::parseAtom(const char *&expr, const char *limit) const
 	{
 		Token token;
 		switch ( parseToken(token, expr, limit) )
 		{
 		case tok_end: throw MathParserError("unexpected end of expression");
-		case tok_number: return atof(token.value.c_str());
-		case tok_name: return parseNamedObject(token, expr, limit);
-		case tok_open: { expr = token.begin; return parseSubExpr(expr, limit); }
-		default:
-			MathParserError("unexpected");
+		case tok_number: return atof(token.toString().c_str());
+		case tok_name: return parseNamedObject(token.toString(), expr, limit);
+		case tok_open: return parseSubExpr(expr, limit);
+		default: throw MathParserError("unexpected");
 		}
 	}
 	
@@ -376,33 +441,33 @@ namespace nanosoft
 	* @param limit ограничение
 	* @return математическая фунция
 	*/
-	MathFunction MathParser::parseMult(const char *&expr, const char *limit)
+	MathFunction MathParser::parseMult(const char *&expr, const char *limit) const
 	{
 		Token token;
 		token_type op;
+		
+		// парсим первый множитель
 		MathFunction mult = parseAtom(expr, limit);
+		
 		while ( 1 )
 		{
+			// парсим оператор
 			switch ( parseToken(token, expr, limit) )
 			{
-			case tok_end:
-				return mult;
-			case tok_plus:
-			case tok_minus:
-			case tok_close:
-			case tok_comma:
-				expr = token.begin;
-				return mult;
 			case tok_mult:
 			case tok_div:
 				op = token.type;
 				break;
 			default:
-				throw MathParserError("operator expected: ('*', '/')");
+				expr = token.begin;
+				return mult;
 			}
+			
+			// парсим очередной множитель
 			if ( op == tok_mult ) mult = mult * parseMult(expr, limit);
 			else mult = mult / parseMult(expr, limit);
 		}
+		
 		return mult;
 	}
 	
@@ -414,33 +479,40 @@ namespace nanosoft
 	* @param limit ограничение
 	* @return математическая фунция
 	*/
-	MathFunction MathParser::parseSum(const char *&expr, const char *limit)
+	MathFunction MathParser::parseSum(const char *&expr, const char *limit) const
 	{
 		Token token;
+		
+		// проверка на унарный минус/плюс
 		token_type op = parseToken(token, expr, limit);
 		if ( op != tok_minus && op != tok_plus ) expr = token.begin;
+		
+		// парсим первое слагаемое
 		MathFunction sum = parseMult(expr, limit);
+		
+		// если вначале выражения был унарный минус,
+		// то инвертировать певрое слагаемое
 		if ( op == tok_minus ) sum = - sum;
+		
 		while ( 1 )
 		{
+			// парсим оператор
 			switch ( parseToken(token, expr, limit) )
 			{
-			case tok_end:
-				return sum;
-			case tok_close:
-			case tok_comma:
-				expr = token.begin;
-				return sum;
 			case tok_plus:
 			case tok_minus:
 				op = token.type;
 				break;
 			default:
-				throw MathParserError("operator expected: ('+', '-')");
+				expr = token.begin;
+				return sum;
 			}
+			
+			// парсим очередное слагаемое
 			if ( op == tok_plus ) sum = sum + parseMult(expr, limit);
 			else sum = sum - parseMult(expr, limit);
 		}
+		
 		return sum;
 	}
 	
@@ -452,9 +524,21 @@ namespace nanosoft
 	* @param len длина выражения
 	* @return математическая фунция
 	*/
-	MathFunction MathParser::parse(const char *expr, size_t len)
+	MathFunction MathParser::parse(const char *expr, size_t len) const
 	{
-		return parseSum(expr, expr + len);
+		const char *limit = expr + len;
+		
+		// парсим сумму
+		MathFunction f = parseSum(expr, limit);
+		
+		// проверяем конец выражения
+		Token token;
+		if ( parseToken(token, expr, limit) != tok_end )
+		{
+			throw MathParserError("unexpected token (" + token.typeString() + "), end of string expected");
+		}
+		
+		return f;
 	}
 	
 	/**
@@ -464,7 +548,7 @@ namespace nanosoft
 	* @param expr выражение для парсинга
 	* @return математическая фунция
 	*/
-	MathFunction MathParser::parse(const char *expr)
+	MathFunction MathParser::parse(const char *expr) const
 	{
 		return parse(expr, strlen(expr));
 	}
@@ -476,7 +560,7 @@ namespace nanosoft
 	* @param expr выражение для парсинга
 	* @return математическая фунция
 	*/
-	MathFunction MathParser::parse(const std::string &expr)
+	MathFunction MathParser::parse(const std::string &expr) const
 	{
 		return parse(expr.c_str(), expr.length());
 	}

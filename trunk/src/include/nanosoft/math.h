@@ -125,7 +125,7 @@ namespace nanosoft
 		/**
 		* Вернуть функцию f(x) = x
 		*/
-		operator class MathFunction ();
+		operator class MathFunction () const;
 	};
 	
 	/**
@@ -162,23 +162,23 @@ namespace nanosoft
 		/**
 		* Вернуть тип функции
 		*/
-		std::string getType() { return func->getType(); }
+		std::string getType() const { return func->getType(); }
 		
 		/**
 		* Вычислить функцию
 		*/
-		double eval() { return func->eval(); }
+		double eval() const { return func->eval(); }
 		
 		/**
 		* Вернуть производную функции
 		* @param var переменная по которой будет дифференцирование
 		*/
-		MathFunction derive(const MathVar &var) { return func->derive(var); }
+		MathFunction derive(const MathVar &var) const { return func->derive(var); }
 		
 		/**
 		* Вернуть оптимизированную функцию
 		*/
-		MathFunction optimize() { return func->optimize(); }
+		MathFunction optimize() const { return func->optimize(); }
 		
 		void operator = (const MathFunction &a)
 		{
@@ -277,14 +277,24 @@ namespace nanosoft
 	MathFunction exp(const MathFunction &x);
 	
 	/**
+	* Функция pow(x, y) = x ^ y
+	*/
+	MathFunction pow(const MathFunction &x, const MathFunction &y);
+	
+	/**
 	* Функция ln(x) (натуальный логарифм)
 	*/
 	MathFunction ln(const MathFunction &x);
 	
 	/**
-	* Функция pow(x, y) = x ^ y
+	* Функция log(x, a) - логарифм числа x по основанию a
 	*/
-	MathFunction pow(const MathFunction &x, const MathFunction &y);
+	MathFunction log(const MathFunction &x, const MathFunction &a);
+	
+	/**
+	* Оптимизация функции
+	*/
+	MathFunction optimize(const MathFunction &f);
 }
 
 #endif // NANOSOFT_MATH_H

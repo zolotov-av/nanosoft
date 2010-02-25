@@ -53,13 +53,16 @@ namespace nanosoft
 	*/
 	class MathParser
 	{
-	public:
+	friend class MathHelperParser;
+	friend class MathVarParser;
+	friend class MathFunctionXParser;
+	friend class MathFunctionXYParser;
+	private:
 		/**
 		* Типы лексем
 		*/
 		enum token_type {
 			tok_end, // конец выражения
-			tok_error, // признак ситаксической ошибки
 			tok_number, // число
 			tok_name, // имя переменной или функции
 			tok_plus, tok_minus, tok_mult, tok_div, tok_pow, // операторы
@@ -88,13 +91,36 @@ namespace nanosoft
 			const char *limit;
 			
 			/**
-			* Значение лексемы
+			* Вернуть тип лексемы в виде строки
 			*/
-			std::string value;
+			std::string typeString() const;
+			
+			/**
+			* Вернуть лексему в виде строки
+			*/
+			std::string toString() const { return std::string(begin, limit); }
 		};
 		
 		typedef std::map<std::string, class MathHelperParser *> names_t;
 		names_t names;
+		
+		/**
+		* Парсинг лексемы числа
+		* @param token стуктура принимающая описание лексемы
+		* @param expr выражение
+		* @param limit ограничение строки
+		* @return тип лексемы
+		*/
+		static token_type parseNumber(Token &token, const char *&expr, const char *limit);
+		
+		/**
+		* Парсинг лексемы идентификатора (переменной, функции)
+		* @param token стуктура принимающая описание лексемы
+		* @param expr выражение
+		* @param limit ограничение строки
+		* @return тип лексемы
+		*/
+		static token_type parseName(Token &token, const char *&expr, const char *limit);
 		
 		/**
 		* Парсинг лексемы
@@ -103,7 +129,18 @@ namespace nanosoft
 		* @param limit ограничение строки
 		* @return тип лексемы
 		*/
-		token_type parseToken(Token &token, const char *&expr, const char *limit);
+		static token_type parseToken(Token &token, const char *&expr, const char *limit);
+		
+		/**
+		* Парсинг переменной и вызова функций
+		* Если выражение содержит синтаксическую ошибку, то
+		* генерируется исключение
+		* @param name имя объекта
+		* @param expr выражение для парсинга
+		* @param limit ограничение
+		* @return математическая фунция
+		*/
+		MathFunction parseNamedObject(const std::string &name, const char *&expr, const char *limit) const;
 		
 		/**
 		* Парсинг подвыражения в скобках
@@ -113,17 +150,7 @@ namespace nanosoft
 		* @param limit ограничение
 		* @return математическая фунция
 		*/
-		MathFunction parseSubExpr(const char *&expr, const char *limit);
-		
-		/**
-		* Парсинг переменной и вызова функций
-		* Если выражение содержит синтаксическую ошибку, то
-		* генерируется исключение
-		* @param expr выражение для парсинга
-		* @param limit ограничение
-		* @return математическая фунция
-		*/
-		MathFunction parseNamedObject(const Token &token, const char *&expr, const char *limit);
+		MathFunction parseSubExpr(const char *&expr, const char *limit) const;
 		
 		/**
 		* Парсинг атомарного выражения
@@ -133,7 +160,7 @@ namespace nanosoft
 		* @param limit ограничение
 		* @return математическая фунция
 		*/
-		MathFunction parseAtom(const char *&expr, const char *limit);
+		MathFunction parseAtom(const char *&expr, const char *limit) const;
 		
 		/**
 		* Парсинг произведения
@@ -143,7 +170,7 @@ namespace nanosoft
 		* @param limit ограничение
 		* @return математическая фунция
 		*/
-		MathFunction parseMult(const char *&expr, const char *limit);
+		MathFunction parseMult(const char *&expr, const char *limit) const;
 		
 		/**
 		* Парсинг суммы
@@ -153,7 +180,16 @@ namespace nanosoft
 		* @param limit ограничение
 		* @return математическая фунция
 		*/
-		MathFunction parseSum(const char *&expr, const char *limit);
+		MathFunction parseSum(const char *&expr, const char *limit) const;
+	protected:
+		/**
+		* Подключение функций
+		*
+		* Вызывается в констукторе для автоматического подключения
+		* функций. Чтобы добавить, удалить или переопределить
+		* какие-то функции можно переопределить эту функцию
+		*/
+		virtual void bindFunctions();
 	public:
 		/**
 		* Конструктор парсера
@@ -166,24 +202,34 @@ namespace nanosoft
 		~MathParser();
 		
 		/**
-		* Добавить переменную
+		* Добавить параметр/переменную
 		*/
-		void set(const char *name, const MathVar &var);
+		void setVar(const char *name, const MathVar &value);
+		
+		/**
+		* Добавить параметр/переменную
+		*/
+		void setVar(const char *name, const MathFunction &value);
+		
+		/**
+		* Добавить константу
+		*/
+		void setConst(const char *name, double value);
 		
 		/**
 		* Добавить функцию одной переменной
 		*/
-		void set(const char *name, const MathFunctionX f);
+		void setFunction(const char *name, const MathFunctionX f);
 		
 		/**
 		* Добавить функцию двух переменных
 		*/
-		void set(const char *name, const MathFunctionXY f);
+		void setFunction(const char *name, const MathFunctionXY f);
 		
 		/**
 		* Проверить зарегистрированное ли имя
 		*/
-		bool isset(const char *name);
+		bool isset(const char *name) const;
 		
 		/**
 		* Удалить переменную/функцию
@@ -197,7 +243,7 @@ namespace nanosoft
 		* @param expr выражение для парсинга
 		* @return математическая фунция
 		*/
-		MathFunction parse(const char *expr);
+		MathFunction parse(const char *expr) const;
 		
 		/**
 		* Парсинг выражения
@@ -207,7 +253,7 @@ namespace nanosoft
 		* @param len длина выражения
 		* @return математическая фунция
 		*/
-		MathFunction parse(const char *expr, size_t len);
+		MathFunction parse(const char *expr, size_t len) const;
 		
 		/**
 		* Парсинг выражения
@@ -216,7 +262,7 @@ namespace nanosoft
 		* @param expr выражение для парсинга
 		* @return математическая фунция
 		*/
-		MathFunction parse(const std::string &expr);
+		MathFunction parse(const std::string &expr) const;
 	};
 }
 
