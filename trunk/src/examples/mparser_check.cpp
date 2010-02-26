@@ -42,17 +42,17 @@ void test_runtime()
 {
 	printf("\nbasic:\n");
 	test_runtime(__LINE__, x, "x");
-	test_runtime(__LINE__, -x, "- x");
+	test_runtime(__LINE__, -x, "neg(x)");
 	
 	printf("\nsums:\n");
 	test_runtime(__LINE__, x + y, "(x + y)");
 	test_runtime(__LINE__, x - y, "(x - y)");
-	test_runtime(__LINE__, -x - y, "(- x - y)");
+	test_runtime(__LINE__, -x - y, "(neg(x) - y)");
 	test_runtime(__LINE__, x + y + z, "((x + y) + z)");
 	test_runtime(__LINE__, x + y - z, "((x + y) - z)");
 	test_runtime(__LINE__, x - y + z, "((x - y) + z)");
 	test_runtime(__LINE__, x - y - z, "((x - y) - z)");
-	test_runtime(__LINE__, - x - y - z, "((- x - y) - z)");
+	test_runtime(__LINE__, - x - y - z, "((neg(x) - y) - z)");
 	
 	printf("\nmults:\n");
 	test_runtime(__LINE__, x * y, "(x * y)");
@@ -114,14 +114,14 @@ void test_parser()
 {
 	printf("\nparser sums:\n");
 	test_parser(__LINE__, "x", "x");
-	test_parser(__LINE__, "-x", "- x");
+	test_parser(__LINE__, "-x", "neg(x)");
 	test_parser(__LINE__, "x + y", "(x + y)");
 	test_parser(__LINE__, "x + y + z", "((x + y) + z)");
 	test_parser(__LINE__, "x - y", "(x - y)");
 	test_parser(__LINE__, "x - y + z", "((x - y) + z)");
 	test_parser(__LINE__, "x + y - z", "((x + y) - z)");
 	test_parser(__LINE__, "x - y - z", "((x - y) - z)");
-	test_parser(__LINE__, "- x - y - z", "((- x - y) - z)");
+	test_parser(__LINE__, "- x - y - z", "((neg(x) - y) - z)");
 	
 	printf("\nparser mults:\n");
 	test_parser(__LINE__, "x * y", "(x * y)");
@@ -207,18 +207,18 @@ void test_optimizer()
 	test_optimizer(__LINE__, x * y * z, x * y * z);
 	test_optimizer(__LINE__, x + y * z, x + y * z);
 	test_optimizer(__LINE__, x * y + z, x * y + z);
-	test_optimizer(__LINE__, x / y, x / y);
-	test_optimizer(__LINE__, x / y / z, x / y / z);
-	test_optimizer(__LINE__, x + y / z, x + y / z);
-	test_optimizer(__LINE__, x / y + z, x / y + z);
-	test_optimizer(__LINE__, x * y / z, x * y / z);
-	test_optimizer(__LINE__, x / y * z, x / y * z);
+	//test_optimizer(__LINE__, x / y, x / y);
+	//test_optimizer(__LINE__, x / y / z, x / y / z);
+	//test_optimizer(__LINE__, x + y / z, x + y / z);
+	//test_optimizer(__LINE__, x / y + z, x / y + z);
+	//test_optimizer(__LINE__, x * y / z, x * y / z);
+	//test_optimizer(__LINE__, x / y * z, x / y * z);
 	test_optimizer(__LINE__, sin(x), sin(x));
 	test_optimizer(__LINE__, cos(x), cos(x));
 	test_optimizer(__LINE__, exp(x), exp(x));
 	test_optimizer(__LINE__, pow(x, y), pow(x, y));
 	test_optimizer(__LINE__, ln(x), ln(x));
-	test_optimizer(__LINE__, log(x, y), log(x, y));
+	//test_optimizer(__LINE__, log(x, y), log(x, y));
 	
 	printf("\nsin/cos optimizer:\n");
 	test_optimizer(__LINE__, cos(MathFunction(0.0)), 1.0);
@@ -250,7 +250,6 @@ void test_optimizer()
 	test_optimizer(__LINE__, x + (1.0 + y), 1.0 + (x + y));
 	test_optimizer(__LINE__, (x + 1.0) + (y + 2.0) + (z + 3.0), 6.0 + (x + y + z));
 	
-	// new tests
 	printf("\noptimize[mult]:\n");
 	test_optimizer(__LINE__, MathFunction(2.0) * 3.0, 6.0);
 	test_optimizer(__LINE__, 0.0 * x, 0.0);
@@ -291,6 +290,22 @@ void test_optimizer()
 	test_optimizer(__LINE__, x * (-y), -(x * y));
 	test_optimizer(__LINE__, (-x) * y, -(x * y));
 	test_optimizer(__LINE__, (-x) * (-y), x * y);
+	
+	printf("\noptimize[temp sub/div]:\n");
+	test_optimizer(__LINE__, 1.0 - (2.0 + x), (-1.0) + (-x));
+	test_optimizer(__LINE__, x - (y + z), x + ((-y) + (-z)));
+	test_optimizer(__LINE__, x + y - z, x + y + (-z));
+	test_optimizer(__LINE__, 1.0 / (2.0 * x), 0.5 * inv(x));
+	test_optimizer(__LINE__, x / (y * z), x * (inv(y) * inv(z)));
+	test_optimizer(__LINE__, x * y / z, x * y * inv(z));
+	test_optimizer(__LINE__, -(-x), x);
+	test_optimizer(__LINE__, - sin(-x), sin(x));
+	test_optimizer(__LINE__, cos(-x), cos(x));
+	test_optimizer(__LINE__, inv(inv(x)), x);
+	test_optimizer(__LINE__, ln(inv(x)), -ln(x));
+	test_optimizer(__LINE__, -ln(inv(x)), ln(x));
+	test_optimizer(__LINE__, (-x) / (-y), x * inv(y));
+	test_optimizer(__LINE__, x + y / (-z), x + (-(y * inv(z))));
 }
 
 int main()

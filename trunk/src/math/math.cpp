@@ -337,7 +337,7 @@ namespace nanosoft
 		* Вернуть в виде строки для отладки и тестирования
 		*/
 		std::string debugString() {
-			return "- " + a.debugString();
+			return "neg(" + a.debugString() + ")";
 		}
 	};
 	
@@ -452,32 +452,59 @@ namespace nanosoft
 	
 	MathFunction MathNeg::optimize()
 	{
+		MathSum *sum = a.cast<MathSum>();
+		if ( sum ) return (- sum->a - sum->b).optimize();
+		
+		MathSub *sub = a.cast<MathSub>();
+		if ( sub ) return (- sub->a + sub->b).optimize();
+		
 		MathFunction x = a.optimize();
 		
 		MathConst *c = x.cast<MathConst>();
-		if ( c ) return - c->eval();
-		
-		MathSum *sum = x.cast<MathSum>();
-		if ( sum ) return - sum->a - sum->b;
-		
-		MathSub *sub = x.cast<MathSub>();
-		if ( sub ) return sub->b - sub->a;
+		if ( c ) return (-c->eval());
 		
 		MathNeg *neg = x.cast<MathNeg>();
-		if ( neg ) return neg->a;
+		if ( neg ) return neg->a.optimize();
 		
 		return - x;
 	}
+	
+	/**
+	* Функция f(x) = 1/x
+	*/
+	class MathInv: public MathFunctionImpl
+	{
+	public:
+		MathFunction a;
+		MathInv(const MathFunction &A): a(A) { }
+		std::string getType() { return "inv"; }
+		double eval() { return 1.0 / a.eval(); }
+		MathFunction derive(const MathVar &var) { return - (pow(a, -2.0) * a.derive(var)); }
+		MathFunction optimize();
+		
+		/**
+		* Вернуть в виде строки
+		*/
+		std::string toString() {
+			return "inv(" + a.toString() + ")";
+		}
+		
+		/**
+		* Вернуть в виде строки для отладки и тестирования
+		*/
+		std::string debugString() {
+			return "inv(" + a.debugString() + ")";
+		}
+	};
 	
 	/**
 	* Функция F(x,y) = x * y
 	*/
 	class MathMult: public MathFunctionImpl
 	{
-	private:
+	public:
 		MathFunction a;
 		MathFunction b;
-	public:
 		MathMult(const MathFunction &A, const MathFunction &B): a(A), b(B) { }
 		std::string getType() { return "mult"; }
 		double eval() { return a.eval() * b.eval(); }
@@ -574,37 +601,18 @@ namespace nanosoft
 	*/
 	class MathDiv: public MathFunctionImpl
 	{
-	private:
+	public:
 		MathFunction a;
 		MathFunction b;
-	public:
 		MathDiv(const MathFunction &A, const MathFunction &B): a(A), b(B) { }
 		std::string getType() { return "div"; }
 		double eval() { return a.eval() / b.eval(); }
 		MathFunction derive(const MathVar &var) {
 			// TODO b^2
-			return (a.derive(var) * b - a * b.derive(var)) / (b * b);
+			return (a.derive(var) * b - a * b.derive(var)) / pow(b, 2);
 		}
 		MathFunction optimize() {
-			MathFunction x = a.optimize();
-			MathFunction y = b.optimize();
-			
-			if ( x.getType() == "const" )
-			{
-				if ( x.eval() == 0.0 ) return 0.0;
-				if ( y.getType() == "const" ) return x.eval() * y.eval();
-				
-				return x / y;
-			}
-			
-			if ( y.getType() == "const" )
-			{
-				if ( y.eval() == 1.0 ) return x;
-				
-				return x * (1 / y);
-			}
-			
-			return x / y;
+			return (a * inv(b)).optimize();
 		}
 		
 		/**
@@ -621,6 +629,28 @@ namespace nanosoft
 			return "(" + a.debugString() + " / " + b.debugString() + ")";
 		}
 	};
+	
+	MathFunction MathInv::optimize()
+	{
+		MathNeg *neg = a.cast<MathNeg>();
+		if ( neg ) return (-inv(neg->a)).optimize();
+		
+		MathMult *mult = a.cast<MathMult>();
+		if ( mult ) return (inv(mult->a) * inv(mult->b)).optimize();
+		
+		MathDiv *div = a.cast<MathDiv>();
+		if ( div ) return (inv(mult->a) * mult->b).optimize();
+		
+		MathFunction x = a.optimize();
+		
+		MathConst *c = x.cast<MathConst>();
+		if ( c ) return 1 / c->eval();
+		
+		MathInv *inv = x.cast<MathInv>();
+		if ( inv ) return inv->a.optimize();
+		
+		return nanosoft::inv(x);
+	}
 	
 	/**
 	* Оптимизатор по умолчанию для функции одной переменной
@@ -765,7 +795,13 @@ namespace nanosoft
 		std::string getType() { return "ln"; }
 		double eval() { return ::log(a.eval()); }
 		MathFunction derive(const MathVar &var) { return a.derive(var) / a; }
-		MathFunction optimize() { return opt_default(ln, a); }
+		MathFunction optimize() {
+			MathFunction x = a.optimize();
+			if ( x.getType() == "const" ) return ln(x).eval();
+			MathInv *xi = x.cast<MathInv>();
+			if ( xi ) return -ln(xi->a);
+			return ln(x);
+		}
 		
 		/**
 		* Вернуть в виде строки
@@ -951,6 +987,14 @@ namespace nanosoft
 	MathFunction operator / (double a, const MathFunction &b)
 	{
 		return new MathDiv(a, b);
+	}
+	
+	/**
+	* Функция inv(x) = 1 / x
+	*/
+	MathFunction inv(const MathFunction &a)
+	{
+		return new MathInv(a);
 	}
 	
 	/**
