@@ -221,6 +221,10 @@ void test_optimizer()
 	test_optimizer(__LINE__, log(x, y), log(x, y));
 	
 	printf("\nsin/cos optimizer:\n");
+	test_optimizer(__LINE__, cos(MathFunction(0.0)), 1.0);
+	test_optimizer(__LINE__, sin(MathFunction(0.0)), 0.0);
+	test_optimizer(__LINE__, exp(MathFunction(0.0)), 1.0);
+	test_optimizer(__LINE__, ln(exp(MathFunction(1.0))), 1.0);
 	test_optimizer(__LINE__, cos(x), cos(x));
 	test_optimizer(__LINE__, cos(-x), cos(x));
 	test_optimizer(__LINE__, sin(x), sin(x));

@@ -623,11 +623,33 @@ namespace nanosoft
 	};
 	
 	/**
+	* Оптимизатор по умолчанию для функции одной переменной
+	*/
+	inline MathFunction opt_default(MathFunctionX f, const MathFunction &a)
+	{
+		MathFunction x = a.optimize();
+		if ( x.getType() == "const" ) return f(x).eval();
+		return f(x);
+	}
+	
+	/**
+	* Оптимизатор по умолчанию для функции двух переменных
+	*/
+	inline MathFunction opt_default(MathFunctionXY f, const MathFunction &a, const MathFunction &b)
+	{
+		MathFunction x = a.optimize();
+		MathFunction y = b.optimize();
+		if ( x.getType() == "const" && x.getType() == "const" ) return f(x, y).eval();
+		return f(x, y);
+	}
+	
+	/**
 	* Оптимизатор четной функции
 	*/
 	inline MathFunction opt_even(MathFunctionX f, const MathFunction &a)
 	{
 		MathFunction x = a.optimize();
+		if ( x.getType() == "const" ) return f(x).eval();
 		MathNeg *nx = x.cast<MathNeg>();
 		return f( nx ? nx->a : x);
 	}
@@ -638,6 +660,7 @@ namespace nanosoft
 	inline MathFunction opt_odd(MathFunctionX f, const MathFunction &a)
 	{
 		MathFunction x = a.optimize();
+		if ( x.getType() == "const" ) return f(x).eval();
 		MathNeg *nx = x.cast<MathNeg>();
 		if ( nx ) return - f(nx->a);
 		return f(x);
@@ -713,7 +736,7 @@ namespace nanosoft
 		std::string getType() { return "exp"; }
 		double eval() { return ::exp(a.eval()); }
 		MathFunction derive(const MathVar &var) { return exp(a) * a.derive(var); }
-		MathFunction optimize() { return exp(a.optimize()); }
+		MathFunction optimize() { return opt_default(exp, a); }
 		
 		/**
 		* Вернуть в виде строки
@@ -742,7 +765,7 @@ namespace nanosoft
 		std::string getType() { return "ln"; }
 		double eval() { return ::log(a.eval()); }
 		MathFunction derive(const MathVar &var) { return a.derive(var) / a; }
-		MathFunction optimize() { return ln(a.optimize()); }
+		MathFunction optimize() { return opt_default(ln, a); }
 		
 		/**
 		* Вернуть в виде строки
@@ -774,7 +797,7 @@ namespace nanosoft
 		MathFunction derive(const MathVar &var) {
 			return b * pow(a, b-1) * a.derive(var) + pow(a, b) * ln(a) * b.derive(var);
 		}
-		MathFunction optimize() { return pow(a.optimize(), b.optimize()); }
+		MathFunction optimize() { return opt_default(pow, a, b); }
 		
 		/**
 		* Вернуть в виде строки
