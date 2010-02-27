@@ -715,7 +715,7 @@ namespace nanosoft
 	/**
 	* Первый этап оптимизатора по умолчанию для функции одной переменной
 	*/
-	inline MathFunction opt1_default(MathFunctionX f, const MathFunction &a)
+	MathFunction opt1_default(MathFunctionX f, const MathFunction &a)
 	{
 		MathFunction x = a.optimize1();
 		if ( x.getType() == "const" ) return f(x).eval();
@@ -725,7 +725,7 @@ namespace nanosoft
 	/**
 	* Второй этап оптимизатора по умолчанию для функции одной переменной
 	*/
-	inline MathFunction opt2_default(MathFunctionX f, const MathFunction &a)
+	MathFunction opt2_default(MathFunctionX f, const MathFunction &a)
 	{
 		return f(a.optimize2());
 	}
@@ -733,7 +733,7 @@ namespace nanosoft
 	/**
 	* Первый этап оптимизатора по умолчанию для функции двух переменных
 	*/
-	inline MathFunction opt1_default(MathFunctionXY f, const MathFunction &a, const MathFunction &b)
+	MathFunction opt1_default(MathFunctionXY f, const MathFunction &a, const MathFunction &b)
 	{
 		MathFunction x = a.optimize1();
 		MathFunction y = b.optimize1();
@@ -744,7 +744,7 @@ namespace nanosoft
 	/**
 	* Втрой этап оптимизатора по умолчанию для функции двух переменных
 	*/
-	inline MathFunction opt2_default(MathFunctionXY f, const MathFunction &a, const MathFunction &b)
+	MathFunction opt2_default(MathFunctionXY f, const MathFunction &a, const MathFunction &b)
 	{
 		return f(a.optimize2(), b.optimize2());
 	}
@@ -752,7 +752,7 @@ namespace nanosoft
 	/**
 	* Оптимизатор четной функции
 	*/
-	inline MathFunction opt1_even(MathFunctionX f, const MathFunction &a)
+	MathFunction opt1_even(MathFunctionX f, const MathFunction &a)
 	{
 		MathFunction x = a.optimize1();
 		if ( x.getType() == "const" ) return f(x).eval();
@@ -763,7 +763,7 @@ namespace nanosoft
 	/**
 	* Оптимизатор нечетной функции
 	*/
-	inline MathFunction opt1_odd(MathFunctionX f, const MathFunction &a)
+	MathFunction opt1_odd(MathFunctionX f, const MathFunction &a)
 	{
 		MathFunction x = a.optimize1();
 		if ( x.getType() == "const" ) return f(x).eval();
@@ -932,6 +932,15 @@ namespace nanosoft
 	};
 	
 	/**
+	* Конструктор по умолчанию (нуль-функция)
+	*/
+	MathFunction::MathFunction()
+	{
+		func = new MathConst(0);
+		func->lock();
+	}
+	
+	/**
 	* Конструктор константной функции
 	*/
 	MathFunction::MathFunction(double c)
@@ -964,6 +973,69 @@ namespace nanosoft
 	MathFunction::~MathFunction()
 	{
 		if ( func ) func->release();
+	}
+	
+	/**
+	* Вернуть тип функции
+	*/
+	std::string MathFunction::getType() const { return func->getType(); }
+	
+	/**
+	* Вычислить функцию
+	*/
+	double MathFunction::eval() const { return func->eval(); }
+	
+	/**
+	* Вернуть производную функции
+	* @param var переменная по которой будет дифференцирование
+	*/
+	MathFunction MathFunction::derive(const MathVar &var) const { return func->derive(var); }
+	
+	/**
+	* Вернуть оптимизированную функцию
+	*/
+	MathFunction MathFunction::optimize1() const
+	{
+		return func->optimize1();
+	}
+	
+	/**
+	* Вернуть оптимизированную функцию
+	*/
+	MathFunction MathFunction::optimize2() const
+	{
+		return func->optimize2();
+	}
+	
+	/**
+	* Вернуть оптимизированную функцию
+	*/
+	MathFunction MathFunction::optimize() const
+	{
+		return optimize1().optimize2();
+	}
+	
+	void MathFunction::operator = (const MathFunction &a)
+	{
+		if ( func ) func->release();
+		func = a.func;
+		func->lock();
+	}
+	
+	/**
+	* Вернуть функцию в виде строки
+	*/
+	std::string MathFunction::toString() const
+	{
+		return func->toString();
+	}
+	
+	/**
+	* Вернуть в виде строки для отладки и тестирования
+	*/
+	std::string MathFunction::debugString() const
+	{
+		return func->debugString();
 	}
 	
 	/**
@@ -1132,5 +1204,13 @@ namespace nanosoft
 	MathFunction optimize(const MathFunction &f)
 	{
 		return f.optimize();
+	}
+	
+	/**
+	* Производная функции
+	*/
+	MathFunction derive(const MathFunction &f, const MathVar &var)
+	{
+		return f.derive(var);
 	}
 }

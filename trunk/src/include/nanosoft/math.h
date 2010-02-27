@@ -22,7 +22,6 @@ namespace nanosoft
 		* Счетчик ссылок
 		*/
 		int ref_count;
-		std::string id;
 	public:
 		/**
 		* Конструктор по умолчанию
@@ -150,6 +149,11 @@ namespace nanosoft
 		MathFunctionImpl *func;
 	public:
 		/**
+		* Конструктор по умолчанию (нуль-функция)
+		*/
+		MathFunction();
+		
+		/**
 		* Конструктор константной функции
 		*/
 		MathFunction(double c);
@@ -172,56 +176,45 @@ namespace nanosoft
 		/**
 		* Вернуть тип функции
 		*/
-		std::string getType() const { return func->getType(); }
+		std::string getType() const;
 		
 		/**
 		* Вычислить функцию
 		*/
-		double eval() const { return func->eval(); }
+		double eval() const;
 		
 		/**
 		* Вернуть производную функции
 		* @param var переменная по которой будет дифференцирование
 		*/
-		MathFunction derive(const MathVar &var) const { return func->derive(var); }
+		MathFunction derive(const MathVar &var) const;
 		
 		/**
 		* Вернуть оптимизированную функцию
 		*/
-		MathFunction optimize1() const {
-			return func->optimize1();
-		}
+		MathFunction optimize1() const;
 		
 		/**
 		* Вернуть оптимизированную функцию
 		*/
-		MathFunction optimize2() const {
-			return func->optimize2();
-		}
+		MathFunction optimize2() const;
 		
 		/**
 		* Вернуть оптимизированную функцию
 		*/
-		MathFunction optimize() const {
-			return optimize1().optimize2();
-		}
+		MathFunction optimize() const;
 		
-		void operator = (const MathFunction &a)
-		{
-			if ( func ) func->release();
-			func = a.func;
-			func->lock();
-		}
+		void operator = (const MathFunction &a);
 		
 		/**
 		* Вернуть функцию в виде строки
 		*/
-		std::string toString() const { return func->toString(); }
+		std::string toString() const;
 		
 		/**
 		* Вернуть в виде строки для отладки и тестирования
 		*/
-		std::string debugString() const { return func->debugString(); }
+		std::string debugString() const;
 		
 		template <class type>
 		type* cast() const { return dynamic_cast<type*>(func); }
@@ -236,6 +229,36 @@ namespace nanosoft
 	* Типа конструктора функции двух переменных
 	*/
 	typedef MathFunction (*MathFunctionXY)(const MathFunction &x, const MathFunction &y);
+	
+	/**
+	* Первый этап оптимизатора по умолчанию для функции одной переменной
+	*/
+	MathFunction opt1_default(MathFunctionX f, const MathFunction &a);
+	
+	/**
+	* Второй этап оптимизатора по умолчанию для функции одной переменной
+	*/
+	MathFunction opt2_default(MathFunctionX f, const MathFunction &a);
+	
+	/**
+	* Первый этап оптимизатора по умолчанию для функции двух переменных
+	*/
+	MathFunction opt1_default(MathFunctionXY f, const MathFunction &a, const MathFunction &b);
+	
+	/**
+	* Втрой этап оптимизатора по умолчанию для функции двух переменных
+	*/
+	MathFunction opt2_default(MathFunctionXY f, const MathFunction &a, const MathFunction &b);
+	
+	/**
+	* Оптимизатор четной функции
+	*/
+	MathFunction opt1_even(MathFunctionX f, const MathFunction &a);
+	
+	/**
+	* Оптимизатор нечетной функции
+	*/
+	MathFunction opt1_odd(MathFunctionX f, const MathFunction &a);
 	
 	/**
 	* Унарный оператор вычитания
@@ -341,6 +364,11 @@ namespace nanosoft
 	* Оптимизация функции
 	*/
 	MathFunction optimize(const MathFunction &f);
+	
+	/**
+	* Производная функции
+	*/
+	MathFunction derive(const MathFunction &f, const MathVar &var);
 }
 
 #endif // NANOSOFT_MATH_H
