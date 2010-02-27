@@ -292,20 +292,21 @@ void test_optimizer()
 	test_optimizer(__LINE__, (-x) * (-y), x * y);
 	
 	printf("\noptimize[temp sub/div]:\n");
-	test_optimizer(__LINE__, 1.0 - (2.0 + x), (-1.0) + (-x));
-	test_optimizer(__LINE__, x - (y + z), x + ((-y) + (-z)));
-	test_optimizer(__LINE__, x + y - z, x + y + (-z));
-	test_optimizer(__LINE__, 1.0 / (2.0 * x), 0.5 * inv(x));
-	test_optimizer(__LINE__, x / (y * z), x * (inv(y) * inv(z)));
-	test_optimizer(__LINE__, x * y / z, x * y * inv(z));
+	test_optimizer(__LINE__, 1.0 - (2.0 + x), (-1.0) - x);
+	test_optimizer(__LINE__, x - (y + z), x - (y + z));
+	test_optimizer(__LINE__, x + y - z, x + y - z);
+	test_optimizer(__LINE__, 1.0 / (2.0 * x), 0.5 / x);
+	test_optimizer(__LINE__, x / (y * z), x / (y * z));
+	test_optimizer(__LINE__, x * y / z, x * y / z);
 	test_optimizer(__LINE__, -(-x), x);
 	test_optimizer(__LINE__, - sin(-x), sin(x));
 	test_optimizer(__LINE__, cos(-x), cos(x));
 	test_optimizer(__LINE__, inv(inv(x)), x);
 	test_optimizer(__LINE__, ln(inv(x)), -ln(x));
 	test_optimizer(__LINE__, -ln(inv(x)), ln(x));
-	test_optimizer(__LINE__, (-x) / (-y), x * inv(y));
-	test_optimizer(__LINE__, x + y / (-z), x + (-(y * inv(z))));
+	test_optimizer(__LINE__, (-x) / (-y), x / y);
+	test_optimizer(__LINE__, x + y / (-z), x - (y / z));
+	test_optimizer(__LINE__, x * inv(y), x / y);
 }
 
 int main()

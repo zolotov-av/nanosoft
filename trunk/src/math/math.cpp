@@ -39,6 +39,16 @@ namespace nanosoft
 		MathFunction derive(const MathVar &var) { return new MathConst(0); }
 		
 		/**
+		* Первый этап оптимизации (константы, суммы, произведения)
+		*/
+		MathFunction optimize1() { return this; }
+		
+		/**
+		* Второй этап оптимизации (светывание разностей и частных)
+		*/
+		MathFunction optimize2() { return this; }
+		
+		/**
 		* Вернуть в виде строки
 		*/
 		std::string toString() {
@@ -112,6 +122,16 @@ namespace nanosoft
 		* Вернуть производную
 		*/
 		MathFunction derive(const MathVar &var);
+		
+		/**
+		* Первый этап оптимизации (константы, суммы, произведения)
+		*/
+		MathFunction optimize1() { return this; }
+		
+		/**
+		* Второй этап оптимизации (светывание разностей и частных)
+		*/
+		MathFunction optimize2() { return this; }
 		
 		/**
 		* Вернуть в виде строки
@@ -212,9 +232,9 @@ namespace nanosoft
 	}
 	
 	/**
-	* Вернуть оптимизированную функцию
+	* Первый этап оптимизации (константы, суммы, произведения)
 	*/
-	MathFunction MathFunctionImpl::optimize()
+	MathFunction MathFunctionImpl::optimize1()
 	{
 		// default optimization: no optimization
 		return this;
@@ -324,7 +344,8 @@ namespace nanosoft
 		std::string getType() { return "neg"; }
 		double eval() { return - a.eval(); }
 		MathFunction derive(const MathVar &var) { return new MathNeg(a.derive(var)); }
-		MathFunction optimize();
+		MathFunction optimize1();
+		MathFunction optimize2() { return - a.optimize2(); }
 		
 		/**
 		* Вернуть в виде строки
@@ -353,9 +374,9 @@ namespace nanosoft
 		std::string getType() { return "sum"; }
 		double eval() { return a.eval() + b.eval(); }
 		MathFunction derive(const MathVar &var) { return a.derive(var) + b.derive(var); }
-		MathFunction optimize() {
-			MathFunction x = a.optimize();
-			MathFunction y = b.optimize();
+		MathFunction optimize1() {
+			MathFunction x = a.optimize1();
+			MathFunction y = b.optimize1();
 			
 			MathSum *xs = x.cast<MathSum>();
 			MathSum *ys = y.cast<MathSum>();
@@ -404,6 +425,24 @@ namespace nanosoft
 			return x + y;
 		}
 		
+		MathFunction optimize2() {
+			MathFunction x = a.optimize2();
+			MathFunction y = b.optimize2();
+			
+			MathNeg *xn = x.cast<MathNeg>();
+			MathNeg *yn = y.cast<MathNeg>();
+			
+			if ( xn )
+			{
+				if ( yn ) return -(xn->a + yn->a);
+				return y - xn->a;
+			}
+			
+			if ( yn ) return x - yn->a;
+			
+			return x + y;
+		}
+		
 		/**
 		* Вернуть в виде строки
 		*/
@@ -431,9 +470,10 @@ namespace nanosoft
 		std::string getType() { return "sub"; }
 		double eval() { return a.eval() - b.eval(); }
 		MathFunction derive(const MathVar &var) { return a.derive(var) - b.derive(var); }
-		MathFunction optimize() {
-			return (a + (-b)).optimize();
+		MathFunction optimize1() {
+			return (a + (-b)).optimize1();
 		}
+		MathFunction optimize2() { return a.optimize2() - b.optimize2(); }
 		
 		/**
 		* Вернуть в виде строки
@@ -450,21 +490,21 @@ namespace nanosoft
 		}
 	};
 	
-	MathFunction MathNeg::optimize()
+	MathFunction MathNeg::optimize1()
 	{
 		MathSum *sum = a.cast<MathSum>();
-		if ( sum ) return (- sum->a - sum->b).optimize();
+		if ( sum ) return (- sum->a - sum->b).optimize1();
 		
 		MathSub *sub = a.cast<MathSub>();
-		if ( sub ) return (- sub->a + sub->b).optimize();
+		if ( sub ) return (- sub->a + sub->b).optimize1();
 		
-		MathFunction x = a.optimize();
+		MathFunction x = a.optimize1();
 		
 		MathConst *c = x.cast<MathConst>();
 		if ( c ) return (-c->eval());
 		
 		MathNeg *neg = x.cast<MathNeg>();
-		if ( neg ) return neg->a.optimize();
+		if ( neg ) return neg->a.optimize1();
 		
 		return - x;
 	}
@@ -480,7 +520,8 @@ namespace nanosoft
 		std::string getType() { return "inv"; }
 		double eval() { return 1.0 / a.eval(); }
 		MathFunction derive(const MathVar &var) { return - (pow(a, -2.0) * a.derive(var)); }
-		MathFunction optimize();
+		MathFunction optimize1();
+		MathFunction optimize2() { return inv(a.optimize()); }
 		
 		/**
 		* Вернуть в виде строки
@@ -509,9 +550,9 @@ namespace nanosoft
 		std::string getType() { return "mult"; }
 		double eval() { return a.eval() * b.eval(); }
 		MathFunction derive(const MathVar &var) { return a.derive(var) * b + a * b.derive(var); }
-		MathFunction optimize() {
-			MathFunction x = a.optimize();
-			MathFunction y = b.optimize();
+		MathFunction optimize1() {
+			MathFunction x = a.optimize1();
+			MathFunction y = b.optimize1();
 			
 			MathMult *xm = x.cast<MathMult>();
 			MathMult *ym = y.cast<MathMult>();
@@ -581,6 +622,24 @@ namespace nanosoft
 			return x * y;
 		}
 		
+		MathFunction optimize2() {
+			MathFunction x = a.optimize2();
+			MathFunction y = b.optimize2();
+			
+			MathInv *xi = x.cast<MathInv>();
+			MathInv *yi = y.cast<MathInv>();
+			
+			if ( xi )
+			{
+				if ( yi ) return inv(xi->a * yi->a);
+				return y / xi->a;
+			}
+			
+			if ( yi ) return x / yi->a;
+			
+			return x * y;
+		}
+		
 		/**
 		* Вернуть в виде строки
 		*/
@@ -611,9 +670,10 @@ namespace nanosoft
 			// TODO b^2
 			return (a.derive(var) * b - a * b.derive(var)) / pow(b, 2);
 		}
-		MathFunction optimize() {
-			return (a * inv(b)).optimize();
+		MathFunction optimize1() {
+			return (a * inv(b)).optimize1();
 		}
+		MathFunction optimize2() { return a.optimize2() / b.optimize2(); }
 		
 		/**
 		* Вернуть в виде строки
@@ -630,55 +690,71 @@ namespace nanosoft
 		}
 	};
 	
-	MathFunction MathInv::optimize()
+	MathFunction MathInv::optimize1()
 	{
 		MathNeg *neg = a.cast<MathNeg>();
-		if ( neg ) return (-inv(neg->a)).optimize();
+		if ( neg ) return (-inv(neg->a)).optimize1();
 		
 		MathMult *mult = a.cast<MathMult>();
-		if ( mult ) return (inv(mult->a) * inv(mult->b)).optimize();
+		if ( mult ) return (inv(mult->a) * inv(mult->b)).optimize1();
 		
 		MathDiv *div = a.cast<MathDiv>();
-		if ( div ) return (inv(mult->a) * mult->b).optimize();
+		if ( div ) return (inv(mult->a) * mult->b).optimize1();
 		
-		MathFunction x = a.optimize();
+		MathFunction x = a.optimize1();
 		
 		MathConst *c = x.cast<MathConst>();
 		if ( c ) return 1 / c->eval();
 		
 		MathInv *inv = x.cast<MathInv>();
-		if ( inv ) return inv->a.optimize();
+		if ( inv ) return inv->a.optimize1();
 		
 		return nanosoft::inv(x);
 	}
 	
 	/**
-	* Оптимизатор по умолчанию для функции одной переменной
+	* Первый этап оптимизатора по умолчанию для функции одной переменной
 	*/
-	inline MathFunction opt_default(MathFunctionX f, const MathFunction &a)
+	inline MathFunction opt1_default(MathFunctionX f, const MathFunction &a)
 	{
-		MathFunction x = a.optimize();
+		MathFunction x = a.optimize1();
 		if ( x.getType() == "const" ) return f(x).eval();
 		return f(x);
 	}
 	
 	/**
-	* Оптимизатор по умолчанию для функции двух переменных
+	* Второй этап оптимизатора по умолчанию для функции одной переменной
 	*/
-	inline MathFunction opt_default(MathFunctionXY f, const MathFunction &a, const MathFunction &b)
+	inline MathFunction opt2_default(MathFunctionX f, const MathFunction &a)
 	{
-		MathFunction x = a.optimize();
-		MathFunction y = b.optimize();
+		return f(a.optimize2());
+	}
+	
+	/**
+	* Первый этап оптимизатора по умолчанию для функции двух переменных
+	*/
+	inline MathFunction opt1_default(MathFunctionXY f, const MathFunction &a, const MathFunction &b)
+	{
+		MathFunction x = a.optimize1();
+		MathFunction y = b.optimize1();
 		if ( x.getType() == "const" && x.getType() == "const" ) return f(x, y).eval();
 		return f(x, y);
 	}
 	
 	/**
+	* Втрой этап оптимизатора по умолчанию для функции двух переменных
+	*/
+	inline MathFunction opt2_default(MathFunctionXY f, const MathFunction &a, const MathFunction &b)
+	{
+		return f(a.optimize2(), b.optimize2());
+	}
+	
+	/**
 	* Оптимизатор четной функции
 	*/
-	inline MathFunction opt_even(MathFunctionX f, const MathFunction &a)
+	inline MathFunction opt1_even(MathFunctionX f, const MathFunction &a)
 	{
-		MathFunction x = a.optimize();
+		MathFunction x = a.optimize1();
 		if ( x.getType() == "const" ) return f(x).eval();
 		MathNeg *nx = x.cast<MathNeg>();
 		return f( nx ? nx->a : x);
@@ -687,9 +763,9 @@ namespace nanosoft
 	/**
 	* Оптимизатор нечетной функции
 	*/
-	inline MathFunction opt_odd(MathFunctionX f, const MathFunction &a)
+	inline MathFunction opt1_odd(MathFunctionX f, const MathFunction &a)
 	{
-		MathFunction x = a.optimize();
+		MathFunction x = a.optimize1();
 		if ( x.getType() == "const" ) return f(x).eval();
 		MathNeg *nx = x.cast<MathNeg>();
 		if ( nx ) return - f(nx->a);
@@ -708,7 +784,8 @@ namespace nanosoft
 		std::string getType() { return "cos"; }
 		double eval() { return ::cos(a.eval()); }
 		MathFunction derive(const MathVar &var) { return - sin(a) * a.derive(var); }
-		MathFunction optimize() { return opt_even(cos, a); }
+		MathFunction optimize1() { return opt1_even(cos, a); }
+		MathFunction optimize2() { return opt2_default(cos, a); }
 		
 		/**
 		* Вернуть в виде строки
@@ -737,7 +814,8 @@ namespace nanosoft
 		std::string getType() { return "sin"; }
 		double eval() { return ::sin(a.eval()); }
 		MathFunction derive(const MathVar &var) { return cos(a) * a.derive(var); }
-		MathFunction optimize() { return opt_odd(sin, a); }
+		MathFunction optimize1() { return opt1_odd(sin, a); }
+		MathFunction optimize2() { return opt2_default(sin, a); }
 		
 		/**
 		* Вернуть в виде строки
@@ -766,7 +844,8 @@ namespace nanosoft
 		std::string getType() { return "exp"; }
 		double eval() { return ::exp(a.eval()); }
 		MathFunction derive(const MathVar &var) { return exp(a) * a.derive(var); }
-		MathFunction optimize() { return opt_default(exp, a); }
+		MathFunction optimize1() { return opt1_default(exp, a); }
+		MathFunction optimize2() { return opt2_default(exp, a); }
 		
 		/**
 		* Вернуть в виде строки
@@ -795,13 +874,14 @@ namespace nanosoft
 		std::string getType() { return "ln"; }
 		double eval() { return ::log(a.eval()); }
 		MathFunction derive(const MathVar &var) { return a.derive(var) / a; }
-		MathFunction optimize() {
-			MathFunction x = a.optimize();
+		MathFunction optimize1() {
+			MathFunction x = a.optimize1();
 			if ( x.getType() == "const" ) return ln(x).eval();
 			MathInv *xi = x.cast<MathInv>();
 			if ( xi ) return -ln(xi->a);
 			return ln(x);
 		}
+		MathFunction optimize2() { return opt2_default(ln, a); }
 		
 		/**
 		* Вернуть в виде строки
@@ -833,7 +913,8 @@ namespace nanosoft
 		MathFunction derive(const MathVar &var) {
 			return b * pow(a, b-1) * a.derive(var) + pow(a, b) * ln(a) * b.derive(var);
 		}
-		MathFunction optimize() { return opt_default(pow, a, b); }
+		MathFunction optimize1() { return opt1_default(pow, a, b); }
+		MathFunction optimize2() { return opt2_default(pow, a, b); }
 		
 		/**
 		* Вернуть в виде строки

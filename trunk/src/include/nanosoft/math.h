@@ -51,9 +51,14 @@ namespace nanosoft
 		virtual class MathFunction derive(const class MathVar &var) = 0;
 		
 		/**
-		* Вернуть оптимизированную функцию
+		* Первый этап оптимизации (константы, суммы, произведения)
 		*/
-		virtual class MathFunction optimize();
+		virtual class MathFunction optimize1() = 0;
+		
+		/**
+		* Второй этап оптимизации (светывание разностей и частных)
+		*/
+		virtual class MathFunction optimize2() = 0;
 		
 		/**
 		* Вернуть в виде строки
@@ -183,7 +188,23 @@ namespace nanosoft
 		/**
 		* Вернуть оптимизированную функцию
 		*/
-		MathFunction optimize() const { return func->optimize(); }
+		MathFunction optimize1() const {
+			return func->optimize1();
+		}
+		
+		/**
+		* Вернуть оптимизированную функцию
+		*/
+		MathFunction optimize2() const {
+			return func->optimize2();
+		}
+		
+		/**
+		* Вернуть оптимизированную функцию
+		*/
+		MathFunction optimize() const {
+			return optimize1().optimize2();
+		}
 		
 		void operator = (const MathFunction &a)
 		{
