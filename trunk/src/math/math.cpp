@@ -1039,6 +1039,20 @@ namespace nanosoft
 	}
 	
 	/**
+	* Конструктор по умолчанию - нуль-вектор
+	*/
+	MathVector::MathVector()
+	{
+	}
+	
+	/**
+	* Конструктор вектор-функции
+	*/
+	MathVector::MathVector(const MathFunction &X, const MathFunction &Y, const MathFunction &Z): x(X), y(Y), z(Z)
+	{
+	}
+	
+	/**
 	* Унарный оператор вычитания
 	*/
 	MathFunction operator - (const MathFunction &a)
@@ -1071,6 +1085,14 @@ namespace nanosoft
 	}
 	
 	/**
+	* Сумма вектор-функций
+	*/
+	MathVector operator + (const MathVector &a, const MathVector &b)
+	{
+		return MathVector(a.x + b.x, a.y + b.y, a.z + b.z);
+	}
+	
+	/**
 	* Разность функций
 	*/
 	MathFunction operator - (const MathFunction &a, const MathFunction &b)
@@ -1079,7 +1101,7 @@ namespace nanosoft
 	}
 	
 	/**
-	* Сумма функции и константы
+	* Разность функции и константы
 	*/
 	MathFunction operator - (const MathFunction &a, double b)
 	{
@@ -1087,11 +1109,19 @@ namespace nanosoft
 	}
 	
 	/**
-	* Сумма функции и константы
+	* Разность функции и константы
 	*/
 	MathFunction operator - (double a, const MathFunction &b)
 	{
 		return new MathSub(a, b);
+	}
+	
+	/**
+	* Разность вектор-функций
+	*/
+	MathVector operator - (const MathVector &a, const MathVector &b)
+	{
+		return MathVector(a.x - b.x, a.y - b.y, a.z - b.z);
 	}
 	
 	/**
@@ -1119,6 +1149,34 @@ namespace nanosoft
 	}
 	
 	/**
+	* Вектроное произведение вектор-функций
+	*/
+	MathVector operator * (const MathVector &a, const MathVector &b)
+	{
+		return MathVector(
+			a.y * b.z - a.z * b.y,
+			a.z * b.x - a.x * b.z,
+			a.x * b.y - a.y * b.x
+		);
+	}
+	
+	/**
+	* Умножение вектор-функции на скалярную функцию
+	*/
+	MathVector operator * (const MathFunction &a, const MathVector &r)
+	{
+		return MathVector(a * r.x, a * r.y, a * r.z);
+	}
+	
+	/**
+	* Умножение вектор-функции на скалярную функцию
+	*/
+	MathVector operator * (const MathVector &r, const MathFunction &a)
+	{
+		return MathVector(r.x * a, r.y * a, r.z * a);
+	}
+	
+	/**
 	* Деление функций
 	*/
 	MathFunction operator / (const MathFunction &a, const MathFunction &b)
@@ -1140,6 +1198,14 @@ namespace nanosoft
 	MathFunction operator / (double a, const MathFunction &b)
 	{
 		return new MathDiv(a, b);
+	}
+	
+	/**
+	* Деление вектор-функции на скалярную функцию
+	*/
+	MathVector operator / (const MathVector &r, const MathFunction &a)
+	{
+		return MathVector(r.x / a, r.y / a, r.z / a);
 	}
 	
 	/**
@@ -1207,10 +1273,26 @@ namespace nanosoft
 	}
 	
 	/**
+	* Оптимизация вектор-функции
+	*/
+	MathVector optimize(const MathVector &r)
+	{
+		return MathVector(r.x.optimize(), r.y.optimize(), r.z.optimize());
+	}
+	
+	/**
 	* Производная функции
 	*/
 	MathFunction derive(const MathFunction &f, const MathVar &var)
 	{
 		return f.derive(var);
+	}
+	
+	/**
+	* Производная вектор-функции
+	*/
+	MathVector derive(const MathVector &r, const MathVar &var)
+	{
+		return MathVector(r.x.derive(var), r.y.derive(var), r.z.derive(var));
 	}
 }

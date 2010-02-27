@@ -221,6 +221,27 @@ namespace nanosoft
 	};
 	
 	/**
+	* Класс вектор-функции
+	*/
+	class MathVector
+	{
+	public:
+		MathFunction x;
+		MathFunction y;
+		MathFunction z;
+		
+		/**
+		* Конструктор по умолчанию - нуль-вектор
+		*/
+		MathVector();
+		
+		/**
+		* Конструктор вектор-функции
+		*/
+		MathVector(const MathFunction &X, const MathFunction &Y, const MathFunction &Z);
+	};
+	
+	/**
 	* Тип конструктора функции одной переменной
 	*/
 	typedef MathFunction (*MathFunctionX)(const MathFunction &x);
@@ -281,19 +302,29 @@ namespace nanosoft
 	MathFunction operator + (double a, const MathFunction &b);
 	
 	/**
+	* Сумма вектор-функций
+	*/
+	MathVector operator + (const MathVector &a, const MathVector &b);
+	
+	/**
 	* Разность функций
 	*/
 	MathFunction operator - (const MathFunction &a, const MathFunction &b);
 	
 	/**
-	* Сумма функции и константы
+	* Разность функции и константы
 	*/
 	MathFunction operator - (const MathFunction &a, double b);
 	
 	/**
-	* Сумма функции и константы
+	* Разность функции и константы
 	*/
 	MathFunction operator - (double a, const MathFunction &b);
+	
+	/**
+	* Разность вектор-функций
+	*/
+	MathVector operator - (const MathVector &a, const MathVector &b);
 	
 	/**
 	* Произведение функций
@@ -311,6 +342,21 @@ namespace nanosoft
 	MathFunction operator * (double a, const MathFunction &b);
 	
 	/**
+	* Вектроное произведение вектор-функций
+	*/
+	MathVector operator * (const MathVector &a, const MathVector &b);
+	
+	/**
+	* Умножение вектор-функции на скалярную функцию
+	*/
+	MathVector operator * (const MathFunction &a, const MathVector &r);
+	
+	/**
+	* Умножение вектор-функции на скалярную функцию
+	*/
+	MathVector operator * (const MathVector &r, const MathFunction &a);
+	
+	/**
 	* Деление функций
 	*/
 	MathFunction operator / (const MathFunction &a, const MathFunction &b);
@@ -324,6 +370,11 @@ namespace nanosoft
 	* Деление константы на функцию
 	*/
 	MathFunction operator / (double a, const MathFunction &b);
+	
+	/**
+	* Деление вектор-функции на скалярную функцию
+	*/
+	MathVector operator / (const MathVector &r, const MathFunction &a);
 	
 	/**
 	* Функция inv(x) = 1 / x
@@ -366,9 +417,19 @@ namespace nanosoft
 	MathFunction optimize(const MathFunction &f);
 	
 	/**
+	* Оптимизация вектор-функции
+	*/
+	MathVector optimize(const MathVector &r);
+	
+	/**
 	* Производная функции
 	*/
 	MathFunction derive(const MathFunction &f, const MathVar &var);
+	
+	/**
+	* Производная вектор-функции
+	*/
+	MathVector derive(const MathVector &r, const MathVar &var);
 }
 
 #endif // NANOSOFT_MATH_H
