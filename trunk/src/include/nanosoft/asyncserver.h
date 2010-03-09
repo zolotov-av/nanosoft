@@ -23,16 +23,9 @@ protected:
 	virtual void onEvent(uint32_t events);
 	
 	/**
-	* Событие ошибки
-	*
-	* Вызывается в случае возникновения какой-либо ошибки
-	*/
-	virtual void onError(const char *message);
-	
-	/**
 	* Принять входящее соединение
 	*/
-	virtual AsyncObject* onAccept() = 0;
+	virtual void onAccept() = 0;
 	
 public:
 	/**

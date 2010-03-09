@@ -105,13 +105,3 @@ void AsyncServer::onEvent(uint32_t events)
 	if ( events & EPOLLERR ) onError("epoll report some error in stream...");
 	if ( events & EPOLLIN ) onAccept();
 }
-
-/**
-* Событие ошибки
-*
-* Вызывается в случае возникновения какой-либо ошибки
-*/
-void AsyncServer::onError(const char *message)
-{
-	fprintf(stderr, "#%d [AsyncServer]: %s\n", getWorkerId(), message);
-}
