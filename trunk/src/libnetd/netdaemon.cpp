@@ -343,7 +343,7 @@ void NetDaemon::killObjects()
 	// TODO добавить mutex
 	for(map_objects_t::iterator pos = objects.begin(); pos != objects.end(); ++pos)
 	{
-		pos->second->onTerminate();
+		pos->second->terminate();
 	}
 }
 

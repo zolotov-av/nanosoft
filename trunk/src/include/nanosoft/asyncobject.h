@@ -17,6 +17,11 @@ private:
 	int workerId;
 	
 	/**
+	* Признак завершения
+	*/
+	bool terminating;
+	
+	/**
 	* Конструктор копий
 	*
 	* Не ищите его реализации, его нет и не надо.
@@ -53,13 +58,19 @@ protected:
 	virtual void onEvent(uint32_t events) = 0;
 	
 	/**
+	* Событие ошибки
+	*
+	* Вызывается в случае возникновения какой-либо ошибки
+	*/
+	virtual void onError(const char *message);
+	
+	/**
 	* Сигнал завершения работы
 	*
-	* Объект должен закрыть файловый дескриптор
-	* и освободить все занимаемые ресурсы
+	* Сервер решил закрыть соединение, здесь ещё есть время
+	* корректно попрощаться с пиром (peer).
 	*/
 	virtual void onTerminate() = 0;
-	
 public:
 	/**
 	* Конструктор
@@ -82,12 +93,9 @@ public:
 	virtual ~AsyncObject();
 	
 	/**
-	* Событие ошибки
-	*
-	* Вызывается в случае возникновения какой-либо ошибки
+	* Послать сигнал завершения
 	*/
-	virtual void onError(const char *message);
-	
+	void terminate();
 };
 
 #endif // NANOSOFT_ASYNCOBJECT_H

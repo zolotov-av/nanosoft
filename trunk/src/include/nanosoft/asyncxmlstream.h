@@ -10,22 +10,6 @@
 */
 class AsyncXMLStream: public AsyncStream, public nanosoft::XMLParser
 {
-public:
-	/**
-	* Класс описывающий атрибуты тега
-	*/
-	typedef std::map<std::string, std::string> attributtes_t;
-	
-	/**
-	* Конструктор
-	*/
-	AsyncXMLStream(int afd);
-	
-	/**
-	* Деструктор
-	*/
-	virtual ~AsyncXMLStream();
-	
 protected:
 	/**
 	* Событие готовности к чтению
@@ -34,34 +18,6 @@ protected:
 	* которые можно прочитать без блокирования
 	*/
 	virtual void onRead();
-	
-	/**
-	* Событие готовности к записи
-	*
-	* Вызывается, когда в поток готов принять
-	* данные для записи без блокировки
-	*/
-	virtual void onWrite() = 0;
-	
-	/**
-	* Событие ошибки
-	*
-	* Вызывается в случае возникновения какой-либо ошибки
-	*/
-	virtual void onError(const char *message);
-	
-	/**
-	* Обработчик ошибок парсера
-	*/
-	virtual void onParseError(const char *message);
-	
-	/**
-	* Событие закрытия потока
-	*
-	* Вызывается в случае достижения конца файла
-	* или если противоположный конец закрыл поток
-	*/
-	virtual void onShutdown();
 	
 	/**
 	* Обработчик открытия тега
@@ -77,6 +33,35 @@ protected:
 	* Обработчик закрытия тега
 	*/
 	virtual void onEndElement(const std::string &name) = 0;
+	
+	/**
+	* Обработчик ошибок парсера
+	*/
+	virtual void onParseError(const char *message);
+	
+	/**
+	* Пир (peer) закрыл поток.
+	*
+	* Мы уже ничего не можем отправить в ответ,
+	* можем только корректно закрыть соединение с нашей стороны.
+	*/
+	virtual void onPeerDown();
+	virtual void onShutdown();
+public:
+	/**
+	* Класс описывающий атрибуты тега
+	*/
+	typedef std::map<std::string, std::string> attributtes_t;
+	
+	/**
+	* Конструктор
+	*/
+	AsyncXMLStream(int afd);
+	
+	/**
+	* Деструктор
+	*/
+	virtual ~AsyncXMLStream();
 };
 
 #endif // NANOSOFT_ASYNCXMLSTREAM_H

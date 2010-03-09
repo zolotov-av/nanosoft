@@ -1,7 +1,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <string.h>
-#include <iostream>
+#include <stdio.h>
 #include <nanosoft/asyncobject.h>
 
 using namespace std;
@@ -9,14 +9,14 @@ using namespace std;
 /**
 * Конструктор
 */
-AsyncObject::AsyncObject(): fd(0), workerId(-1)
+AsyncObject::AsyncObject(): fd(0), workerId(-1), terminating(false)
 {
 }
 
 /**
 * Конструктор
 */
-AsyncObject::AsyncObject(int afd): fd(afd)
+AsyncObject::AsyncObject(int afd): fd(afd), workerId(-1), terminating(false)
 {
 }
 
@@ -42,5 +42,18 @@ void AsyncObject::stderror()
 */
 void AsyncObject::onError(const char *message)
 {
-	cerr << "[AsyncObject]: " << message << endl;
+	fprintf(stderr, "#%d: [AsyncObject: %d]: %s\n", getWorkerId(), fd, message);
+}
+
+/**
+* Послать сигнал завершения
+*/
+void AsyncObject::terminate()
+{
+	fprintf(stderr, "#%d: [AsyncObject: %d]: terminate(%d)...\n", getWorkerId(), fd, terminating);
+	if ( ! terminating )
+	{
+		terminating = true;
+		onTerminate();
+	}
 }

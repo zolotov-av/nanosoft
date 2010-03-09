@@ -22,6 +22,7 @@ AsyncStream::AsyncStream(int afd): AsyncObject(afd), flags(0)
 */
 AsyncStream::~AsyncStream()
 {
+	fprintf(stderr, "#%d: [AsyncStream: %d] deleting\n", getWorkerId(), fd);
 	close();
 }
 
@@ -40,7 +41,7 @@ void AsyncStream::onEvent(uint32_t events)
 {
 	if ( events & EPOLLERR ) onError("epoll report some error in stream...");
 	if ( events & EPOLLIN ) onRead();
-	if ( (events & EPOLLRDHUP) || (events & EPOLLHUP) ) onShutdown();
+	if ( (events & EPOLLRDHUP) || (events & EPOLLHUP) ) onPeerDown();
 }
 
 /**
@@ -64,29 +65,12 @@ ssize_t AsyncStream::write(const void *buf, size_t count)
 }
 
 /**
-* Приостановить чтение из потока
-*/
-bool AsyncStream::suspend()
-{
-	onError("TODO AsyncStream::suspend()");
-}
-
-/**
-* Возобновить чтение из потока
-*/
-bool AsyncStream::resume()
-{
-	onError("TODO AsyncStream::resume()");
-}
-
-enum { READ = 1, WRITE = 2 };
-
-/**
 * Завершить чтение/запись
 * @note только для сокетов
 */
 bool AsyncStream::shutdown(int how)
 {
+	fprintf(stderr, "#%d: [AsyncStream: %d] shutdown\n", getWorkerId(), fd);
 	if ( how & READ & ~ flags ) {
 		if ( ::shutdown(fd, SHUT_RD) != 0 ) stderror();
 		flags |= READ;
@@ -102,21 +86,11 @@ bool AsyncStream::shutdown(int how)
 */
 void AsyncStream::close()
 {
+	fprintf(stderr, "#%d: [AsyncStream: %d] close\n", getWorkerId(), fd);
 	if ( fd )
 	{
 		int r = ::close(fd);
 		fd = 0;
 		if ( r < 0 ) stderror();
 	}
-}
-
-/**
-* Событие ошибки
-*
-* Вызывается в случае возникновения какой-либо ошибки.
-* По умолчанию выводит все ошибки в stderr
-*/
-void AsyncStream::onError(const char *message)
-{
-	fprintf(stderr, "#%d [AsyncStream]: %s\n", getWorkerId(), message);
 }

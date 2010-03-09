@@ -37,17 +37,6 @@ void AsyncXMLStream::onRead()
 }
 
 /**
-* Событие ошибки
-*
-* Вызывается в случае возникновения какой-либо ошибки.
-* По умолчанию выводит все ошибки в stderr
-*/
-void AsyncXMLStream::onError(const char *message)
-{
-	cerr << "#" << getWorkerId() << " [AsyncXMLStream]: " << message << endl;
-}
-
-/**
 * Обработчик ошибок парсера
 */
 void AsyncXMLStream::onParseError(const char *message)
@@ -55,15 +44,17 @@ void AsyncXMLStream::onParseError(const char *message)
 	onError(message);
 }
 
-
 /**
-* Событие закрытия потока
+* Пир (peer) закрыл поток.
 *
-* Вызывается в случае достижения конца файла
-* или если противоположный конец закрыл поток
+* Мы уже ничего не можем отправить в ответ,
+* можем только корректно закрыть соединение с нашей стороны.
 */
-void AsyncXMLStream::onShutdown()
+void AsyncXMLStream::onPeerDown()
 {
+	fprintf(stderr, "#%d: [AsyncXMLStream: %d] peer down\n", getWorkerId(), fd);
+	
+	// читаем и парсим все, что осталось в потоке
 	while ( 1 )
 	{
 		char buf[4096];
@@ -71,5 +62,30 @@ void AsyncXMLStream::onShutdown()
 		if ( r <= 0 ) break;
 		parseXML(buf, r, false);
 	}
+	
+	// и сообщаем парсеру об EOF
+	parseXML(0, 0, true);
+}
+
+/**
+* Пир (peer) закрыл поток.
+*
+* Мы уже ничего не можем отправить в ответ,
+* можем только корректно закрыть соединение с нашей стороны.
+*/
+void AsyncXMLStream::onShutdown()
+{
+	fprintf(stderr, "#%d: [AsyncXMLStream: %d] onShutdown\n", getWorkerId(), fd);
+	
+	// читаем и парсим все, что осталось в потоке
+	while ( 1 )
+	{
+		char buf[4096];
+		ssize_t r = read(buf, sizeof(buf));
+		if ( r <= 0 ) break;
+		parseXML(buf, r, false);
+	}
+	
+	// и сообщаем парсеру об EOF
 	parseXML(0, 0, true);
 }
