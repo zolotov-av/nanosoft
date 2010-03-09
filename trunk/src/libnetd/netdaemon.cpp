@@ -93,7 +93,7 @@ void NetDaemon::setWorkerStackSize(size_t size)
 */
 bool NetDaemon::addObject(AsyncObject *object)
 {
-	//fprintf(stderr, "addObject enter, count: %d\n", objects.size());
+	fprintf(stderr, "#d: [NetDaemon] addObject(%d)\n", object->fd);
 	struct epoll_event event;
 	mutex.lock();
 		objects[object->fd] = object;
@@ -112,6 +112,7 @@ bool NetDaemon::addObject(AsyncObject *object)
 */
 bool NetDaemon::removeObject(AsyncObject *object)
 {
+	fprintf(stderr, "#d: [NetDaemon] removeObject(%d)\n", object->fd);
 	mutex.lock();
 	//fprintf(stderr, "#%d NetDaemon::removeObject(%d) enter, count = %d\n", object->workerId, object->fd, count);
 	map_objects_t::iterator pos = objects.find(object->fd);
