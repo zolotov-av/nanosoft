@@ -300,6 +300,11 @@ public:
 	bool addObject(AsyncObject *object);
 	
 	/**
+	* Уведомить NetDaemon, что объект изменил свою маску
+	*/
+	void modifyObject(AsyncObject *object);
+	
+	/**
 	* Удалить асинхронный объект
 	*/
 	bool removeObject(AsyncObject *object);

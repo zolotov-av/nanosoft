@@ -108,6 +108,21 @@ bool NetDaemon::addObject(AsyncObject *object)
 }
 
 /**
+* Уведомить NetDaemon, что объект изменил свою маску
+*/
+void NetDaemon::modifyObject(AsyncObject *object)
+{
+	//fprintf(stderr, "#d: [NetDaemon] modifyObject(%d)\n", object->fd);
+	mutex.lock();
+		map_objects_t::iterator pos = objects.find(object->fd);
+		if ( pos != objects.end() )
+		{
+			resetObject(object);
+		}
+	mutex.unlock();
+}
+
+/**
 * Удалить асинхронный объект
 */
 bool NetDaemon::removeObject(AsyncObject *object)
@@ -151,21 +166,26 @@ bool NetDaemon::resetObject(AsyncObject *object)
 */
 void NetDaemon::doActiveAction(worker_t *worker)
 {
+	AsyncObject *obj;
 	struct epoll_event event;
 	int r = epoll_wait(epoll, &event, 1, nextTimer());
 	if ( r > 0 )
 	{
 		mutex.lock();
-			AsyncObject *obj = objects[event.data.fd];
+			map_objects_t::iterator pos = objects.find(event.data.fd);
+			obj = (pos != objects.end()) ? pos->second : 0;
 		mutex.unlock();
-		obj->workerId = worker->workerId;
-		obj->onEvent(event.events);
-		mutex.lock();
-			if ( objects.find(event.data.fd) != objects.end() )
-			{
-				resetObject(obj);
-			}
-		mutex.unlock();
+		if ( obj )
+		{
+			obj->workerId = worker->workerId;
+			obj->onEvent(event.events);
+			mutex.lock();
+				if ( objects.find(event.data.fd) != objects.end() )
+				{
+					resetObject(obj);
+				}
+			mutex.unlock();
+		}
 	}
 	if ( r < 0 ) fprintf(stderr, "#%d: %s\n", worker->workerId, nanosoft::stderror());
 	if ( r == 0 ) processTimers(worker->workerId);

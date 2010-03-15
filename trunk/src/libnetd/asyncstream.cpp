@@ -41,6 +41,7 @@ void AsyncStream::onEvent(uint32_t events)
 {
 	if ( events & EPOLLERR ) onError("epoll report some error in stream...");
 	if ( events & EPOLLIN ) onRead();
+	if ( events & EPOLLOUT ) onWrite();
 	if ( (events & EPOLLRDHUP) || (events & EPOLLHUP) ) onPeerDown();
 }
 
