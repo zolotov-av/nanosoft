@@ -132,16 +132,14 @@ private:
 public:
 	MyServer(NetDaemon *d): daemon(d), count(0) { }
 	
-	AsyncObject* onAccept()
+	void onAccept()
 	{
 		int sock = accept();
 		if ( sock )
 		{
 			AsyncObject *client = new TestStream(daemon, sock);
 			daemon->addObject(client);
-			return client;
 		}
-		return 0;
 	}
 	
 	/**
