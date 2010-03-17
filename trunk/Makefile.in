@@ -56,6 +56,7 @@ LINUX_PROGS+=masterd
 LINUX_PROGS+=nsu
 LINUX_PROGS+=miniget2
 LINUX_PROGS+=minisend
+LINUX_PROGS+=uncat
 LINUX_PROGS+=showpath
 
 LINUX_EXAMPLES=streams
@@ -88,6 +89,7 @@ install-linux: forker miniget wait time masterd nsu miniget2 showpath libnanosof
 	$(INSTALL_BIN) masterd $(BINDIR)/masterd
 	$(INSTALL_BIN) nsu $(BINDIR)/nsu
 	$(INSTALL_BIN) miniget2 $(BINDIR)/miniget2
+	$(INSTALL_BIN) uncat $(BINDIR)/uncat
 	$(INSTALL_BIN) showpath $(BINDIR)/showpath
 	$(INSTALL_LIB) libnanosoft.a $(LIBDIR)/libnanosoft.a
 
@@ -125,6 +127,9 @@ miniget: $(ns_srcbin)/miniget.c libnanosoft.a
 
 miniget2: $(ns_srcbin)/miniget.cpp libnanosoft.a
 	$(CXX) $(ns_srcbin)/miniget.cpp -lnanosoft -lstdc++ $(NETWORK_LIBS) -o miniget2
+
+uncat: $(ns_srcbin)/uncat.c libnanosoft.a
+	$(CC) $(ns_srcbin)/uncat.c $(NETWORK_LIBS) -o uncat
 
 minisend: $(ns_srcbin)/minisend.cpp libnanosoft.a
 	$(CXX) $(ns_srcbin)/minisend.cpp -lnanosoft -lstdc++ $(NETWORK_LIBS) -o minisend
