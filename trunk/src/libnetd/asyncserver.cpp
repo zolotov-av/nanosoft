@@ -1,10 +1,12 @@
+
+#include <nanosoft/asyncserver.h>
+#include <unistd.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <arpa/inet.h>
 #include <sys/epoll.h>
-#include <iostream>
 #include <stdio.h>
 #include <exception>
-#include <nanosoft/asyncserver.h>
 
 using namespace std;
 
@@ -13,15 +15,6 @@ using namespace std;
 */
 AsyncServer::AsyncServer()
 {
-	fd = socket(AF_INET, SOCK_STREAM, 0);
-	if ( fd == 0 )
-	{
-		stderror();
-		throw exception();
-	}
-	
-	int yes = 1;
-	if ( setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) stderror();
 }
 
 /**
@@ -37,6 +30,16 @@ AsyncServer::~AsyncServer()
 */
 bool AsyncServer::bind(int port)
 {
+	fd = socket(AF_INET, SOCK_STREAM, 0);
+	if ( fd == 0 )
+	{
+		stderror();
+		return false;
+	}
+	
+	int yes = 1;
+	if ( setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) stderror();
+	
 	struct sockaddr_in addr;
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
@@ -46,6 +49,35 @@ bool AsyncServer::bind(int port)
 	if ( ::bind(fd, (sockaddr *)&addr, sizeof(addr)) != 0 )
 	{
 		stderror();
+		close();
+		return false;
+	}
+	
+	return true;
+}
+
+/**
+* Подключиться к unix-сокету
+*/
+bool AsyncServer::bind(const char *path)
+{
+	fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+	if ( fd == 0 )
+	{
+		stderror();
+		return false;
+	}
+	
+	struct sockaddr_un addr;
+	memset(&addr, 0, sizeof(addr));
+	addr.sun_family = AF_UNIX;
+	strncpy(addr.sun_path, path, sizeof(addr.sun_path)-1);
+	fprintf(stderr, "bind unix socket: %s\n", addr.sun_path);
+	unlink(path);
+	if ( ::bind(fd, (struct sockaddr *) &addr, sizeof(addr)) != 0 )
+	{
+		stderror();
+		close();
 		return false;
 	}
 	

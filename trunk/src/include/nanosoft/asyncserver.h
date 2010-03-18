@@ -44,6 +44,11 @@ public:
 	bool bind(int port);
 	
 	/**
+	* Подключиться к unix-сокету
+	*/
+	bool bind(const char *path);
+	
+	/**
 	* Начать слушать сокет
 	*/
 	bool listen(int backlog);

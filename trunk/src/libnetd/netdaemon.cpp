@@ -73,6 +73,18 @@ void NetDaemon::setWorkerCount(int count)
 }
 
 /**
+* Вернуть число подконтрольных объектов
+*/
+int NetDaemon::getObjectCount()
+{
+	int count;
+	mutex.lock();
+		count = objects.size();
+	mutex.unlock();
+	return count;
+}
+
+/**
 * Вернуть размер стека воркера
 */
 size_t NetDaemon::getWorkerStackSize()

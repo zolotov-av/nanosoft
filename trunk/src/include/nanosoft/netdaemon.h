@@ -280,6 +280,11 @@ public:
 	int getWorkerCount();
 	
 	/**
+	* Вернуть число подконтрольных объектов
+	*/
+	int getObjectCount();
+	
+	/**
 	* Установить число воркеров
 	*/
 	void setWorkerCount(int count);
