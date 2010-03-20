@@ -4,7 +4,6 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <map>
 #include <queue>
 #include <nanosoft/asyncobject.h>
 #include <nanosoft/mutex.h>
@@ -86,22 +85,25 @@ private:
 	*/
 	timers_queue_t timers;
 	
-	typedef std::map<int, AsyncObject*> map_objects_t;
+	/**
+	* Максимальное число обслуживаемых объектов
+	*/
+	size_t limit;
+	
+	/**
+	* Текущее число объектов
+	*/
+	size_t count;
 	
 	/**
 	* Карта объектов (fd -> AsyncObject)
 	*/
-	map_objects_t objects;
-	
-	/**
-	* Число объектов в epoll
-	*/
-	int count;
+	AsyncObject **objects;
 	
 	/**
 	* Итератор объектов для корректного останова
 	*/
-	map_objects_t::iterator iter;
+	size_t iter;
 	
 	/**
 	* Число потоков-воркеров

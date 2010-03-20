@@ -19,14 +19,17 @@ using namespace nanosoft;
 * Конструктор демона
 * @param maxStreams максимальное число одновременных виртуальных потоков
 */
-NetDaemon::NetDaemon(int maxObjects):
+NetDaemon::NetDaemon(int maxStreams):
 	workerStackSize(DEFAULT_WORKER_STACK_SIZE),
 	workerCount(0),
 	activeCount(0),
 	timerCount(0),
 	count(0)
 {
-	epoll = epoll_create(maxObjects);
+	limit = maxStreams;
+	objects = new AsyncObject*[limit];
+	epoll = epoll_create(maxStreams);
+	for(int i = 0; i < limit; i++) objects[i] = 0;
 }
 
 /**
@@ -77,10 +80,6 @@ void NetDaemon::setWorkerCount(int count)
 */
 int NetDaemon::getObjectCount()
 {
-	int count;
-	mutex.lock();
-		count = objects.size();
-	mutex.unlock();
 	return count;
 }
 
@@ -105,17 +104,25 @@ void NetDaemon::setWorkerStackSize(size_t size)
 */
 bool NetDaemon::addObject(AsyncObject *object)
 {
-	fprintf(stderr, "#d: [NetDaemon] addObject(%d)\n", object->fd);
+	int r = false;
 	struct epoll_event event;
 	mutex.lock();
-		objects[object->fd] = object;
-		count ++;
-		//fprintf(stderr, "AddObject(%d), count = %d\n", object->fd, count);
-		event.events = object->getEventsMask();
-		event.data.fd = object->fd;
-		bool r = epoll_ctl(epoll, EPOLL_CTL_ADD, object->fd, &event) == 0;
+		if ( objects[object->fd] == 0 )
+		{
+			fprintf(stderr, "#d: [NetDaemon] addObject(%d)\n", object->fd);
+			count ++;
+			objects[object->fd] = object;
+			event.events = object->getEventsMask();
+			event.data.fd = object->fd;
+			r = epoll_ctl(epoll, EPOLL_CTL_ADD, object->fd, &event) == 0;
+			/*if ( ! r  )
+			{
+				stderror();
+				count --;
+				objects[object->fd] = 0;
+			}*/
+		}
 	mutex.unlock();
-	//fprintf(stderr, "addObject leave, count: %d\n", objects.size());
 	return r;
 }
 
@@ -124,10 +131,8 @@ bool NetDaemon::addObject(AsyncObject *object)
 */
 void NetDaemon::modifyObject(AsyncObject *object)
 {
-	//fprintf(stderr, "#d: [NetDaemon] modifyObject(%d)\n", object->fd);
 	mutex.lock();
-		map_objects_t::iterator pos = objects.find(object->fd);
-		if ( pos != objects.end() )
+		if ( objects[object->fd] == object )
 		{
 			resetObject(object);
 		}
@@ -139,22 +144,18 @@ void NetDaemon::modifyObject(AsyncObject *object)
 */
 bool NetDaemon::removeObject(AsyncObject *object)
 {
-	fprintf(stderr, "#d: [NetDaemon] removeObject(%d)\n", object->fd);
 	mutex.lock();
-	//fprintf(stderr, "#%d NetDaemon::removeObject(%d) enter, count = %d\n", object->workerId, object->fd, count);
-	map_objects_t::iterator pos = objects.find(object->fd);
-	if ( pos != objects.end() )
-	{
-		objects.erase(object->fd);
-		if ( epoll_ctl(epoll, EPOLL_CTL_DEL, object->fd, 0) != 0 ) stderror();
-		count --;
-		if ( count == 0 ) stopWorkers();
-	}
-	else
-	{
-		fprintf(stderr, "#%d NetDaemon::removeObject(%d): not found o.O\n", object->workerId, object->fd);
-	}
-	//fprintf(stderr, "#%d removeObject(%d) leave, count = %d\n", object->workerId, object->fd, count);
+		if ( objects[object->fd] == object )
+		{
+			if ( epoll_ctl(epoll, EPOLL_CTL_DEL, object->fd, 0) != 0 ) stderror();
+			objects[object->fd] = 0;
+			count --;
+			if ( count == 0 ) stopWorkers();
+		}
+		else
+		{
+			fprintf(stderr, "#%d NetDaemon::removeObject(%d): not found o.O\n", object->workerId, object->fd);
+		}
 	mutex.unlock();
 }
 
@@ -163,14 +164,10 @@ bool NetDaemon::removeObject(AsyncObject *object)
 */
 bool NetDaemon::resetObject(AsyncObject *object)
 {
-	//fprintf(stderr, "#%d: NetDaemon::resetObject(%d)\n", object->workerId, object->fd);
 	struct epoll_event event;
 	event.events = object->getEventsMask();
 	event.data.fd = object->fd;
-	if ( epoll_ctl(epoll, EPOLL_CTL_MOD, object->fd, &event) != 0 )
-	{
-		stderror();
-	}
+	if ( epoll_ctl(epoll, EPOLL_CTL_MOD, object->fd, &event) != 0 ) stderror();
 }
 
 /**
@@ -184,15 +181,14 @@ void NetDaemon::doActiveAction(worker_t *worker)
 	if ( r > 0 )
 	{
 		mutex.lock();
-			map_objects_t::iterator pos = objects.find(event.data.fd);
-			obj = (pos != objects.end()) ? pos->second : 0;
+			obj = objects[event.data.fd];
 		mutex.unlock();
 		if ( obj )
 		{
 			obj->workerId = worker->workerId;
 			obj->onEvent(event.events);
 			mutex.lock();
-				if ( objects.find(event.data.fd) != objects.end() )
+				if ( objects[event.data.fd] == obj )
 				{
 					resetObject(obj);
 				}
@@ -208,13 +204,14 @@ void NetDaemon::doActiveAction(worker_t *worker)
 */
 void NetDaemon::doSleepAction(worker_t *worker)
 {
-	if ( ! worker->checked ) {
+	if ( ! worker->checked )
+	{
 		worker->checked = true;
 		mutex.lock();
 			activeCount --;
 			if ( activeCount == 0 )
 			{
-				iter = objects.begin();
+				iter = 0;
 				setWorkersState(TERMINATE);
 			}
 		mutex.unlock();
@@ -248,9 +245,9 @@ void NetDaemon::doTerminateAction(worker_t *worker)
 	
 	AsyncObject *obj;
 	mutex.lock();
-		if ( iter != objects.end() )
+		if ( iter < limit )
 		{
-			obj = iter->second;
+			obj = objects[iter];
 			++ iter;
 		}
 		else
@@ -262,7 +259,7 @@ void NetDaemon::doTerminateAction(worker_t *worker)
 	if ( obj )
 	{
 		obj->workerId = worker->workerId;
-		obj->onTerminate();
+		obj->terminate();
 	}
 }
 
@@ -366,18 +363,6 @@ void NetDaemon::freeWorkers()
 		pthread_attr_destroy(&workers[i].attr);
 	}
 	delete [] workers;
-}
-
-/**
-* Послать сигнал onTerminate() всем подконтрольным объектам
-*/
-void NetDaemon::killObjects()
-{
-	// TODO добавить mutex
-	for(map_objects_t::iterator pos = objects.begin(); pos != objects.end(); ++pos)
-	{
-		pos->second->terminate();
-	}
 }
 
 /**
