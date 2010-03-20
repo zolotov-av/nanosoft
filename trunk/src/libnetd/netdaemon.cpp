@@ -1,6 +1,7 @@
 
 #include <sys/epoll.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <pthread.h>
 #include <nanosoft/netdaemon.h>
 #include <nanosoft/error.h>
@@ -112,6 +113,14 @@ bool NetDaemon::addObject(AsyncObject *object)
 			fprintf(stderr, "#d: [NetDaemon] addObject(%d)\n", object->fd);
 			count ++;
 			objects[object->fd] = object;
+			
+			// принудительно выставить O_NONBLOCK
+			int flags = fcntl(object->fd, F_GETFL, 0);
+			if ( flags >= 0 )
+			{
+				fcntl(object->fd, F_SETFL, flags | O_NONBLOCK);
+			}
+			
 			event.events = object->getEventsMask();
 			event.data.fd = object->fd;
 			r = epoll_ctl(epoll, EPOLL_CTL_ADD, object->fd, &event) == 0;
