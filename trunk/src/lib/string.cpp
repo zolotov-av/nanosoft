@@ -6,111 +6,42 @@
 
 namespace nanosoft
 {
-	void cstring::setcopy(const char *chars, size_t nchars)
+	/**
+	* Записать в буфер dest строку src
+	* Аналог strncpy всегда завершает строку нулём
+	* @param dest куда копировать
+	* @param dest_len размер буфера
+	* @param src исходная строка
+	* @return TRUE строка скопированна полностью
+	*/
+	bool strset(char *dest, size_t dest_len, const char *src)
 	{
-		if ( chars && nchars > 0 )
+		char *limit = dest + dest_len - 1;
+		while ( *src && dest < limit ) *dest++ = *src++;
+		*dest = 0;
+		return dest < limit;
+	}
+	
+	/**
+	* Записать в буфер dest строку trim(src)
+	* Обрезает пробелы в строке src и копирует строку в dest
+	* Всегда завершает строку нулём
+	* @param dest куда копировать
+	* @param dest_len размер буфера
+	* @param src исходная строка
+	* @return TRUE строка скопированна полностью
+	*/
+	bool strtim(char *dest, size_t dest_len, const char *src)
+	{
+		char *limit = dest + dest_len - 1;
+		while ( *src == ' ' || *src == '\n' || *src == '\r' || *src == '\t' ) src++;
+		char *p = dest;
+		while ( *src && dest < limit )
 		{
-			len = nchars;
-			data = static_cast<char *>( malloc(len + 1) );
-			memcpy(data, chars, len);
-			data[len] = 0;
+			if ( *src != ' ' && *src != '\n' && *src != '\r' && *src != '\t' ) p = dest;
+			*dest++ = *src++;
 		}
-		else
-		{
-			data = 0;
-			len = 0;
-		}
+		p[1] = 0;
+		return dest < limit;
 	}
-	
-	void cstring::setcopy(const cstring &s, int offset, int nchars)
-	{
-		if ( nchars <= 0 || s.len == 0 )
-		{
-			setcopy(0, 0);
-			return;
-		}
-		
-		if ( offset < 0 )
-		{
-			nchars += offset;
-			if ( nchars <= 0 )
-			{
-				setcopy(0, 0);
-				return;
-			}
-			offset = 0;
-		}
-		
-		int rem = s.len - offset;
-		if ( rem <= 0 )
-		{
-			setcopy(0, 0);
-			return;
-		}
-		
-		if ( rem < nchars ) nchars = rem;
-		
-		setcopy(s.data + offset, nchars);
-	}
-	
-	cstring::cstring(const char *chars)
-	{
-		setcopy(chars, strlen(chars));
-	}
-	
-	cstring::cstring(const char *chars, size_t nchars)
-	{
-		setcopy(chars, nchars);
-	}
-	
-	cstring::cstring(const cstring &s)
-	{
-		setcopy(s.data, s.len);
-	}
-	
-	cstring::cstring(const cstring &s, int offset, int nchars)
-	{
-		setcopy(s, offset, nchars);
-	}
-	
-	cstring::~cstring()
-	{
-		free(data);
-	}
-	
-	void cstring::copy(const cstring &s, int offset, int nchars)
-	{
-		char *old = data;
-		setcopy(s, offset, nchars);
-		free(old);
-	}
-	
-	void cstring::trim(const cstring &s)
-	{
-		char *old = data;
-		const char *left = s.data;
-		const char *right = s.data + s.len - 1;
-		while ( isspace(*left) && left < right ) left++;
-		while ( isspace(*right) && left < right ) right--;
-		setcopy(left, right - left + 1);
-		free(old);
-	}
-	
-	cstring & cstring::operator = (const char *chars)
-	{
-		free(data);
-		setcopy(chars, strlen(chars));
-		return *this;
-	}
-	
-	cstring & cstring::operator = (const cstring &s)
-	{
-		if ( &s != this )
-		{
-			free(data);
-			setcopy(s.data, s.len);
-		}
-		return *this;
-	}
-	
 }

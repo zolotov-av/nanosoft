@@ -2,58 +2,288 @@
 #define NANOSOFT_STRING_H
 
 #include <sys/types.h>
+#include <string.h>
 
 namespace nanosoft
 {
+	/**
+	* Записать в буфер dest строку src
+	* Аналог strncpy, но всегда завершает строку нулём
+	* @param dest куда копировать
+	* @param dest_len размер буфера
+	* @param src исходная строка
+	* @return TRUE строка скопированна полностью
+	*/
+	bool strset(char *dest, size_t dest_len, const char *src);
 	
-	class cstring
+	/**
+	* Записать в буфер dest строку trim(src)
+	* Обрезает пробелы в строке src и копирует строку в dest
+	* Всегда завершает строку нулём
+	* @param dest куда копировать
+	* @param dest_len размер буфера
+	* @param src исходная строка
+	* @return TRUE строка скопированна полностью
+	*/
+	bool strtim(char *dest, size_t dest_len, const char *src);
+	
+	/**
+	* Строковый буфер
+	*/
+	template <size_t size>
+	class strbuf
 	{
 	private:
-		char *data;
-		size_t len;
-		void setcopy(const char *chars, size_t nchars);
-		void setcopy(const cstring &s, int offset, int nchars);
+		char buf[size];
 	public:
-		cstring();
-		cstring(const char *chars);
-		cstring(const char *chars, size_t len);
-		cstring(const cstring &s);
-		cstring(const cstring &s, int start, int nchars);
-		~cstring();
-		
-		size_t length() const;
-		const char * c_str() const;
-		operator const char * () const;
-		cstring & operator = (const char *chars);
-		cstring & operator = (const cstring &s);
-		void copy(const cstring &s, int start, int chars);
-		void trim(const cstring &s);
+		strbuf() { buf[0] = 0; }
+		strbuf(const char *s) { strset(buf, size, s); }
+		strbuf(const strbuf<size> &s) { strset(buf, size, s.buf); }
+		void operator = (const char *s) { strset(buf, size, s); }
+		const char * c_str() const { return buf; }
 	};
 	
-	inline cstring::cstring(): data(0), len(0)
+	/**
+	* Строковый буфер с автотримом
+	*/
+	template <size_t size>
+	class tstrbuf
 	{
+	private:
+		char buf[size];
+	public:
+		tstrbuf() { buf[0] = 0; }
+		tstrbuf(const char *s) { strtim(buf, size, s); }
+		tstrbuf(const tstrbuf<size> &s) { strtim(buf, size, s.buf); }
+		void operator = (const char *s) { strtim(buf, size, s); }
+		const char * c_str() const { return buf; }
+	};
+	
+	template <size_t size>
+	inline bool operator == (const char *s1, const strbuf<size> &s2)
+	{
+		return strcmp(s1, s2.c_str()) == 0;
 	}
 	
-	inline size_t cstring::length() const
+	template <size_t size>
+	inline bool operator == (const char *s1, const tstrbuf<size> &s2)
 	{
-		return len;
+		return strcmp(s1, s2.c_str()) == 0;
 	}
 	
-	inline const char * cstring::c_str() const
+	template <size_t size>
+	inline bool operator == (const strbuf<size> &s1, const char *s2)
 	{
-		return data;
+		return strcmp(s1.c_str(), s2) == 0;
 	}
 	
-	inline cstring::operator const char * () const
+	template <size_t size1, size_t size2>
+	inline bool operator == (const strbuf<size1> &s1, const tstrbuf<size2> &s2)
 	{
-		return data;
+		return strcmp(s1.c_str(), s2.c_str()) == 0;
 	}
 	
-	inline cstring substr(const cstring &s, int offset, int nchars)
+	template <size_t size>
+	inline bool operator == (const tstrbuf<size> &s1, const char *s2)
 	{
-		return cstring(s, offset, nchars);
+		return strcmp(s1.c_str(), s2) == 0;
 	}
 	
+	template <size_t size1, size_t size2>
+	inline bool operator == (const tstrbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) == 0;
+	}
+	
+	/////
+	
+	template <size_t size>
+	inline bool operator != (const char *s1, const strbuf<size> &s2)
+	{
+		return strcmp(s1, s2.c_str()) != 0;
+	}
+	
+	template <size_t size>
+	inline bool operator != (const char *s1, const tstrbuf<size> &s2)
+	{
+		return strcmp(s1, s2.c_str()) != 0;
+	}
+	
+	template <size_t size>
+	inline bool operator != (const strbuf<size> &s1, const char *s2)
+	{
+		return strcmp(s1.c_str(), s2) != 0;
+	}
+	
+	template <size_t size1, size_t size2>
+	inline bool operator != (const strbuf<size1> &s1, const tstrbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) != 0;
+	}
+	
+	template <size_t size>
+	inline bool operator != (const tstrbuf<size> &s1, const char *s2)
+	{
+		return strcmp(s1.c_str(), s2) != 0;
+	}
+	
+	template <size_t size1, size_t size2>
+	inline bool operator != (const tstrbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) != 0;
+	}
+	
+	/////
+	
+	template <size_t size>
+	inline bool operator >= (const char *s1, const strbuf<size> &s2)
+	{
+		return strcmp(s1, s2.c_str()) >= 0;
+	}
+	
+	template <size_t size>
+	inline bool operator >= (const char *s1, const tstrbuf<size> &s2)
+	{
+		return strcmp(s1, s2.c_str()) >= 0;
+	}
+	
+	template <size_t size>
+	inline bool operator >= (const strbuf<size> &s1, const char *s2)
+	{
+		return strcmp(s1.c_str(), s2) >= 0;
+	}
+	
+	template <size_t size1, size_t size2>
+	inline bool operator >= (const strbuf<size1> &s1, const tstrbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) >= 0;
+	}
+	
+	template <size_t size>
+	inline bool operator >= (const tstrbuf<size> &s1, const char *s2)
+	{
+		return strcmp(s1.c_str(), s2) >= 0;
+	}
+	
+	template <size_t size1, size_t size2>
+	inline bool operator >= (const tstrbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) >= 0;
+	}
+	
+	/////
+	
+	template <size_t size>
+	inline bool operator <= (const char *s1, const strbuf<size> &s2)
+	{
+		return strcmp(s1, s2.c_str()) <= 0;
+	}
+	
+	template <size_t size>
+	inline bool operator <= (const char *s1, const tstrbuf<size> &s2)
+	{
+		return strcmp(s1, s2.c_str()) <= 0;
+	}
+	
+	template <size_t size>
+	inline bool operator <= (const strbuf<size> &s1, const char *s2)
+	{
+		return strcmp(s1.c_str(), s2) <= 0;
+	}
+	
+	template <size_t size1, size_t size2>
+	inline bool operator <= (const strbuf<size1> &s1, const tstrbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) <= 0;
+	}
+	
+	template <size_t size>
+	inline bool operator <= (const tstrbuf<size> &s1, const char *s2)
+	{
+		return strcmp(s1.c_str(), s2) <= 0;
+	}
+	
+	template <size_t size1, size_t size2>
+	inline bool operator <= (const tstrbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) <= 0;
+	}
+	
+	/////
+	
+	template <size_t size>
+	inline bool operator > (const char *s1, const strbuf<size> &s2)
+	{
+		return strcmp(s1, s2.c_str()) > 0;
+	}
+	
+	template <size_t size>
+	inline bool operator > (const char *s1, const tstrbuf<size> &s2)
+	{
+		return strcmp(s1, s2.c_str()) > 0;
+	}
+	
+	template <size_t size>
+	inline bool operator > (const strbuf<size> &s1, const char *s2)
+	{
+		return strcmp(s1.c_str(), s2) > 0;
+	}
+	
+	template <size_t size1, size_t size2>
+	inline bool operator > (const strbuf<size1> &s1, const tstrbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) > 0;
+	}
+	
+	template <size_t size>
+	inline bool operator > (const tstrbuf<size> &s1, const char *s2)
+	{
+		return strcmp(s1.c_str(), s2) > 0;
+	}
+	
+	template <size_t size1, size_t size2>
+	inline bool operator > (const tstrbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) > 0;
+	}
+	
+	/////
+	
+	template <size_t size>
+	inline bool operator < (const char *s1, const strbuf<size> &s2)
+	{
+		return strcmp(s1, s2.c_str()) < 0;
+	}
+	
+	template <size_t size>
+	inline bool operator < (const char *s1, const tstrbuf<size> &s2)
+	{
+		return strcmp(s1, s2.c_str()) < 0;
+	}
+	
+	template <size_t size>
+	inline bool operator < (const strbuf<size> &s1, const char *s2)
+	{
+		return strcmp(s1.c_str(), s2) < 0;
+	}
+	
+	template <size_t size1, size_t size2>
+	inline bool operator < (const strbuf<size1> &s1, const tstrbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) < 0;
+	}
+	
+	template <size_t size>
+	inline bool operator < (const tstrbuf<size> &s1, const char *s2)
+	{
+		return strcmp(s1.c_str(), s2) < 0;
+	}
+	
+	template <size_t size1, size_t size2>
+	inline bool operator < (const tstrbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) < 0;
+	}
 }
 
 #endif // NANOSOFT_STRING_H
