@@ -87,6 +87,12 @@ namespace nanosoft
 		return strcmp(s1.c_str(), s2.c_str()) == 0;
 	}
 	
+	template <size_t size1, size_t size2>
+	inline bool operator == (const strbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) == 0;
+	}
+	
 	template <size_t size>
 	inline bool operator == (const tstrbuf<size> &s1, const char *s2)
 	{
@@ -95,6 +101,12 @@ namespace nanosoft
 	
 	template <size_t size1, size_t size2>
 	inline bool operator == (const tstrbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) == 0;
+	}
+	
+	template <size_t size1, size_t size2>
+	inline bool operator == (const tstrbuf<size1> &s1, const tstrbuf<size2> &s2)
 	{
 		return strcmp(s1.c_str(), s2.c_str()) == 0;
 	}
@@ -125,6 +137,12 @@ namespace nanosoft
 		return strcmp(s1.c_str(), s2.c_str()) != 0;
 	}
 	
+	template <size_t size1, size_t size2>
+	inline bool operator != (const strbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) != 0;
+	}
+	
 	template <size_t size>
 	inline bool operator != (const tstrbuf<size> &s1, const char *s2)
 	{
@@ -133,6 +151,12 @@ namespace nanosoft
 	
 	template <size_t size1, size_t size2>
 	inline bool operator != (const tstrbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) != 0;
+	}
+	
+	template <size_t size1, size_t size2>
+	inline bool operator != (const tstrbuf<size1> &s1, const tstrbuf<size2> &s2)
 	{
 		return strcmp(s1.c_str(), s2.c_str()) != 0;
 	}
@@ -163,6 +187,12 @@ namespace nanosoft
 		return strcmp(s1.c_str(), s2.c_str()) >= 0;
 	}
 	
+	template <size_t size1, size_t size2>
+	inline bool operator >= (const strbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) >= 0;
+	}
+	
 	template <size_t size>
 	inline bool operator >= (const tstrbuf<size> &s1, const char *s2)
 	{
@@ -171,6 +201,12 @@ namespace nanosoft
 	
 	template <size_t size1, size_t size2>
 	inline bool operator >= (const tstrbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) >= 0;
+	}
+	
+	template <size_t size1, size_t size2>
+	inline bool operator >= (const tstrbuf<size1> &s1, const tstrbuf<size2> &s2)
 	{
 		return strcmp(s1.c_str(), s2.c_str()) >= 0;
 	}
@@ -201,6 +237,12 @@ namespace nanosoft
 		return strcmp(s1.c_str(), s2.c_str()) <= 0;
 	}
 	
+	template <size_t size1, size_t size2>
+	inline bool operator <= (const strbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) <= 0;
+	}
+	
 	template <size_t size>
 	inline bool operator <= (const tstrbuf<size> &s1, const char *s2)
 	{
@@ -209,6 +251,12 @@ namespace nanosoft
 	
 	template <size_t size1, size_t size2>
 	inline bool operator <= (const tstrbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) <= 0;
+	}
+	
+	template <size_t size1, size_t size2>
+	inline bool operator <= (const tstrbuf<size1> &s1, const tstrbuf<size2> &s2)
 	{
 		return strcmp(s1.c_str(), s2.c_str()) <= 0;
 	}
@@ -239,6 +287,12 @@ namespace nanosoft
 		return strcmp(s1.c_str(), s2.c_str()) > 0;
 	}
 	
+	template <size_t size1, size_t size2>
+	inline bool operator > (const strbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) > 0;
+	}
+	
 	template <size_t size>
 	inline bool operator > (const tstrbuf<size> &s1, const char *s2)
 	{
@@ -247,6 +301,12 @@ namespace nanosoft
 	
 	template <size_t size1, size_t size2>
 	inline bool operator > (const tstrbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) > 0;
+	}
+	
+	template <size_t size1, size_t size2>
+	inline bool operator > (const tstrbuf<size1> &s1, const tstrbuf<size2> &s2)
 	{
 		return strcmp(s1.c_str(), s2.c_str()) > 0;
 	}
@@ -272,6 +332,12 @@ namespace nanosoft
 	}
 	
 	template <size_t size1, size_t size2>
+	inline bool operator < (const strbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) < 0;
+	}
+	
+	template <size_t size1, size_t size2>
 	inline bool operator < (const strbuf<size1> &s1, const tstrbuf<size2> &s2)
 	{
 		return strcmp(s1.c_str(), s2.c_str()) < 0;
@@ -285,6 +351,12 @@ namespace nanosoft
 	
 	template <size_t size1, size_t size2>
 	inline bool operator < (const tstrbuf<size1> &s1, const strbuf<size2> &s2)
+	{
+		return strcmp(s1.c_str(), s2.c_str()) < 0;
+	}
+	
+	template <size_t size1, size_t size2>
+	inline bool operator < (const tstrbuf<size1> &s1, const tstrbuf<size2> &s2)
 	{
 		return strcmp(s1.c_str(), s2.c_str()) < 0;
 	}
