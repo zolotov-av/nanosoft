@@ -41,6 +41,8 @@ namespace nanosoft
 		strbuf(const strbuf<size> &s) { strset(buf, size, s.buf); }
 		void operator = (const char *s) { strset(buf, size, s); }
 		const char * c_str() const { return buf; }
+		char * ptr() { return buf; }
+		size_t bufsz() { return size; }
 	};
 	
 	/**
@@ -57,6 +59,8 @@ namespace nanosoft
 		tstrbuf(const tstrbuf<size> &s) { strtim(buf, size, s.buf); }
 		void operator = (const char *s) { strtim(buf, size, s); }
 		const char * c_str() const { return buf; }
+		char * ptr() { return buf; }
+		size_t bufsz() { return size; }
 	};
 	
 	template <size_t size>
