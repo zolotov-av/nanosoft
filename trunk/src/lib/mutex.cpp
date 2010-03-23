@@ -23,9 +23,9 @@ namespace nanosoft
 	/**
 	* Получить монопольный доступ к БД
 	*/
-	void Mutex::lock()
+	bool Mutex::lock()
 	{
-		stdcheck( pthread_mutex_lock(&mutex) == 0 );
+		return pthread_mutex_lock(&mutex) == 0;
 	}
 	
 	/**

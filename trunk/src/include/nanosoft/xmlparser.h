@@ -85,12 +85,12 @@ namespace nanosoft
 		/**
 		* Инициализация парсера
 		*/
-		void initParser();
+		bool initParser();
 		
 		/**
 		* Реальная переинициализация парсера
 		*/
-		void realResetParser();
+		bool realResetParser();
 		
 		/**
 		* Обработчик открытия тега

@@ -18,13 +18,13 @@ namespace nanosoft
 		p2ns_map::iterator p = p2ns.find(prefix);
 		if ( p == p2ns.end() )
 		{ // новый префикс
-			if ( ns2p.find(ns) != ns2p.end() ) error("[XMLNSManager] prefix conflict: " + prefix + "=" + ns);
+			if ( ns2p.find(ns) != ns2p.end() ) fatal_error("[XMLNSManager] prefix conflict: " + prefix + "=" + ns);
 			p2ns[prefix].ns = ns;
 			ns2p[ns] = prefix;
 		}
 		else
 		{ // дубликат, увеличить счетчик ссылок
-			if ( p->second.ns != ns  ) error("[XMLNSManager] prefix conflict: " + prefix + "=" + ns);
+			if ( p->second.ns != ns  ) fatal_error("[XMLNSManager] prefix conflict: " + prefix + "=" + ns);
 			p2ns[prefix].counter ++;
 		}
 	}
@@ -36,7 +36,7 @@ namespace nanosoft
 	void XMLNSManager::unregisterPrefix(const std::string &prefix)
 	{
 		p2ns_map::iterator p = p2ns.find(prefix);
-		if ( p == p2ns.end() || p->second.counter == 0 ) error("[XMLNSManager] unable unregister prefix, not found: " + prefix);
+		if ( p == p2ns.end() || p->second.counter == 0 ) fatal_error("[XMLNSManager] unable unregister prefix, not found: " + prefix);
 		p->second.counter--;
 	}
 	
@@ -48,7 +48,7 @@ namespace nanosoft
 	std::string XMLNSManager::prefixToNS(const std::string &prefix) const
 	{
 		p2ns_map::const_iterator p = p2ns.find(prefix);
-		if ( p == p2ns.end() ) error("[XMLNSManager] unknown prefix:" + prefix);
+		if ( p == p2ns.end() ) fatal_error("[XMLNSManager] unknown prefix:" + prefix);
 	}
 	
 	/**

@@ -56,7 +56,7 @@ namespace nanosoft
 	*/
 	void * SimplePool::alloc(size_t size)
 	{
-		if ( offset + size > limit ) error("[SimplePool] pool exeeded");
+		if ( offset + size > limit ) fatal_error("[SimplePool] pool exeeded");
 		
 		void *p = offset;
 		offset += size;
@@ -76,7 +76,7 @@ namespace nanosoft
 	*/
 	void SimplePool::enter()
 	{
-		if ( top == stackLimit ) error("[SimplePool] stack exeeded");
+		if ( top == stackLimit ) fatal_error("[SimplePool] stack exeeded");
 		*top = offset;
 		top ++;
 		ptrdiff_t depth = top - stack;
@@ -95,7 +95,7 @@ namespace nanosoft
 	*/
 	void SimplePool::leave()
 	{
-		if ( top == stack ) error("[SimplePool] stack is empty");
+		if ( top == stack ) fatal_error("[SimplePool] stack is empty");
 		top --;
 		offset = *top;
 	}

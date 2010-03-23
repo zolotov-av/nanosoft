@@ -15,7 +15,7 @@ namespace nanosoft
 	* @param message сообщение об ошибке
 	* @note сообщение об ошибке сразу же выводиться в stderr
 	*/
-	void error(const char *message)
+	void fatal_error(const char *message)
 	{
 		cerr << message << endl;
 		throw runtime_error(message);
@@ -26,7 +26,7 @@ namespace nanosoft
 	* @param message сообщение об ошибке
 	* @note сообщение об ошибке сразу же выводиться в stderr
 	*/
-	void error(const std::string &message)
+	void fatal_error(const std::string &message)
 	{
 		cerr << message << endl;
 		throw std::runtime_error(message);
@@ -51,7 +51,7 @@ namespace nanosoft
 	{
 		if ( status == 0 )
 		{
-			error(stderror());
+			fatal_error(stderror());
 		}
 	}
 }

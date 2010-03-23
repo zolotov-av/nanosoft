@@ -32,7 +32,7 @@ namespace nanosoft
 		/**
 		* Получить монопольный доступ к БД
 		*/
-		void lock();
+		bool lock();
 		
 		/**
 		* Освободить БД

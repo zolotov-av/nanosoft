@@ -10,8 +10,8 @@ namespace nanosoft
 	* @param message сообщение об ошибке
 	* @note сообщение об ошибке сразу же выводиться в stderr
 	*/
-	void error(const char *message);
-	void error(const std::string &message);
+	void fatal_error(const char *message);
+	void fatal_error(const std::string &message);
 	
 	/**
 	* Вернуть стандартное сообщение о последней

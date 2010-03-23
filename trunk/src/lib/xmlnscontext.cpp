@@ -62,7 +62,7 @@ namespace nanosoft
 		size_t p = name.find(':');
 		if ( p == string::npos )
 		{
-			error("[XMLNSContext] encoded name must be prefixed: " + name);
+			fatal_error("[XMLNSContext] encoded name must be prefixed: " + name);
 			return name;
 		}
 		else

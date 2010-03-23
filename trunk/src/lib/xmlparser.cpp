@@ -9,9 +9,8 @@ namespace nanosoft
 	/**
 	* Конструктор
 	*/
-	XMLParser::XMLParser(): parsing(false), resetNeed(false)
+	XMLParser::XMLParser(): parser(0), parsing(false), resetNeed(false)
 	{
-		initParser();
 	}
 	
 	/**
@@ -19,19 +18,20 @@ namespace nanosoft
 	*/
 	XMLParser::~XMLParser()
 	{
-		XML_ParserFree(parser);
+		if ( parser ) XML_ParserFree(parser);
 	}
 	
 	/**
 	* Инициализация парсера
 	*/
-	void XMLParser::initParser()
+	bool XMLParser::initParser()
 	{
 		parser = XML_ParserCreate((XML_Char *) "UTF-8");
-		if ( parser == 0 ) error("[XMLParser] XML_ParserCreate() fault");
+		if ( parser == 0 ) return false;
 		XML_SetUserData(parser, (void*) this);
 		XML_SetElementHandler(parser, startElementCallback, endElementCallback);
 		XML_SetCharacterDataHandler(parser, characterDataCallback);
+		return true;
 	}
 	
 	/**
@@ -43,12 +43,12 @@ namespace nanosoft
 	*/
 	bool XMLParser::parseXML(const char *buf, size_t len, bool isFinal)
 	{
+		if ( resetNeed ) return realResetParser();
 		cout << "\nparse: \033[22;31m" << string(buf, len) << "\033[0m\n";
 		parsing = true;
 		int r = XML_Parse(parser, buf, len, isFinal);
 		parsing = false;
-		if ( resetNeed ) realResetParser();
-		else if ( ! r )
+		if ( ! r )
 		{
 			onParseError(XML_ErrorString(XML_GetErrorCode(parser)));
 			return false;
@@ -59,11 +59,19 @@ namespace nanosoft
 	/**
 	* Реальная переинициализация парсера
 	*/
-	void XMLParser::realResetParser()
+	bool XMLParser::realResetParser()
 	{
-		XML_ParserFree(parser);
-		initParser();
-		resetNeed = false;
+		if ( parser )
+		{
+			XML_ParserFree(parser);
+			parser = 0;
+		}
+		if ( initParser() )
+		{
+			resetNeed = false;
+			return true;
+		}
+		return false;
 	}
 	
 	/**
@@ -71,6 +79,7 @@ namespace nanosoft
 	*/
 	void XMLParser::resetParser()
 	{
+		// TODO что-то надо делать с обработкой ошибок
 		if ( parsing ) resetNeed = true;
 		else realResetParser();
 	}
