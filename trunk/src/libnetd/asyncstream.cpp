@@ -22,7 +22,7 @@ AsyncStream::AsyncStream(int afd): AsyncObject(afd), flags(0)
 */
 AsyncStream::~AsyncStream()
 {
-	fprintf(stderr, "#%d: [AsyncStream: %d] deleting\n", getWorkerId(), fd);
+	printf("#%d: [AsyncStream: %d] deleting\n", getWorkerId(), fd);
 	close();
 }
 
@@ -71,7 +71,7 @@ ssize_t AsyncStream::write(const void *buf, size_t count)
 */
 bool AsyncStream::shutdown(int how)
 {
-	fprintf(stderr, "#%d: [AsyncStream: %d] shutdown\n", getWorkerId(), fd);
+	printf("#%d: [AsyncStream: %d] shutdown\n", getWorkerId(), fd);
 	if ( how & READ & ~ flags ) {
 		if ( ::shutdown(fd, SHUT_RD) != 0 ) stderror();
 		flags |= READ;
@@ -87,7 +87,6 @@ bool AsyncStream::shutdown(int how)
 */
 void AsyncStream::close()
 {
-	fprintf(stderr, "#%d: [AsyncStream: %d] close\n", getWorkerId(), fd);
 	if ( fd )
 	{
 		int r = ::close(fd);

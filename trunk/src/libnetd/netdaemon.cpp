@@ -28,7 +28,7 @@ NetDaemon::NetDaemon(int maxStreams):
 	count(0)
 {
 	limit = maxStreams;
-	objects = new AsyncObject*[limit];
+	objects = new nanosoft::ptr<AsyncObject>[limit];
 	epoll = epoll_create(maxStreams);
 	for(int i = 0; i < limit; i++) objects[i] = 0;
 }
@@ -103,14 +103,14 @@ void NetDaemon::setWorkerStackSize(size_t size)
 /**
 * Добавить асинхронный объект
 */
-bool NetDaemon::addObject(AsyncObject *object)
+bool NetDaemon::addObject(nanosoft::ptr<AsyncObject> object)
 {
 	int r = false;
 	struct epoll_event event;
 	mutex.lock();
 		if ( objects[object->fd] == 0 )
 		{
-			fprintf(stderr, "#d: [NetDaemon] addObject(%d)\n", object->fd);
+			printf("#d: [NetDaemon] addObject(%d)\n", object->fd);
 			count ++;
 			objects[object->fd] = object;
 			
@@ -138,7 +138,7 @@ bool NetDaemon::addObject(AsyncObject *object)
 /**
 * Уведомить NetDaemon, что объект изменил свою маску
 */
-void NetDaemon::modifyObject(AsyncObject *object)
+void NetDaemon::modifyObject(nanosoft::ptr<AsyncObject> object)
 {
 	mutex.lock();
 		if ( objects[object->fd] == object )
@@ -151,7 +151,7 @@ void NetDaemon::modifyObject(AsyncObject *object)
 /**
 * Удалить асинхронный объект
 */
-bool NetDaemon::removeObject(AsyncObject *object)
+bool NetDaemon::removeObject(nanosoft::ptr<AsyncObject> object)
 {
 	mutex.lock();
 		if ( objects[object->fd] == object )
@@ -163,7 +163,7 @@ bool NetDaemon::removeObject(AsyncObject *object)
 		}
 		else
 		{
-			fprintf(stderr, "#%d NetDaemon::removeObject(%d): not found o.O\n", object->workerId, object->fd);
+			printf("NetDaemon::removeObject(%d): not found o.O\n", object->fd);
 		}
 	mutex.unlock();
 }
@@ -171,7 +171,7 @@ bool NetDaemon::removeObject(AsyncObject *object)
 /**
 * Возобновить работу с асинхронным объектом
 */
-bool NetDaemon::resetObject(AsyncObject *object)
+bool NetDaemon::resetObject(nanosoft::ptr<AsyncObject> &object)
 {
 	struct epoll_event event;
 	event.events = object->getEventsMask();
@@ -184,7 +184,7 @@ bool NetDaemon::resetObject(AsyncObject *object)
 */
 void NetDaemon::doActiveAction(worker_t *worker)
 {
-	AsyncObject *obj;
+	ptr<AsyncObject> obj;
 	struct epoll_event event;
 	int r = epoll_wait(epoll, &event, 1, nextTimer());
 	if ( r > 0 )
@@ -192,7 +192,7 @@ void NetDaemon::doActiveAction(worker_t *worker)
 		mutex.lock();
 			obj = objects[event.data.fd];
 		mutex.unlock();
-		if ( obj )
+		if ( obj != 0 )
 		{
 			obj->workerId = worker->workerId;
 			obj->onEvent(event.events);
@@ -202,9 +202,10 @@ void NetDaemon::doActiveAction(worker_t *worker)
 					resetObject(obj);
 				}
 			mutex.unlock();
+			obj = 0;
 		}
 	}
-	if ( r < 0 ) fprintf(stderr, "#%d: %s\n", worker->workerId, nanosoft::stderror());
+	if ( r < 0 ) printf("#%d: %s\n", worker->workerId, nanosoft::stderror());
 	if ( r == 0 ) processTimers(worker->workerId);
 }
 
@@ -227,7 +228,7 @@ void NetDaemon::doSleepAction(worker_t *worker)
 		return;
 	}
 	
-	fprintf(stderr, "#%d: doSleepAction\n", worker->workerId);
+	printf("#%d: doSleepAction\n", worker->workerId);
 	
 	// просто засыпаем на как можно больший срок
 	// лишь сигнал нас должен разбудить
@@ -250,9 +251,9 @@ void NetDaemon::doTerminateAction(worker_t *worker)
 		mutex.unlock();
 		return;
 	}
-	fprintf(stderr, "#%d: doTerminateAction\n", worker->workerId);
+	printf("#%d: doTerminateAction\n", worker->workerId);
 	
-	AsyncObject *obj;
+	ptr<AsyncObject> obj;
 	mutex.lock();
 		if ( iter < limit )
 		{
@@ -265,7 +266,7 @@ void NetDaemon::doTerminateAction(worker_t *worker)
 			obj = 0;
 		}
 	mutex.unlock();
-	if ( obj )
+	if ( obj != 0 )
 	{
 		obj->workerId = worker->workerId;
 		obj->terminate();

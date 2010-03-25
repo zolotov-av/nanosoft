@@ -3,16 +3,19 @@
 
 #include <stdint.h>
 #include <sys/types.h>
+#include <nanosoft/object.h>
 
 /**
 * Базовый класс для всех асинхронных объектов
 */
-class AsyncObject
+class AsyncObject: public nanosoft::Object
 {
 friend class NetDaemon;
 private:
 	/**
 	* Номер воркера обрабатывающий в данный момент объект
+	*
+	* @deprecated
 	*/
 	int workerId;
 	
@@ -84,6 +87,8 @@ public:
 	
 	/**
 	* Вернуть ID воркера обрабатывающий объект
+	*
+	* @deprecated
 	*/
 	int getWorkerId() { return workerId; }
 	

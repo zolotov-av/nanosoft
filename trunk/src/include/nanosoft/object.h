@@ -82,6 +82,16 @@ namespace nanosoft
 			if ( p ) p->lock();
 		}
 		
+		type* getObject() const {
+			return p;
+		}
+		
+		template <class type2>
+		ptr(const ptr<type2> &obj) {
+			p = obj.getObject();
+			if ( p ) p->lock();
+		}
+		
 		~ptr() {
 			if ( p ) p->release();
 		}
@@ -111,6 +121,22 @@ namespace nanosoft
 		
 		const type* operator -> () const {
 			return p;
+		}
+		
+		bool operator == (const type *obj) {
+			return p == obj;
+		}
+		
+		bool operator == (const ptr<type> obj) {
+			return p == obj.p;
+		}
+		
+		bool operator != (const type *obj) {
+			return p != obj;
+		}
+		
+		bool operator != (const ptr<type> obj) {
+			return p != obj.p;
 		}
 	};
 }

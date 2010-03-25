@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <queue>
+#include <nanosoft/object.h>
 #include <nanosoft/asyncobject.h>
 #include <nanosoft/mutex.h>
 
@@ -98,7 +99,7 @@ private:
 	/**
 	* Карта объектов (fd -> AsyncObject)
 	*/
-	AsyncObject **objects;
+	nanosoft::ptr<AsyncObject> *objects;
 	
 	/**
 	* Итератор объектов для корректного останова
@@ -210,7 +211,7 @@ private:
 	/**
 	* Возобновить работу с асинхронным объектом
 	*/
-	bool resetObject(AsyncObject *object);
+	bool resetObject(nanosoft::ptr<AsyncObject> &object);
 	
 	/**
 	* Размер стека воркера
@@ -304,17 +305,17 @@ public:
 	/**
 	* Добавить асинхронный объект
 	*/
-	bool addObject(AsyncObject *object);
+	bool addObject(nanosoft::ptr<AsyncObject> object);
 	
 	/**
 	* Уведомить NetDaemon, что объект изменил свою маску
 	*/
-	void modifyObject(AsyncObject *object);
+	void modifyObject(nanosoft::ptr<AsyncObject> object);
 	
 	/**
 	* Удалить асинхронный объект
 	*/
-	bool removeObject(AsyncObject *object);
+	bool removeObject(nanosoft::ptr<AsyncObject> object);
 	
 	/**
 	* Запустить демона
