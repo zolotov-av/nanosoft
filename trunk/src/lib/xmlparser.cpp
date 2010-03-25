@@ -11,6 +11,7 @@ namespace nanosoft
 	*/
 	XMLParser::XMLParser(): parser(0), parsing(false), resetNeed(false)
 	{
+		initParser();
 	}
 	
 	/**
