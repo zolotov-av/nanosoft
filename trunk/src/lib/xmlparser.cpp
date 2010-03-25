@@ -44,11 +44,11 @@ namespace nanosoft
 	*/
 	bool XMLParser::parseXML(const char *buf, size_t len, bool isFinal)
 	{
-		if ( resetNeed ) return realResetParser();
 		cout << "\nparse: \033[22;31m" << string(buf, len) << "\033[0m\n";
 		parsing = true;
 		int r = XML_Parse(parser, buf, len, isFinal);
 		parsing = false;
+		if ( resetNeed ) return realResetParser();
 		if ( ! r )
 		{
 			onParseError(XML_ErrorString(XML_GetErrorCode(parser)));
