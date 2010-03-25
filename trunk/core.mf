@@ -13,6 +13,7 @@ NANOSOFT_CORE+=doublepool.o
 NANOSOFT_CORE+=base64.o
 NANOSOFT_CORE+=error.o
 NANOSOFT_CORE+=mutex.o
+NANOSOFT_CORE+=object.o
 
 ifeq ($(WITH_MYSQL), yes)
 NANOSOFT_CORE+=mysql.o
@@ -36,6 +37,7 @@ install-core-headers:
 	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/error.h $(INCLUDEDIR)/nanosoft/error.h
 	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/mysql.h $(INCLUDEDIR)/nanosoft/mysql.h
 	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/mutex.h $(INCLUDEDIR)/nanosoft/mutex.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/object.h $(INCLUDEDIR)/nanosoft/object.h
 
 libns_core.a: $(NANOSOFT_CORE)
 	$(AR) rc libns_core.a $(NANOSOFT_CORE)
@@ -82,3 +84,6 @@ mysql.o: $(ns_srclib)/mysql.cpp $(ns_srcinc)/nanosoft/mysql.h $(ns_srcinc)/nanos
 
 mutex.o: $(ns_srclib)/mutex.cpp $(ns_srcinc)/nanosoft/mutex.h
 	$(CXX) -c $(ns_srclib)/mutex.cpp
+
+object.o: $(ns_srclib)/object.cpp $(ns_srcinc)/nanosoft/object.h
+	$(CXX) -c $(ns_srclib)/object.cpp
