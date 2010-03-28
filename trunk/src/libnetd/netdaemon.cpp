@@ -110,7 +110,6 @@ bool NetDaemon::addObject(nanosoft::ptr<AsyncObject> object)
 	mutex.lock();
 		if ( objects[object->fd] == 0 )
 		{
-			printf("#d: [NetDaemon] addObject(%d)\n", object->fd);
 			count ++;
 			objects[object->fd] = object;
 			
@@ -161,10 +160,6 @@ bool NetDaemon::removeObject(nanosoft::ptr<AsyncObject> object)
 			count --;
 			if ( count == 0 ) stopWorkers();
 		}
-		else
-		{
-			printf("NetDaemon::removeObject(%d): not found o.O\n", object->fd);
-		}
 	mutex.unlock();
 }
 
@@ -205,7 +200,7 @@ void NetDaemon::doActiveAction(worker_t *worker)
 			obj = 0;
 		}
 	}
-	if ( r < 0 ) printf("#%d: %s\n", worker->workerId, nanosoft::stderror());
+	if ( r < 0 ) fprintf(stderr, "#%d: %s\n", worker->workerId, nanosoft::stderror());
 	if ( r == 0 ) processTimers(worker->workerId);
 }
 
@@ -281,7 +276,7 @@ void* NetDaemon::workerEntry(void *pWorker)
 	worker_t *worker = static_cast<worker_t *>(pWorker);
 	NetDaemon *daemon = worker->daemon;
 	
-	fprintf(stderr, "#%d: worker started\n", worker->workerId);
+	printf("#%d: worker started\n", worker->workerId);
 	
 	while ( daemon->count > 0 && worker->status != INACTIVE )
 	{
@@ -299,7 +294,7 @@ void* NetDaemon::workerEntry(void *pWorker)
 		}
 	}
 	
-	fprintf(stderr, "#%d: worker exited\n", worker->workerId);
+	printf("#%d: worker exited\n", worker->workerId);
 	
 	return 0;
 }

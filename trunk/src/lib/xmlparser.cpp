@@ -1,6 +1,5 @@
 #include <nanosoft/error.h>
 #include <nanosoft/xmlparser.h>
-#include <iostream>
 
 using namespace std;
 
@@ -44,7 +43,6 @@ namespace nanosoft
 	*/
 	bool XMLParser::parseXML(const char *buf, size_t len, bool isFinal)
 	{
-		cout << "\nparse: \033[22;31m" << string(buf, len) << "\033[0m\n";
 		parsing = true;
 		int r = XML_Parse(parser, buf, len, isFinal);
 		parsing = false;

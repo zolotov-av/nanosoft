@@ -5,8 +5,6 @@
 #include <sys/un.h>
 #include <arpa/inet.h>
 #include <sys/epoll.h>
-#include <stdio.h>
-#include <exception>
 
 using namespace std;
 
@@ -72,7 +70,6 @@ bool AsyncServer::bind(const char *path)
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
 	strncpy(addr.sun_path, path, sizeof(addr.sun_path)-1);
-	fprintf(stderr, "bind unix socket: %s\n", addr.sun_path);
 	unlink(path);
 	if ( ::bind(fd, (struct sockaddr *) &addr, sizeof(addr)) != 0 )
 	{
