@@ -288,6 +288,11 @@ public:
 	int getObjectCount();
 	
 	/**
+	* Вернуть максимальное число подконтрольных объектов
+	*/
+	int getObjectLimit() { return limit; }
+	
+	/**
 	* Установить число воркеров
 	*/
 	void setWorkerCount(int count);
