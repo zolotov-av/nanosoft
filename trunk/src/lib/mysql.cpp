@@ -1,6 +1,7 @@
 #include <nanosoft/mysql.h>
 #include <nanosoft/error.h>
 #include <mysql/mysql.h>
+#include <mysql/errmsg.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -28,6 +29,27 @@ namespace nanosoft
 	* Соединение сервером
 	*
 	* В случае неудачи выводит в stderr сообщение об ошибке и возращает FALSE
+	* @return TRUE - соединение установлено, FALSE ошибка соединения
+	*/
+	bool MySQL::reconnect()
+	{
+		switch ( connectType )
+		{
+		case CONNECT_INET:
+			if ( mysql_real_connect(mysql_init(&conn), host.c_str(), user.c_str(), password.c_str(), database.c_str(), port, 0, 0) ) return true;
+			fprintf(stderr, "[MySQL] connection fault\n");
+			return false;
+		case CONNECT_UNIX:
+			if ( mysql_real_connect(mysql_init(&conn), 0, user.c_str(), password.c_str(), database.c_str(), 0, sock.c_str(), 0) ) return true;
+			fprintf(stderr, "[MySQL] connection fault\n");
+			return false;
+		}
+	}
+	
+	/**
+	* Соединение сервером
+	*
+	* В случае неудачи выводит в stderr сообщение об ошибке и возращает FALSE
 	*
 	* @param host хост
 	* @param database имя БД к которой подключаемся
@@ -38,9 +60,13 @@ namespace nanosoft
 	*/
 	bool MySQL::connect(const std::string &host, const std::string &database, const std::string &user, const std::string &password, int port)
 	{
-		if ( mysql_real_connect(mysql_init(&conn), host.c_str(), user.c_str(), password.c_str(), database.c_str(), port, 0, 0) ) return true;
-		fprintf(stderr, "[MySQL] connection fault\n");
-		return false;
+		this->connectType = CONNECT_INET;
+		this->host = host.c_str();
+		this->port = port;
+		this->database = database.c_str();
+		this->user = user.c_str();
+		this->password = password.c_str();
+		return reconnect();
 	}
 	
 	/**
@@ -56,9 +82,12 @@ namespace nanosoft
 	*/
 	bool MySQL::connectUnix(const std::string &sock, const std::string &database, const std::string &user, const std::string &password)
 	{
-		if ( mysql_real_connect(mysql_init(&conn), 0, user.c_str(), password.c_str(), database.c_str(), 0, sock.c_str(), 0) ) return true;
-		fprintf(stderr, "[MySQL] connection fault\n");
-		return false;
+		this->connectType = CONNECT_UNIX;
+		this->sock = sock.c_str();
+		this->database = database.c_str();
+		this->user = user.c_str();
+		this->password = password.c_str();
+		return reconnect();
 	}
 	
 	/**
@@ -88,13 +117,31 @@ namespace nanosoft
 	MySQL::result MySQL::queryRaw(const char *sql, size_t len)
 	{
 		mutex.lock();
-		
 		int status = mysql_real_query(&conn, sql, len);
-		if ( status ) {
+		if ( status )
+		{
 			fprintf(stderr, "[MySQL] %s\n", mysql_error(&conn));
 			
-			mutex.unlock();
-			return 0;
+			unsigned int err = mysql_errno(&conn);
+			if ( err == CR_SERVER_GONE_ERROR || err == CR_SERVER_LOST )
+			{
+				close();
+				if ( reconnect() )
+				{
+					status = mysql_real_query(&conn, sql, len);
+					if ( status )
+					{
+							fprintf(stderr, "[MySQL] %s\n", mysql_error(&conn));
+							mutex.unlock();
+							return 0;
+					}
+				}
+			}
+			else
+			{
+				mutex.unlock();
+				return 0;
+			}
 		}
 		
 		MYSQL_RES *res = mysql_store_result(&conn);

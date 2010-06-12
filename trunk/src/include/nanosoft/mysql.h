@@ -2,6 +2,7 @@
 #define NANOSOFT_MYSQL_H
 
 #include <nanosoft/mutex.h>
+#include <nanosoft/string.h>
 #include <mysql/mysql.h>
 #include <stdio.h>
 #include <string>
@@ -14,6 +15,51 @@ namespace nanosoft
 	class MySQL
 	{
 	protected:
+		/**
+		* Тип соединения
+		*/
+		enum {
+			/**
+			* Подключение через сеть
+			*/
+			CONNECT_INET,
+			
+			/**
+			* Подключение черел UNIX-сокет
+			*/
+			CONNECT_UNIX
+		} connectType;
+		
+		/**
+		* Путь к UNIX-сокету
+		*/
+		strbuf<255> sock;
+		
+		/**
+		* Хост MySQL-сервера
+		*/
+		strbuf<80> host;
+		
+		/**
+		* Порт MySQL-сервера
+		*/
+		int port;
+		
+		/**
+		* Имя базы данных
+		*/
+		strbuf<80> database;
+		
+		/**
+		* Пользователь
+		*/
+		strbuf<80> user;
+		
+		/**
+		* Пароль пользователя
+		*/
+		strbuf<80> password;
+		
 		/**
 		* Соединение с MySQL сервером
 		*/
@@ -54,6 +100,14 @@ namespace nanosoft
 			*/
 			MYSQL_ROW values;
 		};
+		
+		/**
+		* Соединение сервером
+		*
+		* В случае неудачи выводит в stderr сообщение об ошибке и возращает FALSE
+		* @return TRUE - соединение установлено, FALSE ошибка соединения
+		*/
+		bool reconnect();
 		
 	public:
 		/**
