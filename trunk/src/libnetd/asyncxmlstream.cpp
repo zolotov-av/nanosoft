@@ -1,7 +1,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include <iostream>
+#include <stdio.h>
 #include <nanosoft/asyncxmlstream.h>
 
 using namespace std;
