@@ -246,7 +246,7 @@ void NetDaemon::doTerminateAction(worker_t *worker)
 		mutex.unlock();
 		return;
 	}
-	printf("#%d: doTerminateAction\n", worker->workerId);
+	//printf("#%d: doTerminateAction\n", worker->workerId);
 	
 	ptr<AsyncObject> obj;
 	mutex.lock();
