@@ -36,14 +36,20 @@ namespace nanosoft
 		switch ( connectType )
 		{
 		case CONNECT_INET:
-			if ( mysql_real_connect(mysql_init(&conn), host.c_str(), user.c_str(), password.c_str(), database.c_str(), port, 0, 0) ) return true;
+			if ( mysql_real_connect(mysql_init(&conn), host.c_str(), user.c_str(), password.c_str(), database.c_str(), port, 0, 0) ) break;
 			fprintf(stderr, "[MySQL] connection fault\n");
 			return false;
 		case CONNECT_UNIX:
-			if ( mysql_real_connect(mysql_init(&conn), 0, user.c_str(), password.c_str(), database.c_str(), 0, sock.c_str(), 0) ) return true;
+			if ( mysql_real_connect(mysql_init(&conn), 0, user.c_str(), password.c_str(), database.c_str(), 0, sock.c_str(), 0) ) break;
 			fprintf(stderr, "[MySQL] connection fault\n");
 			return false;
+		default:
+			return false;
 		}
+		
+		// кодировка только UTF-8
+		int status = mysql_real_query(&conn, "SET NAMES UTF8", sizeof("SET NAMES UTF8"));
+		return true;
 	}
 	
 	/**
