@@ -1,91 +1,87 @@
-#ifndef NANOSOFT_STRING_H
-#define NANOSOFT_STRING_H
+#ifndef NANOSOFT_RING_H
+#define NANOSOFT_RING_H
 
 #include <sys/types.h>
 #include <string.h>
 
 namespace nanosoft
 {
-	template <class type>
-	class neighbor;
-	
-	/**
-	* Класс кольцо - вдухсвязный список объектов
-	*/
-	template <class type>
-	class ring
-	{
-	private:
-		neighbor<type> *first;
-	public:
-		ring(): first(0) { }
-		neighbor<type> *getFirst() const { return first; }
-		void add(neighbor<type> *item);
-		void remove(neighbor<type> *item);
-	};
-	
 	/**
 	* Класс сосед - описывает элемент кольца
 	*/
 	template <class type>
 	class neighbor
 	{
-		friend class ring<type>;
 	private:
 		type *obj;
-		ring<type> *owner;
 		neighbor<type> *next;
 		neighbor<type> *prev;
 	public:
-		neighbor(type *o): obj(o), owner(0), next(0), prev(0) { }
-		~neighbor() { if ( owner) owner->remove(this); }
+		/**
+		* Конструктор
+		*/
+		neighbor(type *o): obj(o), next(this), prev(this) { }
+		
+		/**
+		* Деструктор
+		*/
+		~neighbor() { detach(); }
+		
+		/**
+		* Вернуть указатель на объект-родителя
+		*/
 		type* getObject() const { return obj; }
+		
+		/**
+		* Вернуть следующего соседа
+		*/
 		neighbor<type>* getNext() const { return next; }
+		
+		/**
+		* Вернуть предыдущего соседа
+		*/
 		neighbor<type>* getPrev() const { return prev; }
+		
+		/**
+		* Присоединиться к другому соседу/цепочке
+		*/
+		void attachTo(neighbor<type> *item);
+		
+		/**
+		* Присоединить к себе соседа
+		*/
+		void attach(neighbor<type> *item) { item->attachTo(this); }
+		
+		/**
+		* Отсоединиться от цепочки
+		*/
+		void detach();
 	};
 	
 	template <class type>
-	void ring<type>::add(neighbor<type> *item)
+	void neighbor<type>::attachTo(neighbor<type> *item)
 	{
-		if ( item->owner ) item->owner->remove(item);
-		item->owner = this;
+		detach();
+		if ( item == 0 ) return;
 		
-		if ( first == 0 )
-		{
-			first = item;
-			first->next = item;
-			first->prev = item;
-		}
-		else
-		{
-			item->next = first->next;
-			item->prev = first;
-			
-			item->prev->next = item;
-			item->next->prev = item;
-		}
+		this->next = item->next;
+		this->prev = item;
+		
+		this->prev->next = this;
+		this->next->prev = this;
 	}
 	
 	template <class type>
-	void ring<type>::remove(neighbor<type> *item)
+	void neighbor<type>::detach()
 	{
-		if ( item->owner != this ) return;
+		if ( next == this ) return;
 		
-		if ( item->next == item )
-		{
-			item->owner->first = 0;
-		}
-		else
-		{
-			item->prev->next = item->next;
-			item->next->prev = item->prev;
-			item->owner->first = item->next;
-		}
+		this->prev->next = this->next;
+		this->next->prev = this->prev;
 		
-		item->owner = 0;
-		item->next = 0;
-		item->prev = 0;
+		this->next = this;
+		this->prev = this;
 	}
 }
 
-#endif // NANOSOFT_STRING_H
+#endif // NANOSOFT_RING_H

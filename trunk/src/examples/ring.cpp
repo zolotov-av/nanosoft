@@ -23,52 +23,40 @@ public:
 
 int main()
 {
-	ring<myobject> r, r2;
-	myobject *obj, *obj2;
-	neighbor<myobject> *first;
+	myobject *obj1, *obj2, *obj3;
+	neighbor<myobject> *ring1, *ring2;
 	
-	obj = new myobject("first");
-	r.add( &obj->neigh );
+	obj1 = new myobject("first");
+	ring1 = & obj1->neigh;
 	
 	obj2 = new myobject("second");
-	r.add( &obj->neigh );
+	ring1->attach( &obj2->neigh );
 	
-	obj = new myobject("third");
-	r.add( &obj->neigh );
+	obj3 = new myobject("third");
+	ring1->attach( &obj3->neigh );
 	
-	r2.add( &obj2->neigh );
-	//delete obj2;
-	//r.remove(&obj2->neigh);
 	
-	printf("first ring:\n");
-	first = r.getFirst();
-	if ( first == 0 )
-	{
-		printf("empty ring\n");
-		return 0;
-	}
+	ring2 = &obj2->neigh;
+	ring2->detach();
+	ring2->attach( &obj3->neigh );
 	
-	printf("  item: %s\n", first->getObject()->name);
-	for(neighbor<myobject> *item = first->getNext(); item != first; item = item->getNext())
+	
+	printf("ring1:\n");
+	printf(" item: %s\n", ring1->getObject()->name);
+	for(neighbor<myobject> *item = ring1->getNext(); item != ring1; item = item->getNext())
 	{
 		printf("  item: %s\n", item->getObject()->name);
 	}
 	
-	printf("\n\nsecond ring:\n");
-	first = r2.getFirst();
-	if ( first == 0 )
-	{
-		printf("empty ring\n");
-		return 0;
-	}
-	
-	printf("  item: %s\n", first->getObject()->name);
-	for(neighbor<myobject> *item = first->getNext(); item != first; item = item->getNext())
+	printf("\n\nring2:\n");
+	printf(" item: %s\n", ring2->getObject()->name);
+	for(neighbor<myobject> *item = ring2->getNext(); item != ring2; item = item->getNext())
 	{
 		printf("  item: %s\n", item->getObject()->name);
 	}
 	
-	printf("end\n");
+	
+	printf("\n\nend\n");
 	
 	return 0;
 }
