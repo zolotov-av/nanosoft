@@ -38,6 +38,7 @@ install-core-headers:
 	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/mysql.h $(INCLUDEDIR)/nanosoft/mysql.h
 	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/mutex.h $(INCLUDEDIR)/nanosoft/mutex.h
 	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/object.h $(INCLUDEDIR)/nanosoft/object.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/object.h $(INCLUDEDIR)/nanosoft/ring.h
 
 libns_core.a: $(NANOSOFT_CORE)
 	$(AR) rc libns_core.a $(NANOSOFT_CORE)
