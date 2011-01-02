@@ -14,6 +14,7 @@ NANOSOFT_CORE+=base64.o
 NANOSOFT_CORE+=error.o
 NANOSOFT_CORE+=mutex.o
 NANOSOFT_CORE+=object.o
+NANOSOFT_CORE+=hash.o
 
 ifeq ($(WITH_MYSQL), yes)
 NANOSOFT_CORE+=mysql.o
@@ -89,3 +90,6 @@ mutex.o: $(ns_srclib)/mutex.cpp $(ns_srcinc)/nanosoft/mutex.h
 
 object.o: $(ns_srclib)/object.cpp $(ns_srcinc)/nanosoft/object.h
 	$(CXX) -c $(ns_srclib)/object.cpp
+
+hash.o: $(ns_srclib)/hash.cpp $(ns_srcinc)/nanosoft/hash.h
+	$(CXX) -c $(ns_srclib)/hash.cpp

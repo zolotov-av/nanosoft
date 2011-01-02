@@ -174,8 +174,8 @@ mparser_test: mparser_check
 ring: $(ns_srcexm)/ring.cpp $(ns_srcinc)/nanosoft/ring.h
 	$(CXX) $(ns_srcexm)/ring.cpp -o ring
 
-hash: $(ns_srcexm)/hash.cpp $(ns_srcinc)/nanosoft/hash.h
-	$(CXX) $(ns_srcexm)/hash.cpp -o hash
+hash: $(ns_srcexm)/hash.cpp $(ns_srcinc)/nanosoft/hash.h libns_core.a
+	$(CXX) $(ns_srcexm)/hash.cpp -o hash -lns_core
 
 include $(root)/core.mf
 include $(root)/xml.mf
