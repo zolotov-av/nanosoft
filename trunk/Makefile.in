@@ -66,6 +66,7 @@ LINUX_EXAMPLES+=daemon
 LINUX_EXAMPLES+=pools
 LINUX_EXAMPLES+=mparser
 LINUX_EXAMPLES+=ring
+LINUX_EXAMPLES+=hash
 
 ifeq ($(WITH_MYSQL), yes)
 LINUX_EXAMPLES+=mysql
@@ -172,6 +173,9 @@ mparser_test: mparser_check
 
 ring: $(ns_srcexm)/ring.cpp $(ns_srcinc)/nanosoft/ring.h
 	$(CXX) $(ns_srcexm)/ring.cpp -o ring
+
+hash: $(ns_srcexm)/hash.cpp $(ns_srcinc)/nanosoft/hash.h
+	$(CXX) $(ns_srcexm)/hash.cpp -o hash
 
 include $(root)/core.mf
 include $(root)/xml.mf
