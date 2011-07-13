@@ -2,6 +2,7 @@
 #include <nanosoft/error.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 namespace nanosoft
 {
