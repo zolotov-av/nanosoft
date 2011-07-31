@@ -19,7 +19,7 @@ protected:
 	/**
 	* Обработка очередного log-сообщения
 	*/
-	virtual void onMessage(const char *message) = 0;
+	virtual void onMessage(const char *ip, const char *message) = 0;
 	
 	/**
 	* Сигнал завершения работы

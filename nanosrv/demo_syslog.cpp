@@ -10,9 +10,9 @@ protected:
 	/**
 	* Обработка очередного log-сообщения
 	*/
-	virtual void onMessage(const char *message)
+	virtual void onMessage(const char *ip, const char *message)
 	{
-		printf("%s\n", message);
+		printf("[%s]: %s\n", ip, message);
 	}
 };
 

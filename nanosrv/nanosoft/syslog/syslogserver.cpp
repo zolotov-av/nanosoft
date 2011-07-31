@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include <stdio.h>
 
@@ -24,6 +25,7 @@ void SyslogServer::onRead()
 {
 	socklen_t len;
 	struct sockaddr_in addr;
+	char ip[80];
 	memset(&addr, 0, sizeof(struct sockaddr_in));
 	int status = recvfrom(fd, &message, sizeof(message), 0, (struct sockaddr*)&addr, &len);
 	if ( status == -1 )
@@ -31,8 +33,10 @@ void SyslogServer::onRead()
 		stderror();
 		return;
 	}
+	addr.sin_addr.s_addr = htonl(ntohl(addr.sin_addr.s_addr) & 0xFFFF0000);
+	inet_ntop(AF_INET, &(addr.sin_addr), ip, 80);
 	message[status] = 0;
-	onMessage(message);
+	onMessage(ip, message);
 }
 
 /**

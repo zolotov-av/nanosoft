@@ -1,8 +1,10 @@
 # nanosrv syslog Makefile
 
+LIB_CORE=../core/libnsrv_core.a
+
 CPPFLAGS=-I../..
 
-libnsrv_syslog.a: syslogserver.o ../core/libnsrv_core.a
+libnsrv_syslog.a: syslogserver.o $(LIB_CORE)
 	ar rc libnsrv_syslog.a syslogserver.o
 	ranlib libnsrv_syslog.a
 
