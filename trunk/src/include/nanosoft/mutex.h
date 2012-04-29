@@ -1,7 +1,9 @@
 #ifndef NANOSOFT_MUTEX_H
 #define NANOSOFT_MUTEX_H
 
+#ifdef USE_PTHREAD
 #include <pthread.h>
+#endif
 
 namespace nanosoft
 {
@@ -13,11 +15,12 @@ namespace nanosoft
 	class Mutex
 	{
 	protected:
+#ifdef USE_PTHREAD
 		/**
 		* Mutex для thread-safe доступа к БД
 		*/
 		pthread_mutex_t mutex;
-		
+#endif
 	public:
 		/**
 		* Конструктор

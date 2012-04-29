@@ -2,7 +2,6 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <pthread.h>
 #include <nanosoft/netdaemon.h>
 #include <nanosoft/error.h>
 #include <iostream>
@@ -73,7 +72,9 @@ int NetDaemon::getWorkerCount()
 */
 void NetDaemon::setWorkerCount(int count)
 {
+#ifdef USE_PTHREAD
 	workerCount = count;
+#endif
 }
 
 /**
@@ -306,6 +307,7 @@ void* NetDaemon::workerEntry(void *pWorker)
 */
 void NetDaemon::startWorkers()
 {
+#ifdef USE_PTHREAD
 	workers = new worker_t[workerCount];
 	for(int i = 0; i < workerCount; i++)
 	{
@@ -320,6 +322,7 @@ void NetDaemon::startWorkers()
 		pthread_attr_setdetachstate(&workers[i].attr, PTHREAD_CREATE_JOINABLE);
 		pthread_create(&workers[i].thread, &workers[i].attr, workerEntry, &workers[i]);
 	}
+#endif
 }
 
 /**
@@ -327,15 +330,19 @@ void NetDaemon::startWorkers()
 */
 void NetDaemon::setWorkersState(worker_status_t status)
 {
+#ifdef USE_PTHREAD
 	for(int i = 0; i < workerCount; i++)
 	{
 		workers[i].status = status;
 		workers[i].checked = false;
 		pthread_kill(workers[i].thread, SIGHUP);
 	}
+#endif
 	main.status = status;
 	main.checked = false;
+#ifdef USE_PTHREAD
 	pthread_kill(main.thread, SIGHUP);
+#endif
 }
 
 /**
@@ -352,12 +359,14 @@ void NetDaemon::stopWorkers()
 */
 void NetDaemon::waitWorkers()
 {
+#ifdef USE_PTHREAD
 	for(int i = 0; i < workerCount; i++)
 	{
 		void *status;
 		int rc = pthread_join(workers[i].thread, &status);
 		if ( rc ) fprintf(stderr, "[NetDaemon] pthread_join(#%) fault\n", i+1);
 	}
+#endif
 }
 
 /**
@@ -365,11 +374,13 @@ void NetDaemon::waitWorkers()
 */
 void NetDaemon::freeWorkers()
 {
+#ifdef USE_PTHREAD
 	for(int i = 0; i < workerCount; i++)
 	{
 		pthread_attr_destroy(&workers[i].attr);
 	}
 	delete [] workers;
+#endif
 }
 
 /**
@@ -380,7 +391,9 @@ int NetDaemon::run()
 	startWorkers();
 	main.daemon = this;
 	main.workerId = 0;
+#ifdef USE_PTHREAD
 	main.thread = pthread_self();
+#endif
 	main.status = ACTIVE;
 	mutex.lock();
 		activeCount++;
@@ -396,6 +409,7 @@ int NetDaemon::run()
 */
 int NetDaemon::wid()
 {
+#ifdef USE_PTHREAD
 	pthread_t tid = pthread_self();
 	for(int i = 0; i < workerCount; i++)
 	{
@@ -403,6 +417,8 @@ int NetDaemon::wid()
 	}
 	if ( pthread_equal(main.thread, tid) ) return 0;
 	return -1;
+#endif
+	return 0;
 }
 
 /**
@@ -423,12 +439,14 @@ void NetDaemon::terminate()
 */
 void NetDaemon::setTimer(int expires, timer_callback_t callback, void *data)
 {
+	printf("setTimer(%d)\n", expires);
 	bool hup = false;
 	mutex.lock();
 		timers.push(timer(expires, callback, data));
 		hup = timerCount = 0;
 		timerCount++;
 	mutex.unlock();
+#ifdef USE_PTHREAD
 	if ( hup )
 	{
 		for(int i = 0; i < workerCount; i++)
@@ -437,6 +455,7 @@ void NetDaemon::setTimer(int expires, timer_callback_t callback, void *data)
 		}
 		pthread_kill(main.thread, SIGHUP);
 	}
+#endif
 }
 
 /**
@@ -461,6 +480,7 @@ int NetDaemon::nextTimer()
 */
 void NetDaemon::processTimers(int wid)
 {
+	printf("processTimers(%d) enter\n", wid);
 	timer t;
 	time_t now = time(0);
 	while ( timerCount > 0 )
@@ -478,4 +498,5 @@ void NetDaemon::processTimers(int wid)
 		if ( process ) t.fire(wid);
 		else break;
 	}
+	printf("processTimers(%d) leave\n", wid);
 }

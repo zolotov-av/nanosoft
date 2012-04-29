@@ -9,6 +9,11 @@
 #include <nanosoft/asyncobject.h>
 #include <nanosoft/mutex.h>
 
+#ifdef USE_PTHREAD
+#include <pthread.h>
+#endif
+
+
 /**
 * Callback таймера
 */
@@ -160,6 +165,7 @@ private:
 		*/
 		int workerId;
 		
+#ifdef USE_PTHREAD
 		/**
 		* ID потока
 		*/
@@ -169,6 +175,7 @@ private:
 		* Атрибуты потока
 		*/
 		pthread_attr_t attr;
+#endif
 		
 		/**
 		* Текущий статус воркера
