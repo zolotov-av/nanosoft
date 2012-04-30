@@ -35,6 +35,12 @@ private:
 	*/
 	nanosoft::Mutex mutex;
 	
+	/**
+	* Активность демона
+	* TRUE - активен, FALSE остановлен или в процессе останова
+	*/
+	bool active;
+	
 	struct timer
 	{
 		/**
@@ -338,6 +344,12 @@ public:
 	* Вернуть ID текущего воркера
 	*/
 	int wid();
+	
+	/**
+	* Вернуть статус демона
+	* TRUE - активен, FALSE отключен или в процессе останова
+	*/
+	bool getDaemonActive() { return active; }
 	
 	/**
 	* Завершить работу демона

@@ -24,7 +24,8 @@ NetDaemon::NetDaemon(int maxStreams):
 	workerCount(0),
 	activeCount(0),
 	timerCount(0),
-	count(0)
+	count(0),
+	active(0)
 {
 	limit = maxStreams;
 	objects = new nanosoft::ptr<AsyncObject>[limit];
@@ -388,6 +389,7 @@ void NetDaemon::freeWorkers()
 */
 int NetDaemon::run()
 {
+	active = 1;
 	startWorkers();
 	main.daemon = this;
 	main.workerId = 0;
@@ -426,6 +428,7 @@ int NetDaemon::wid()
 */
 void NetDaemon::terminate()
 {
+	active = 0;
 	onError("terminate...");
 	//killObjects();
 	setWorkersState(SLEEP);
