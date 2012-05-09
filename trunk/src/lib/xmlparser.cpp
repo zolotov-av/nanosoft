@@ -31,6 +31,7 @@ namespace nanosoft
 		XML_SetUserData(parser, (void*) this);
 		XML_SetElementHandler(parser, startElementCallback, endElementCallback);
 		XML_SetCharacterDataHandler(parser, characterDataCallback);
+		XML_SetDefaultHandler(parser, NULL);
 		return true;
 	}
 	
