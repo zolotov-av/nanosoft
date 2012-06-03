@@ -1,5 +1,6 @@
 #include <nanosoft/error.h>
 #include <nanosoft/xmlparser.h>
+#include <string.h>
 
 using namespace std;
 
@@ -8,7 +9,7 @@ namespace nanosoft
 	/**
 	* Конструктор
 	*/
-	XMLParser::XMLParser(): parser(0), parsing(false), resetNeed(false)
+	XMLParser::XMLParser(): parser(0), parsing(false), resetNeed(false), compression(false)
 	{
 		initParser();
 	}
@@ -19,6 +20,62 @@ namespace nanosoft
 	XMLParser::~XMLParser()
 	{
 		if ( parser ) XML_ParserFree(parser);
+		disableCompression();
+	}
+	
+	/**
+	* Вернуть флаг компрессии
+	* @return TRUE - компрессия включена, FALSE - компрессия отключена
+	*/
+	bool XMLParser::getCompression()
+	{
+		return compression;
+	}
+	
+	/**
+	* Включить/отключить компрессию
+	* @param state TRUE - включить компрессию, FALSE - отключить компрессию
+	* @return TRUE - операция успешна, FALSE - операция прошла с ошибкой
+	*/
+	bool XMLParser::setCompression(bool state)
+	{
+		if ( state ) enableCompression();
+		else disableCompression();
+	}
+	
+	/**
+	* Включить компрессию
+	*/
+	bool XMLParser::enableCompression()
+	{
+		if ( ! compression )
+		{
+			memset(&strm, 0, sizeof(strm));
+			int status = inflateInit(&strm);
+			if ( status != Z_OK )
+			{
+				(void)inflateEnd(&strm);
+				return false;
+			}
+			
+			compression = true;
+		}
+		return true;
+	}
+	
+	/**
+	* Отключить компрессию
+	*/
+	bool XMLParser::disableCompression()
+	{
+		if ( compression )
+		{
+			(void)inflateEnd(&strm);
+			
+			compression = false;
+		}
+		
+		return true;
 	}
 	
 	/**
@@ -36,24 +93,44 @@ namespace nanosoft
 	}
 	
 	/**
-	* Парсинг
-	* @param buf буфер с данными
+	* Парсинг XML
+	* 
+	* Если включена компрессия, то данные сначала распаковываются
+	* 
+	* @param data буфер с данными
 	* @param len длина буфера с данными
 	* @param isFinal TRUE - последний кусок, FALSE - будет продолжение
 	* @return TRUE - успешно, FALSE - ошибка парсинга
 	*/
-	bool XMLParser::parseXML(const char *buf, size_t len, bool isFinal)
+	bool XMLParser::parseXML(const char *data, size_t len, bool isFinal)
 	{
-		parsing = true;
-		int r = XML_Parse(parser, buf, len, isFinal);
-		parsing = false;
-		if ( resetNeed ) return realResetParser();
-		if ( ! r )
+		char buf[1024 * 16];
+		
+		if ( compression )
 		{
-			onParseError(XML_ErrorString(XML_GetErrorCode(parser)));
-			return false;
+			strm.next_in = (unsigned char*)data;
+			strm.avail_in = len;
+			
+			while ( strm.avail_out == 0 )
+			{
+				strm.next_out = (unsigned char*)buf;
+				strm.avail_out = sizeof(buf);
+				
+				inflate(&strm, Z_SYNC_FLUSH);
+				
+				size_t have = sizeof(buf) - strm.avail_out;
+				
+				if ( ! realParseXML(buf, have, false) ) return false;
+			}
+			
+			strm.avail_out = 0;
+			
+			if ( isFinal ) return realParseXML(0, 0, true);
 		}
-		return true;
+		else
+		{
+			return realParseXML(data, len, isFinal);
+		}
 	}
 	
 	/**
@@ -72,6 +149,28 @@ namespace nanosoft
 			return true;
 		}
 		return false;
+	}
+	
+	/**
+	* Парсинг XML
+	*
+	* @param buf буфер с данными
+	* @param len длина буфера с данными
+	* @param isFinal TRUE - последний кусок, FALSE - будет продолжение
+	* @return TRUE - успешно, FALSE - ошибка парсинга
+	*/
+	bool XMLParser::realParseXML(const char *buf, size_t len, bool isFinal)
+	{
+		parsing = true;
+		int r = XML_Parse(parser, buf, len, isFinal);
+		parsing = false;
+		if ( resetNeed ) return realResetParser();
+		if ( ! r )
+		{
+			onParseError(XML_ErrorString(XML_GetErrorCode(parser)));
+			return false;
+		}
+		return true;
 	}
 	
 	/**

@@ -4,6 +4,7 @@
 #include <expat.h>
 #include <map>
 #include <string>
+#include "zlib.h"
 
 namespace nanosoft
 {
@@ -29,13 +30,29 @@ namespace nanosoft
 		virtual ~XMLParser();
 		
 		/**
-		* Парсинг
-		* @param buf буфер с данными
+		* Вернуть флаг компрессии
+		* @return TRUE - компрессия включена, FALSE - компрессия отключена
+		*/
+		bool getCompression();
+		
+		/**
+		* Включить/отключить компрессию
+		* @param state TRUE - включить компрессию, FALSE - отключить компрессию
+		* @return TRUE - операция успешна, FALSE - операция прошла с ошибкой
+		*/
+		bool setCompression(bool state);
+		
+		/**
+		* Парсинг XML
+		* 
+		* Если включена компрессия, то данные сначала распаковываются
+		* 
+		* @param data буфер с данными
 		* @param len длина буфера с данными
 		* @param isFinal TRUE - последний кусок, FALSE - будет продолжение
 		* @return TRUE - успешно, FALSE - ошибка парсинга
 		*/
-		bool parseXML(const char *buf, size_t len, bool isFinal);
+		bool parseXML(const char *data, size_t len, bool isFinal);
 		
 		/**
 		* Сбросить парсер, начать парсить новый поток
@@ -70,6 +87,19 @@ namespace nanosoft
 		XML_Parser parser;
 		
 		/**
+		* Контекст компрессора zlib
+		*/
+		z_stream strm;
+		
+		/**
+		* Флаг компрессии zlib
+		*
+		* TRUE - компрессия включена
+		* FALSE - компрессия отключена
+		*/
+		bool compression;
+		
+		/**
 		* Признак парсинга
 		* TRUE - парсер в состоянии обработка куска файла
 		*/
@@ -83,6 +113,16 @@ namespace nanosoft
 		bool resetNeed;
 		
 		/**
+		* Включить компрессию
+		*/
+		bool enableCompression();
+		
+		/**
+		* Отключить компрессию
+		*/
+		bool disableCompression();
+		
+		/**
 		* Инициализация парсера
 		*/
 		bool initParser();
@@ -91,6 +131,16 @@ namespace nanosoft
 		* Реальная переинициализация парсера
 		*/
 		bool realResetParser();
+		
+		/**
+		* Парсинг XML
+		*
+		* @param buf буфер с данными
+		* @param len длина буфера с данными
+		* @param isFinal TRUE - последний кусок, FALSE - будет продолжение
+		* @return TRUE - успешно, FALSE - ошибка парсинга
+		*/
+		bool realParseXML(const char *buf, size_t len, bool isFinal);
 		
 		/**
 		* Обработчик открытия тега
