@@ -52,14 +52,6 @@ ssize_t AsyncStream::read(void *buf, size_t count)
 {
 	ssize_t r = ::read(fd, buf, count);
 	if ( r < 0 ) stderror();
-	else
-	{
-#ifdef DUMP_IO
-		std::string s(static_cast<const char*>(buf), r);
-		fprintf(stdout, "[AsyncStream: %d] read: \033[22;32m%s\033[0m\n", fd, s.c_str());
-#endif
-	}
-	
 	return r;
 }
 
@@ -70,14 +62,6 @@ ssize_t AsyncStream::write(const void *buf, size_t count)
 {
 	ssize_t r = ::write(fd, buf, count);
 	if ( r < 0 ) stderror();
-	else
-	{
-#ifdef DUMP_IO
-		std::string s(static_cast<const char*>(buf), r);
-		fprintf(stdout, "[AsyncStream: %d] write: \033[22;34m%s\033[0m\n", fd, s.c_str());
-#endif
-	}
-	
 	return r;
 }
 
