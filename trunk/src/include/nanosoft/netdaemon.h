@@ -8,11 +8,15 @@
 #include <nanosoft/object.h>
 #include <nanosoft/asyncobject.h>
 #include <nanosoft/mutex.h>
+#include <nanosoft/config.h>
 
 #ifdef USE_PTHREAD
 #include <pthread.h>
 #endif
 
+#ifdef HAVE_LIBZ
+#include <zlib.h>
+#endif // HAVE_LIBZ
 
 /**
 * Callback таймера
@@ -108,11 +112,6 @@ private:
 	size_t count;
 	
 	/**
-	* Карта объектов (fd -> AsyncObject)
-	*/
-	nanosoft::ptr<AsyncObject> *objects;
-	
-	/**
 	* Итератор объектов для корректного останова
 	*/
 	size_t iter;
@@ -131,6 +130,106 @@ private:
 	* Число таймеров в очереди
 	*/
 	int timerCount;
+	
+	/**
+	* Структура описывающая один блок буфера
+	*/
+	struct block_t
+	{
+		/**
+		* Ссылка на следующий блок
+		*/
+		block_t *next;
+		
+		/**
+		* Данные блока
+		*/
+		char data[FDBUFFER_BLOCK_SIZE];
+	};
+	
+	/**
+	* Структура описывающая файловый дескриптор
+	*/
+	struct fd_info_t
+	{
+		/**
+		* Мьютекс для сихронизации файлового буфера
+		*/
+		nanosoft::Mutex mutex;
+		
+		/**
+		* Указатель на объект
+		*/
+		nanosoft::ptr<AsyncObject> obj;
+		
+#ifdef HAVE_LIBZ
+		/**
+		* Контекст компрессора zlib
+		*/
+		z_stream strm;
+		
+		/**
+		* Флаг компрессии zlib
+		*
+		* TRUE - компрессия включена
+		* FALSE - компрессия отключена
+		*/
+		bool compression;
+#endif // HAVE_LIBZ
+		
+		/**
+		* Размер буферизованных данных (в байтах)
+		*/
+		size_t size;
+		
+		/**
+		* Смещение в блоке к началу не записанных данных
+		*/
+		size_t offset;
+		
+		/**
+		* Размер квоты для файлового дескриптора (в байтах)
+		*/
+		size_t quota;
+		
+		/**
+		* Указатель на первый блок данных
+		*/
+		block_t *first;
+		
+		/**
+		* Указатель на последний блок данных
+		*/
+		block_t *last;
+	};
+	
+	/**
+	* Размер буфера (в блоках)
+	*/
+	size_t buffer_size;
+	
+	/**
+	* Число свободных блоков
+	*/
+	size_t free_blocks;
+	
+	/**
+	* Буфер
+	*/
+	block_t *buffer;
+	
+	/**
+	* Стек свободных блоков
+	*/
+	block_t *stack;
+	
+	/**
+	* Таблица файловых дескрипторов
+	*
+	* хранит указатели на первый блок данных дескриптора или NULL
+	* если нет буферизованных данных
+	*/
+	fd_info_t *fds;
 	
 	/**
 	* Статус воркера
@@ -242,6 +341,54 @@ private:
 	*/
 	void processTimers(int wid);
 	
+	/**
+	* Выделить цепочку блоков достаточную для буферизации указаного размера
+	* @param size требуемый размер в байтах
+	* @return список блоков или NULL если невозможно выделить запрощенный размер
+	*/
+	block_t* allocBlocks(size_t size);
+	
+	/**
+	* Освободить цепочку блоков
+	* @param top цепочка блоков
+	*/
+	void freeBlocks(block_t *top);
+	
+	/**
+	* Включить компрессию
+	*/
+	bool enableCompression(int fd, fd_info_t *fb);
+	
+	/**
+	* Отключить компрессию
+	*/
+	bool disableCompression(int fd, fd_info_t *fb);
+	
+	/**
+	* Добавить данные в буфер (thread-unsafe)
+	*
+	* Если включена компрессия, то сначала сжать данные
+	*
+	* @param fd файловый дескриптор
+	* @param fb указатель на описание файлового буфера
+	* @param data указатель на данные
+	* @param len размер данных
+	* @return TRUE данные приняты, FALSE данные не приняты - нет места
+	*/
+	bool put(int fd, fd_info_t *fb, const char *data, size_t len);
+	
+	/**
+	* Добавить данные в буфер (thread-unsafe)
+	*
+	* Записать данные как есть без какой-либо обработки
+	*
+	* @param fd файловый дескриптор
+	* @param fb указатель на описание файлового буфера
+	* @param data указатель на данные
+	* @param len размер данных
+	* @return TRUE данные приняты, FALSE данные не приняты - нет места
+	*/
+	bool putRaw(int fd, fd_info_t *fb, const char *data, size_t len);
 protected:
 	/**
 	* Запустить воркеров
@@ -281,9 +428,10 @@ protected:
 public:
 	/**
 	* Конструктор демона
-	* @param maxStreams максимальное число одновременных виртуальных потоков
+	* @param fd_limit максимальное число одновременных виртуальных потоков
+	* @param buf_size размер файлового буфера в блоках
 	*/
-	NetDaemon(int maxStreams);
+	NetDaemon(int fd_limit, int buf_size);
 	
 	/**
 	* Деструктор демона
@@ -304,6 +452,11 @@ public:
 	* Вернуть максимальное число подконтрольных объектов
 	*/
 	int getObjectLimit() { return limit; }
+	
+	/**
+	* Вернуть размер буфера в блоках
+	*/
+	int getBufferSize() const { return buffer_size; }
 	
 	/**
 	* Установить число воркеров
@@ -370,6 +523,93 @@ public:
 	* По умолчанию выводит все ошибки в stderr
 	*/
 	virtual void onError(const char *message);
+	
+	/**
+	* Вернуть число свободных блоков в буфере
+	* @return число свободных блоков в буфере
+	*/
+	size_t getFreeSize() { return free_blocks; }
+	
+	/**
+	* Вернуть размер буферизованных данных
+	* @param fd файловый дескриптор
+	* @return размер буферизованных данных (в байтах)
+	*/
+	size_t getBufferedSize(int fd);
+	
+	/**
+	* Вернуть квоту файлового дескриптора
+	* @param fd файловый дескриптор
+	* @return размер квоты (в блоках)
+	*/
+	size_t getQuota(int fd);
+	
+	/**
+	* Установить квоту буфер файлового дескриптора
+	* @param fd файловый дескриптор
+	* @param quota размер квоты (в блоках)
+	* @return TRUE квота установлена, FALSE квота не установлена
+	*/
+	bool setQuota(int fd, size_t quota);
+	
+	/**
+	* Проверить поддерживается ли компрессия
+	* @return TRUE - компрессия поддерживается, FALSE - компрессия не поддерживается
+	*/
+	bool canCompression(int fd);
+	
+	/**
+	* Вернуть флаг компрессии
+	* @param fd файловый дескриптор
+	* @return TRUE - компрессия включена, FALSE - компрессия отключена
+	*/
+	bool getCompression(int fd);
+	
+	/**
+	* Включить/отключить компрессию
+	* @param fd файловый дескриптор
+	* @param state TRUE - включить компрессию, FALSE - отключить компрессию
+	* @return TRUE - операция успешна, FALSE - операция прошла с ошибкой
+	*/
+	bool setCompression(int fd, bool state);
+	
+	/**
+	* Добавить данные в буфер (thread-safe)
+	*
+	* @param fd файловый дескриптор в который надо записать
+	* @param data указатель на данные
+	* @param len размер данных
+	* @return TRUE данные приняты, FALSE данные не приняты - нет места
+	*/
+	bool put(int fd, const char *data, size_t len);
+	
+	/**
+	* Добавить данные в буфер как есть (thread-safe)
+	*
+	* Данные добавляются в буфер как есть без какой-либо
+	* обработки типа сжатия и шифрования
+	*
+	* @param fd файловый дескриптор в который надо записать
+	* @param data указатель на данные
+	* @param len размер данных
+	* @return TRUE данные приняты, FALSE данные не приняты - нет места
+	*/
+	bool putRaw(int fd, const char *data, size_t len);
+	
+	/**
+	* Записать данные из буфера в файл/сокет
+	*
+	* @param fd файловый дескриптор
+	* @return TRUE буфер пуст, FALSE в буфере ещё есть данные
+	*/
+	bool push(int fd);
+	
+	/**
+	* Удалить блоки файлового дескриптора
+	*
+	* @param fd файловый дескриптор
+	*/
+	void cleanup(int fd);
 };
 
 #endif // NANOSOFT_NETDAEMON_H

@@ -17,9 +17,10 @@ using namespace nanosoft;
 
 /**
 * Конструктор демона
-* @param maxStreams максимальное число одновременных виртуальных потоков
+* @param fd_limit максимальное число одновременных виртуальных потоков
+* @param buf_size размер файлового буфера в блоках
 */
-NetDaemon::NetDaemon(int maxStreams):
+NetDaemon::NetDaemon(int fd_limit, int buf_size):
 	workerStackSize(DEFAULT_WORKER_STACK_SIZE),
 	workerCount(0),
 	activeCount(0),
@@ -27,10 +28,32 @@ NetDaemon::NetDaemon(int maxStreams):
 	count(0),
 	active(0)
 {
-	limit = maxStreams;
-	objects = new nanosoft::ptr<AsyncObject>[limit];
-	epoll = epoll_create(maxStreams);
-	for(int i = 0; i < limit; i++) objects[i] = 0;
+	limit = fd_limit;
+	epoll = epoll_create(fd_limit);
+	
+	fds = new fd_info_t[fd_limit];
+	fd_info_t *fb, *fd_end = fds + fd_limit;
+	for(fb = fds; fb < fd_end; fb++)
+	{
+		fb->obj = 0;
+		fb->size = 0;
+		fb->offset = 0;
+		fb->quota = 0;
+		fb->first = 0;
+		fb->last = 0;
+	}
+	
+	free_blocks = buffer_size = buf_size;
+	buffer = new block_t[buf_size];
+	stack = 0;
+	block_t *block, *block_end = buffer + buf_size;
+	for(block = buffer; block < block_end; block++)
+	{
+		memset(block->data, 0, sizeof(block->data));
+		block->next = stack;
+		stack = block;
+	}
+	
 }
 
 /**
@@ -40,6 +63,9 @@ NetDaemon::~NetDaemon()
 {
 	int r = ::close(epoll);
 	if ( r < 0 ) stderror();
+	
+	delete [] fds;
+	delete [] buffer;
 }
 
 /**
@@ -110,10 +136,11 @@ bool NetDaemon::addObject(nanosoft::ptr<AsyncObject> object)
 	int r = false;
 	struct epoll_event event;
 	mutex.lock();
-		if ( objects[object->fd] == 0 )
+		fd_info_t *fb = &fds[object->fd];
+		if ( fb->obj == 0 )
 		{
 			count ++;
-			objects[object->fd] = object;
+			fb->obj = object;
 			object->lock();
 			
 			// принудительно выставить O_NONBLOCK
@@ -143,7 +170,7 @@ bool NetDaemon::addObject(nanosoft::ptr<AsyncObject> object)
 void NetDaemon::modifyObject(nanosoft::ptr<AsyncObject> object)
 {
 	mutex.lock();
-		if ( objects[object->fd] == object )
+		if ( fds[object->fd].obj == object )
 		{
 			resetObject(object);
 		}
@@ -156,11 +183,11 @@ void NetDaemon::modifyObject(nanosoft::ptr<AsyncObject> object)
 bool NetDaemon::removeObject(nanosoft::ptr<AsyncObject> object)
 {
 	mutex.lock();
-		if ( objects[object->fd] == object )
+		if ( fds[object->fd].obj == object )
 		{
 			object->release();
 			if ( epoll_ctl(epoll, EPOLL_CTL_DEL, object->fd, 0) != 0 ) stderror();
-			objects[object->fd] = 0;
+			fds[object->fd].obj = 0;
 			count --;
 			if ( count == 0 ) stopWorkers();
 		}
@@ -189,14 +216,14 @@ void NetDaemon::doActiveAction(worker_t *worker)
 	if ( r > 0 )
 	{
 		mutex.lock();
-			obj = objects[event.data.fd];
+			obj = fds[event.data.fd].obj;
 		mutex.unlock();
 		if ( obj != 0 )
 		{
 			obj->workerId = worker->workerId;
 			obj->onEvent(event.events);
 			mutex.lock();
-				if ( objects[event.data.fd] == obj )
+				if ( fds[event.data.fd].obj == obj )
 				{
 					resetObject(obj);
 				}
@@ -256,7 +283,7 @@ void NetDaemon::doTerminateAction(worker_t *worker)
 	mutex.lock();
 		if ( iter < limit )
 		{
-			obj = objects[iter];
+			obj = fds[iter].obj;
 			++ iter;
 		}
 		else
@@ -502,4 +529,477 @@ void NetDaemon::processTimers(int wid)
 		else break;
 	}
 	printf("processTimers(%d) leave\n", wid);
+}
+
+/**
+* Выделить цепочку блоков достаточную для буферизации указаного размера
+* @param size требуемый размер в байтах
+* @return список блоков или NULL если невозможно выделить запрощенный размер
+*/
+NetDaemon::block_t* NetDaemon::allocBlocks(size_t size)
+{
+	// размер в блоках
+	size_t count = (size + FDBUFFER_BLOCK_SIZE - 1) / FDBUFFER_BLOCK_SIZE;
+	
+	if ( count == 0 ) return 0;
+	
+	if ( mutex.lock() )
+	{
+		block_t *block = 0;
+		if ( count <= free_blocks )
+		{
+			block = stack;
+			if ( count > 1 ) for(size_t i = 0; i < (count-1); i++) stack = stack->next;
+			block_t *last = stack;
+			stack = stack->next;
+			last->next = 0;
+			free_blocks -= count;
+		}
+		mutex.unlock();
+		
+		return block;
+	}
+	
+	return 0;
+}
+
+/**
+* Освободить цепочку блоков
+* @param top цепочка блоков
+*/
+void NetDaemon::freeBlocks(block_t *top)
+{
+	if ( top == 0 ) return;
+	block_t *last = top;
+	size_t count = 1;
+	while ( last->next ) { count++; last = last->next; }
+	while ( 1 )
+	{
+		if ( mutex.lock() )
+		{
+			last->next = stack;
+			stack = top;
+			free_blocks += count;
+			mutex.unlock();
+			return;
+		}
+	}
+}
+
+/**
+* Включить компрессию
+*/
+bool NetDaemon::enableCompression(int fd, fd_info_t *fb)
+{
+	if ( ! fb->compression )
+	{
+		z_stream *strm = &(fb->strm);
+		memset(strm, 0, sizeof(fb->strm));
+		int status = deflateInit(strm, ZLIB_COMPRESS_LEVEL);
+		if ( status != Z_OK )
+		{
+			(void)deflateEnd(strm);
+			return false;
+		}
+		
+		fb->compression = true;
+	}
+	return true;
+}
+
+/**
+* Отключить компрессию
+*/
+bool NetDaemon::disableCompression(int fd, fd_info_t *fb)
+{
+	if ( fb->compression )
+	{
+		z_stream *strm = &(fb->strm);
+		(void)deflateEnd(strm);
+		
+		fb->compression = false;
+	}
+	
+	return true;
+}
+
+/**
+* Вернуть размер буферизованных данных
+* @param fd файловый дескриптор
+* @return размер буферизованных данных
+*/
+size_t NetDaemon::getBufferedSize(int fd)
+{
+	return ( fd >= 0 && fd < limit ) ? fds[fd].size : 0;
+}
+
+/**
+* Вернуть квоту файлового дескриптора
+* @param fd файловый дескриптор
+* @return размер квоты
+*/
+size_t NetDaemon::getQuota(int fd)
+{
+	return ( fd >= 0 && fd < limit ) ? fds[fd].quota : 0;
+}
+
+/**
+* Установить квоту буфер файлового дескриптора
+* @param fd файловый дескриптор
+* @param quota размер квоты
+* @return TRUE квота установлена, FALSE квота не установлена
+*/
+bool NetDaemon::setQuota(int fd, size_t quota)
+{
+	if ( fd >= 0 && fd < limit )
+	{
+		fds[fd].quota = quota;
+		return true;
+	}
+	return false;
+}
+
+/**
+* Проверить поддерживается ли компрессия
+* @return TRUE - компрессия поддерживается, FALSE - компрессия не поддерживается
+*/
+bool NetDaemon::canCompression(int)
+{
+#ifdef HAVE_LIBZ
+	return true;
+#else
+	return false;
+#endif // HAVE_LIBZ
+}
+
+/**
+* Вернуть флаг компрессии
+* @param fd файловый дескриптор
+* @return TRUE - компрессия включена, FALSE - компрессия отключена
+*/
+bool NetDaemon::getCompression(int fd)
+{
+	return ( fd >= 0 && fd < limit ) ? fds[fd].compression : false;
+}
+
+/**
+* Включить/отключить компрессию
+* @param fd файловый дескриптор
+* @param state TRUE - включить компрессию, FALSE - отключить компрессию
+* @return TRUE - операция успешна, FALSE - операция прошла с ошибкой
+*/
+bool NetDaemon::setCompression(int fd, bool state)
+{
+	if ( fd >= 0 && fd < limit )
+	{
+		if ( state ) return enableCompression(fd, &fds[fd]);
+		return disableCompression(fd, &fds[fd]);
+	}
+	
+	return false;
+}
+
+/**
+* Добавить данные в буфер (thread-unsafe)
+*
+* Если включена компрессия, то сначала сжать данные
+*
+* @param fd файловый дескриптор
+* @param fb указатель на описание файлового буфера
+* @param data указатель на данные
+* @param len размер данных
+* @return TRUE данные приняты, FALSE данные не приняты - нет места
+*/
+bool NetDaemon::put(int fd, fd_info_t *fb, const char *data, size_t len)
+{
+	char buf[FDBUFFER_BLOCK_SIZE];
+	
+	if ( fb->compression )
+	{
+		size_t out_len = 0;
+		z_stream *strm = &(fb->strm);
+		
+		strm->next_in = (unsigned char*)data;
+		strm->avail_in = len;
+		
+		
+		while ( strm->avail_out == 0 )
+		{
+			strm->next_out = (unsigned char*)buf;
+			strm->avail_out = sizeof(buf);
+			
+			deflate(strm, Z_PARTIAL_FLUSH);
+			
+			size_t have = sizeof(buf) - strm->avail_out;
+			out_len += have;
+			
+			if ( ! putRaw(fd, fb, buf, have) ) return false;
+			
+		}
+		
+		strm->avail_out = 0;
+		
+		float ratio = static_cast<float>(len) / out_len;
+		printf("compression ratio: %d / %d = %.2f\n", len, out_len, ratio);
+		
+		return true;
+	}
+	else
+	{
+		return putRaw(fd, fb, data, len);
+	}
+}
+
+/**
+* Добавить данные в буфер (thread-unsafe)
+*
+* Записать данные как есть без какой-либо обработки
+*
+* @param fd файловый дескриптор
+* @param fb указатель на описание файлового буфера
+* @param data указатель на данные
+* @param len размер данных
+* @return TRUE данные приняты, FALSE данные не приняты - нет места
+*/
+bool NetDaemon::putRaw(int fd, fd_info_t *fb, const char *data, size_t len)
+{
+	if ( fb->quota != 0 && (fb->size + len) > fb->quota )
+	{
+		// превышение квоты
+		return false;
+	}
+	
+	block_t *block;
+	
+	if ( fb->size > 0 )
+	{
+		// смещение к свободной части последнего блока или 0, если последний
+		// блок заполнен полностью
+		size_t offset = (fb->offset + fb->size) % FDBUFFER_BLOCK_SIZE;
+		
+		// размер свободной части последнего блока
+		size_t rest = offset > 0 ? FDBUFFER_BLOCK_SIZE - offset : 0;
+		
+		// размер недостающей части, которую надо выделить из общего буфера
+		size_t need = len - rest;
+		
+		if ( len <= rest ) rest = len;
+		else
+		{
+			// выделить недостающие блоки
+			block = allocBlocks(need);
+			if ( block == 0 ) return false;
+		}
+		
+		// если последний блок заполнен не полностью, то дописать в него
+		if ( offset > 0 )
+		{
+			memcpy(fb->last->data + offset, data, rest);
+			fb->size += rest;
+			data += rest;
+			len -= rest;
+			if ( len == 0 ) return true;
+		}
+		
+		fb->last->next = block;
+		fb->last = block;
+	}
+	else // fb->size == 0
+	{
+		block = allocBlocks(len);
+		if ( block == 0 )
+		{
+			// нет буфера
+			return false;
+		}
+		
+		fb->first = block;
+		fb->offset = 0;
+	}
+	
+	// записываем полные блоки
+	while ( len >= FDBUFFER_BLOCK_SIZE )
+	{
+		memcpy(block->data, data, FDBUFFER_BLOCK_SIZE);
+		data += FDBUFFER_BLOCK_SIZE;
+		len -= FDBUFFER_BLOCK_SIZE;
+		fb->size += FDBUFFER_BLOCK_SIZE;
+		fb->last = block;
+		block = block->next;
+	}
+	
+	// если что-то осталось записываем частичный блок
+	if ( len > 0 )
+	{
+		memcpy(block->data, data, len);
+		fb->size += len;
+		fb->last = block;
+	}
+	
+	return true;
+}
+
+/**
+* Добавить данные в буфер (thread-safe)
+*
+* @param fd файловый дескриптор в который надо записать
+* @param data указатель на данные
+* @param len размер данных
+* @return TRUE данные приняты, FALSE данные не приняты - нет места
+*/
+bool NetDaemon::put(int fd, const char *data, size_t len)
+{
+	// проверяем корректность файлового дескриптора
+	if ( fd < 0 || fd >= limit )
+	{
+		// плохой дескриптор
+		fprintf(stderr, "StanzaBuffer[%d]: wrong descriptor\n", fd);
+		return false;
+	}
+	
+	// проверяем размер, зачем делать лишние движения если len = 0?
+	if ( len == 0 ) return true;
+	
+#ifdef DUMP_IO
+	std::string io_dump(data, len);
+	fprintf(stdout, "DUMP WRITE[%d]: \033[22;34m%s\033[0m\n", fd, io_dump.c_str());
+#endif
+	
+	// находим описание файлового буфера
+	fd_info_t *fb = &fds[fd];
+	
+	if ( fb->mutex.lock() )
+	{
+		bool r = put(fd, fb, data, len);
+		fb->mutex.unlock();
+		return r;
+	}
+	
+	return false;
+}
+
+/**
+* Добавить данные в буфер как есть (thread-safe)
+*
+* Данные добавляются в буфер как есть без какой-либо
+* обработки типа сжатия и шифрования
+*
+* @param fd файловый дескриптор в который надо записать
+* @param data указатель на данные
+* @param len размер данных
+* @return TRUE данные приняты, FALSE данные не приняты - нет места
+*/
+bool NetDaemon::putRaw(int fd, const char *data, size_t len)
+{
+	// проверяем корректность файлового дескриптора
+	if ( fd < 0 || fd >= limit )
+	{
+		// плохой дескриптор
+		fprintf(stderr, "StanzaBuffer[%d]: wrong descriptor\n", fd);
+		return false;
+	}
+	
+	// проверяем размер, зачем делать лишние движения если len = 0?
+	if ( len == 0 ) return true;
+	
+#ifdef DUMP_IO
+	std::string io_dump(data, len);
+	fprintf(stdout, "DUMP WRITE[%d]: \033[22;34m%s\033[0m\n", fd, io_dump.c_str());
+#endif
+	
+	// находим описание файлового буфера
+	fd_info_t *fb = &fds[fd];
+	
+	if ( fb->mutex.lock() )
+	{
+		bool r = putRaw(fd, fb, data, len);
+		fb->mutex.unlock();
+		return r;
+	}
+	
+	return false;
+}
+
+/**
+* Записать данные из буфера в файл/сокет
+*
+* @param fd файловый дескриптор
+* @return TRUE буфер пуст, FALSE в буфере ещё есть данные
+*/
+bool NetDaemon::push(int fd)
+{
+	// проверяем корректность файлового дескриптора
+	if ( fd < 0 || fd >= limit )
+	{
+		// плохой дескриптор
+		fprintf(stderr, "StanzaBuffer[%d]: wrong descriptor\n", fd);
+		return false;
+	}
+	
+	// находим описание файлового буфера
+	fd_info_t *fb = &fds[fd];
+	
+	if ( fb->mutex.lock() )
+	{
+		// список освободившихся блоков
+		block_t *unused = 0;
+		
+		while ( fb->size > 0 )
+		{
+			// размер не записанной части блока
+			size_t rest = FDBUFFER_BLOCK_SIZE - fb->offset;
+			if ( rest > fb->size ) rest = fb->size;
+			
+			// попробовать записать
+			ssize_t r = write(fd, fb->first->data + fb->offset, rest);
+			if ( r <= 0 ) break;
+			
+			fb->size -= r;
+			fb->offset += r;
+			
+			// если блок записан полностью,
+			if ( r == rest )
+			{
+				// добавить его в список освободившихся
+				block_t *block = fb->first;
+				fb->first = block->next;
+				fb->offset = 0;
+				block->next = unused;
+				unused = block;
+			}
+			else
+			{
+				// иначе пора прерваться и вернуться в epoll
+				break;
+			}
+		}
+		fb->mutex.unlock();
+		freeBlocks(unused);
+	}
+	return fb->size <= 0;
+}
+
+/**
+* Удалить блоки файлового дескриптора
+*
+* @param fd файловый дескриптор
+*/
+void NetDaemon::cleanup(int fd)
+{
+	// проверяем корректность файлового дескриптора
+	if ( fd < 0 || fd >= limit )
+	{
+		// плохой дескриптор
+		fprintf(stderr, "StanzaBuffer[%d]: wrong descriptor\n", fd);
+		return;
+	}
+	
+	fd_info_t *p = &fds[fd];
+	disableCompression(fd, p);
+	freeBlocks(p->first);
+	p->size = 0;
+	p->offset = 0;
+	p->quota = 0;
+	p->first = 0;
+	p->last = 0;
 }

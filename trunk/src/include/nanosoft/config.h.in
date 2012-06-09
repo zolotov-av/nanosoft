@@ -3,6 +3,30 @@
 #undef UNIX
 #undef WINDOWS
 
+/**
+* Размер блока файлового буфера
+*/
+#define FDBUFFER_BLOCK_SIZE 1024
+
+/**
+* Размер файлового буфера в блоках
+*/
+#define FDBUFFER_DEFAULT_SIZE 16
+
+/**
+* Поддержка zlib сконфигурирована?
+*/
+#undef HAVE_LIBZ
+
+/**
+* Уроверь компресси в zlib
+*/
+#define ZLIB_COMPRESS_LEVEL 6
+
+/**
+* Поддержка openssl сконфигурирована?
+*/
+#undef HAVE_LIBSSL
 
 ///////////////////////////////////////////////////////////////////////////
 
