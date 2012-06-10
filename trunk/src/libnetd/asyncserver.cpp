@@ -28,15 +28,15 @@ AsyncServer::~AsyncServer()
 */
 bool AsyncServer::bind(int port)
 {
-	fd = socket(AF_INET, SOCK_STREAM, 0);
-	if ( fd == 0 )
+	setFd( socket(AF_INET, SOCK_STREAM, 0) );
+	if ( getFd() == 0 )
 	{
 		stderror();
 		return false;
 	}
 	
 	int yes = 1;
-	if ( setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) stderror();
+	if ( setsockopt(getFd(), SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) stderror();
 	
 	struct sockaddr_in addr;
 	memset(&addr, 0, sizeof(addr));
@@ -44,7 +44,7 @@ bool AsyncServer::bind(int port)
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	addr.sin_port = htons(port);
 	
-	if ( ::bind(fd, (sockaddr *)&addr, sizeof(addr)) != 0 )
+	if ( ::bind(getFd(), (sockaddr *)&addr, sizeof(addr)) != 0 )
 	{
 		stderror();
 		close();
@@ -59,8 +59,8 @@ bool AsyncServer::bind(int port)
 */
 bool AsyncServer::bind(const char *path)
 {
-	fd = socket(AF_LOCAL, SOCK_STREAM, 0);
-	if ( fd == 0 )
+	setFd( socket(AF_LOCAL, SOCK_STREAM, 0) );
+	if ( getFd() == 0 )
 	{
 		stderror();
 		return false;
@@ -71,7 +71,7 @@ bool AsyncServer::bind(const char *path)
 	addr.sun_family = AF_UNIX;
 	strncpy(addr.sun_path, path, sizeof(addr.sun_path)-1);
 	unlink(path);
-	if ( ::bind(fd, (struct sockaddr *) &addr, sizeof(addr)) != 0 )
+	if ( ::bind(getFd(), (struct sockaddr *) &addr, sizeof(addr)) != 0 )
 	{
 		stderror();
 		close();
@@ -86,7 +86,7 @@ bool AsyncServer::bind(const char *path)
 */
 bool AsyncServer::listen(int backlog)
 {
-	if ( ::listen(fd, backlog) != 0 )
+	if ( ::listen(getFd(), backlog) != 0 )
 	{
 		stderror();
 		return false;
@@ -99,7 +99,7 @@ bool AsyncServer::listen(int backlog)
 */
 int AsyncServer::accept()
 {
-	int sock = ::accept(fd, 0, 0);
+	int sock = ::accept(getFd(), 0, 0);
 	if ( sock > 0 ) return sock;
 	stderror();
 	return 0;
@@ -110,9 +110,9 @@ int AsyncServer::accept()
 */
 void AsyncServer::close()
 {
-	if ( fd ) {
-		int r = ::close(fd);
-		fd = 0;
+	if ( getFd() ) {
+		int r = ::close(getFd());
+		setFd(0);
 		if ( r != 0 ) stderror();
 	}
 }

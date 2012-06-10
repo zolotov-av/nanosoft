@@ -13,6 +13,11 @@ class AsyncObject: public nanosoft::Object
 friend class NetDaemon;
 private:
 	/**
+	* Файловый дескриптор объекта
+	*/
+	int fd;
+	
+	/**
 	* Номер воркера обрабатывающий в данный момент объект
 	*
 	* @deprecated
@@ -40,15 +45,13 @@ private:
 	AsyncObject& operator = (const AsyncObject &);
 	
 protected:
-	/**
-	* Файловый дескриптор объекта
-	*/
-	int fd;
 	
 	/**
 	* Обработка системной ошибки
 	*/
 	void stderror();
+	
+	void setFd(int v) { fd = v; }
 	
 	/**
 	* Вернуть маску ожидаемых событий
@@ -85,6 +88,8 @@ public:
 	*/
 	AsyncObject(int afd);
 	
+	int getFd() const { return fd; }
+
 	/**
 	* Вернуть ID воркера обрабатывающий объект
 	*

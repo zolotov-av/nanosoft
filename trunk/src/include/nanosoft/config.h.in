@@ -14,6 +14,11 @@
 #define FDBUFFER_DEFAULT_SIZE 16
 
 /**
+* Размер буфера чтения
+*/
+#define FD_READ_BUFFER 4096
+
+/**
 * Поддержка zlib сконфигурирована?
 */
 #undef HAVE_LIBZ

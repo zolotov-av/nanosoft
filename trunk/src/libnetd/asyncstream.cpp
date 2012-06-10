@@ -22,7 +22,7 @@ AsyncStream::AsyncStream(int afd): AsyncObject(afd), flags(0)
 */
 AsyncStream::~AsyncStream()
 {
-	printf("#%d: [AsyncStream: %d] deleting\n", getWorkerId(), fd);
+	printf("#%d: [AsyncStream: %d] deleting\n", getWorkerId(), getFd());
 	close();
 }
 
@@ -50,7 +50,7 @@ void AsyncStream::onEvent(uint32_t events)
 */
 ssize_t AsyncStream::read(void *buf, size_t count)
 {
-	ssize_t r = ::read(fd, buf, count);
+	ssize_t r = ::read(getFd(), buf, count);
 	if ( r < 0 ) stderror();
 	return r;
 }
@@ -60,7 +60,7 @@ ssize_t AsyncStream::read(void *buf, size_t count)
 */
 ssize_t AsyncStream::write(const void *buf, size_t count)
 {
-	ssize_t r = ::write(fd, buf, count);
+	ssize_t r = ::write(getFd(), buf, count);
 	if ( r < 0 ) stderror();
 	return r;
 }
@@ -71,13 +71,13 @@ ssize_t AsyncStream::write(const void *buf, size_t count)
 */
 bool AsyncStream::shutdown(int how)
 {
-	printf("#%d: [AsyncStream: %d] shutdown\n", getWorkerId(), fd);
+	printf("#%d: [AsyncStream: %d] shutdown\n", getWorkerId(), getFd());
 	if ( how & READ & ~ flags ) {
-		if ( ::shutdown(fd, SHUT_RD) != 0 ) stderror();
+		if ( ::shutdown(getFd(), SHUT_RD) != 0 ) stderror();
 		flags |= READ;
 	}
 	if ( how & WRITE & ~ flags ) {
-		if ( ::shutdown(fd, SHUT_WR) != 0 ) stderror();
+		if ( ::shutdown(getFd(), SHUT_WR) != 0 ) stderror();
 		flags |= WRITE;
 	}
 }
@@ -87,10 +87,10 @@ bool AsyncStream::shutdown(int how)
 */
 void AsyncStream::close()
 {
-	if ( fd )
+	if ( getFd() )
 	{
-		int r = ::close(fd);
-		fd = 0;
+		int r = ::close(getFd());
+		setFd(0);
 		if ( r < 0 ) stderror();
 	}
 }

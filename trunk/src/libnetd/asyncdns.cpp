@@ -11,7 +11,7 @@
 AsyncDNS::AsyncDNS(NetDaemon *aDaemon): daemon(aDaemon)
 {
 	dns_init(0, 1);
-	fd = dns_sock(0);
+	setFd( dns_sock(0) );
 }
 
 /**
