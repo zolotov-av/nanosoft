@@ -24,6 +24,11 @@
 typedef void (*timer_callback_t) (int wid, void *data);
 
 /**
+* Название метода компрессии
+*/
+typedef const char *compression_method_t;
+
+/**
 * Главный класс сетевого демона
 */
 class NetDaemon
@@ -554,24 +559,53 @@ public:
 	
 	/**
 	* Проверить поддерживается ли компрессия
+	* @param fd файловый дескриптор
 	* @return TRUE - компрессия поддерживается, FALSE - компрессия не поддерживается
 	*/
 	bool canCompression(int fd);
+	
+	/**
+	* Проверить поддерживается ли компрессия конкретным методом
+	* @param fd файловый дескриптор
+	* @param method метод компрессии
+	* @return TRUE - компрессия поддерживается, FALSE - компрессия не поддерживается
+	*/
+	bool canCompression(int fd, const char *method);
+	
+	/**
+	* Вернуть список поддерживаемых методов компрессии
+	* @param fd файловый дескриптор
+	*/
+	const compression_method_t* getCompressionMethods(int fd);
 	
 	/**
 	* Вернуть флаг компрессии
 	* @param fd файловый дескриптор
 	* @return TRUE - компрессия включена, FALSE - компрессия отключена
 	*/
-	bool getCompression(int fd);
+	bool isCompressionEnable(int fd);
 	
 	/**
-	* Включить/отключить компрессию
+	* Вернуть текущий метод компрессии
 	* @param fd файловый дескриптор
-	* @param state TRUE - включить компрессию, FALSE - отключить компрессию
-	* @return TRUE - операция успешна, FALSE - операция прошла с ошибкой
+	* @return имя метода компрессии или NULL если компрессия не включена
 	*/
-	bool setCompression(int fd, bool state);
+	compression_method_t getCompressionMethod(int fd);
+	
+	/**
+	* Включить компрессию
+	* @param fd файловый дескриптор
+	* @param method метод компрессии
+	* @return TRUE - компрессия включена, FALSE - компрессия не включена
+	*/
+	bool enableCompression(int fd, compression_method_t method);
+	
+	/**
+	* Отключить компрессию
+	* @param fd файловый дескриптор
+	* @return TRUE - компрессия отключена, FALSE - произошла ошибка
+	*/
+	bool disableCompression(int fd);
 	
 	/**
 	* Добавить данные в буфер (thread-safe)

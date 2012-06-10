@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 #include <nanosoft/asyncobject.h>
+#include <nanosoft/netdaemon.h>
 
 /**
 * Класс для асинхронной работы потоками
@@ -66,6 +67,49 @@ public:
 	* Деструктор
 	*/
 	virtual ~AsyncStream();
+	
+	/**
+	* Проверить поддерживается ли компрессия
+	* @return TRUE - компрессия поддерживается, FALSE - компрессия не поддерживается
+	*/
+	bool canCompression();
+	
+	/**
+	* Проверить поддерживается ли компрессия конкретным методом
+	* @param method метод компрессии
+	* @return TRUE - компрессия поддерживается, FALSE - компрессия не поддерживается
+	*/
+	bool canCompression(const char *method);
+	
+	/**
+	* Вернуть список поддерживаемых методов компрессии
+	*/
+	const compression_method_t* getCompressionMethods();
+	
+	/**
+	* Вернуть флаг компрессии
+	* @return TRUE - компрессия включена, FALSE - компрессия отключена
+	*/
+	bool isCompressionEnable();
+	
+	/**
+	* Вернуть текущий метод компрессии
+	* @return имя метода компрессии или NULL если компрессия не включена
+	*/
+	compression_method_t getCompressionMethod();
+	
+	/**
+	* Включить компрессию
+	* @param method метод компрессии
+	* @return TRUE - компрессия включена, FALSE - компрессия не включена
+	*/
+	bool enableCompression(compression_method_t method);
+	
+	/**
+	* Отключить компрессию
+	* @return TRUE - компрессия отключена, FALSE - произошла ошибка
+	*/
+	bool disableCompression();
 	
 	/**
 	* Записать данные

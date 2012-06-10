@@ -663,9 +663,10 @@ bool NetDaemon::setQuota(int fd, size_t quota)
 
 /**
 * Проверить поддерживается ли компрессия
+* @param fd файловый дескриптор
 * @return TRUE - компрессия поддерживается, FALSE - компрессия не поддерживается
 */
-bool NetDaemon::canCompression(int)
+bool NetDaemon::canCompression(int fd)
 {
 #ifdef HAVE_LIBZ
 	return true;
@@ -675,29 +676,81 @@ bool NetDaemon::canCompression(int)
 }
 
 /**
+* Проверить поддерживается ли компрессия конкретным методом
+* @param fd файловый дескриптор
+* @param method метод компрессии
+* @return TRUE - компрессия поддерживается, FALSE - компрессия не поддерживается
+*/
+bool NetDaemon::canCompression(int fd, const char *method)
+{
+#ifdef HAVE_LIBZ
+	return strcmp(method, "zlib") == 0;
+#else
+	return false;
+#endif // HAVE_LIBZ
+}
+
+/**
+* Вернуть список поддерживаемых методов компрессии
+* @param fd файловый дескриптор
+*/
+const compression_method_t* NetDaemon::getCompressionMethods(int fd)
+{
+	static compression_method_t methods[] = {
+#ifdef HAVE_LIBZ
+		"zlib",
+#endif // HAVE_LIBZ
+		0
+	};
+	return methods;
+}
+
+/**
 * Вернуть флаг компрессии
 * @param fd файловый дескриптор
 * @return TRUE - компрессия включена, FALSE - компрессия отключена
 */
-bool NetDaemon::getCompression(int fd)
+bool NetDaemon::isCompressionEnable(int fd)
 {
 	return ( fd >= 0 && fd < limit ) ? fds[fd].compression : false;
 }
 
 /**
-* Включить/отключить компрессию
+* Вернуть текущий метод компрессии
 * @param fd файловый дескриптор
-* @param state TRUE - включить компрессию, FALSE - отключить компрессию
-* @return TRUE - операция успешна, FALSE - операция прошла с ошибкой
+* @return имя метода компрессии или NULL если компрессия не включена
 */
-bool NetDaemon::setCompression(int fd, bool state)
+compression_method_t NetDaemon::getCompressionMethod(int fd)
+{
+	return ( fd >= 0 && fd < limit ) ? "zlib" : 0;
+}
+
+/**
+* Включить компрессию
+* @param fd файловый дескриптор
+* @param method метод компрессии
+* @return TRUE - компрессия включена, FALSE - компрессия не включена
+*/
+bool NetDaemon::enableCompression(int fd, compression_method_t method)
+{
+	if ( fd >= 0 && fd < limit && canCompression(fd, method) )
+	{
+		return enableCompression(fd, &fds[fd]);
+	}
+	return false;
+}
+
+/**
+* Отключить компрессию
+* @param fd файловый дескриптор
+* @return TRUE - компрессия отключена, FALSE - произошла ошибка
+*/
+bool NetDaemon::disableCompression(int fd)
 {
 	if ( fd >= 0 && fd < limit )
 	{
-		if ( state ) return enableCompression(fd, &fds[fd]);
 		return disableCompression(fd, &fds[fd]);
 	}
-	
 	return false;
 }
 
