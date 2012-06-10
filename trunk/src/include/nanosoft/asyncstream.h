@@ -11,6 +11,8 @@
 
 #ifdef HAVE_LIBSSL
 #include <openssl/ssl.h>
+#else
+#define SSL_CTX void
 #endif // HAVE_LIBSSL
 
 /**
@@ -73,10 +75,16 @@ private:
 	/**
 	* Флаг TLS
 	*
-	* TRUE - TLS вклчен
-	* FALSE - TLS отключен
+	* tls_off        - TLS отключен
+	* tls_handshake  - TLS включен, идет handshake
+	* tls_on         - TLS вкючен и активен
 	*/
-	bool usetls;
+	enum { tls_off, tls_handshake, tls_on } tls_status;
+	
+	/**
+	* SSL
+	*/
+	SSL *ssl;
 #endif // HAVE_LIBSSL
 	
 	/**
@@ -216,9 +224,10 @@ public:
 	
 	/**
 	* Включить TLS
+	* @param ctx контекст TLS
 	* @return TRUE - TLS включен, FALSE - произошла ошибка
 	*/
-	bool enableTLS();
+	bool enableTLS(SSL_CTX *ctx);
 	
 	/**
 	* Отключить TLS

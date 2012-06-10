@@ -10,6 +10,11 @@
 #include <nanosoft/config.h>
 #include <sys/socket.h>
 
+#ifdef HAVE_LIBSSL
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#endif // HAVE_LIBSSL
+
 using namespace std;
 
 /**
@@ -20,6 +25,11 @@ AsyncStream::AsyncStream(int afd): AsyncObject(afd), flags(0)
 #ifdef HAVE_LIBZ
 	compression = false;
 #endif // HAVE_LIBZ
+
+#ifdef HAVE_LIBSSL
+	tls_status = tls_off;
+	ssl = 0;
+#endif // HAVE_LIBSSL
 }
 
 /**
@@ -275,7 +285,7 @@ bool AsyncStream::canTLS()
 bool AsyncStream::isTLSEnable()
 {
 #ifdef HAVE_LIBSSL
-	return usetls;
+	return tls_status != tls_off;
 #else
 	return false;
 #endif // HAVE_LIBSSL
@@ -283,12 +293,37 @@ bool AsyncStream::isTLSEnable()
 
 /**
 * Включить TLS
+* @param ctx контекст TLS
 * @return TRUE - TLS включен, FALSE - произошла ошибка
 */
-bool AsyncStream::enableTLS()
+bool AsyncStream::enableTLS(SSL_CTX *ctx)
 {
 #ifdef HAVE_LIBSSL
-	return false;
+	if ( tls_status != tls_off ) return true;
+	
+	ssl = SSL_new(ctx);
+	if ( ssl == 0 ) return false;
+	
+	SSL_set_fd (ssl, getFd());
+	
+	int status = SSL_get_error(ssl, SSL_accept (ssl));
+	
+	if ( status == SSL_ERROR_NONE )
+	{
+		tls_status = tls_on;
+		return true;
+	}
+	
+	if ( status == SSL_ERROR_WANT_READ || status == SSL_ERROR_WANT_WRITE )
+	{
+		tls_status = tls_handshake;
+		return true;
+	}
+	
+	SSL_free(ssl);
+	ssl = 0;
+	ERR_print_errors_fp(stderr);
+	
 #else
 	return false;
 #endif // HAVE_LIBSSL
@@ -301,10 +336,12 @@ bool AsyncStream::enableTLS()
 bool AsyncStream::disableTLS()
 {
 #ifdef HAVE_LIBSSL
-	if ( usetls )
+	if ( tls_status == tls_off )
 	{
 		return false;
 	}
+	
+	// TODO ???
 #endif // HAVE_LIBSSL
 	return true;
 }
