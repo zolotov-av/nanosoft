@@ -9,14 +9,14 @@ using namespace std;
 /**
 * Конструктор
 */
-AsyncObject::AsyncObject(): fd(0), workerId(-1), terminating(false)
+AsyncObject::AsyncObject(): fd(0), terminating(false)
 {
 }
 
 /**
 * Конструктор
 */
-AsyncObject::AsyncObject(int afd): fd(afd), workerId(-1), terminating(false)
+AsyncObject::AsyncObject(int afd): fd(afd), terminating(false)
 {
 }
 
@@ -36,13 +36,21 @@ void AsyncObject::stderror()
 }
 
 /**
+* Установить файловый дескриптор
+*/
+void AsyncObject::setFd(int v)
+{
+	fd = v;
+}
+
+/**
 * Событие ошибки
 *
 * Вызывается в случае возникновения какой-либо ошибки
 */
 void AsyncObject::onError(const char *message)
 {
-	fprintf(stderr, "#%d: [AsyncObject: %d]: %s\n", getWorkerId(), fd, message);
+	fprintf(stderr, "AsyncObject[%d]: %s\n", fd, message);
 }
 
 /**
@@ -50,7 +58,7 @@ void AsyncObject::onError(const char *message)
 */
 void AsyncObject::terminate()
 {
-	fprintf(stderr, "#%d: [AsyncObject: %d]: terminate(%d)...\n", getWorkerId(), fd, terminating);
+	fprintf(stderr, "AsyncObject[%d]: terminate(%d)...\n", fd, terminating);
 	if ( ! terminating )
 	{
 		terminating = true;

@@ -52,7 +52,7 @@ void AsyncXMLStream::onParseError(const char *message)
 */
 void AsyncXMLStream::onPeerDown()
 {
-	fprintf(stderr, "#%d: [AsyncXMLStream: %d] peer down\n", getWorkerId(), getFd());
+	fprintf(stderr, "AsyncXMLStream[%d]: peer down\n", getFd());
 	
 	// читаем и парсим все, что осталось в потоке
 	while ( 1 )
@@ -75,7 +75,7 @@ void AsyncXMLStream::onPeerDown()
 */
 void AsyncXMLStream::onShutdown()
 {
-	fprintf(stderr, "#%d: [AsyncXMLStream: %d] onShutdown\n", getWorkerId(), getFd());
+	fprintf(stderr, "AsyncXMLStream[%d] onShutdown\n", getFd());
 	
 	// читаем и парсим все, что осталось в потоке
 	while ( 1 )

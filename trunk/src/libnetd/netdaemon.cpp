@@ -220,7 +220,6 @@ void NetDaemon::doActiveAction(worker_t *worker)
 		mutex.unlock();
 		if ( obj != 0 )
 		{
-			obj->workerId = worker->workerId;
 			obj->onEvent(event.events);
 			mutex.lock();
 				if ( fds[event.data.fd].obj == obj )
@@ -294,7 +293,6 @@ void NetDaemon::doTerminateAction(worker_t *worker)
 	mutex.unlock();
 	if ( obj != 0 )
 	{
-		obj->workerId = worker->workerId;
 		obj->terminate();
 	}
 }

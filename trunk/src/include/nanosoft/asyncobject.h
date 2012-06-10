@@ -18,13 +18,6 @@ private:
 	int fd;
 	
 	/**
-	* Номер воркера обрабатывающий в данный момент объект
-	*
-	* @deprecated
-	*/
-	int workerId;
-	
-	/**
 	* Признак завершения
 	*/
 	bool terminating;
@@ -51,7 +44,10 @@ protected:
 	*/
 	void stderror();
 	
-	void setFd(int v) { fd = v; }
+	/**
+	* Установить файловый дескриптор
+	*/
+	void setFd(int v);
 	
 	/**
 	* Вернуть маску ожидаемых событий
@@ -88,14 +84,10 @@ public:
 	*/
 	AsyncObject(int afd);
 	
-	int getFd() const { return fd; }
-
 	/**
-	* Вернуть ID воркера обрабатывающий объект
-	*
-	* @deprecated
+	* Вернуть файловый дескриптор
 	*/
-	int getWorkerId() { return workerId; }
+	int getFd() const { return fd; }
 	
 	/**
 	* Деструктор
