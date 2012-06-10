@@ -151,6 +151,7 @@ bool NetDaemon::addObject(nanosoft::ptr<AsyncObject> object)
 			}
 			
 			event.events = object->getEventsMask();
+			if ( fb->size > 0 ) event.events |= EPOLLOUT;
 			event.data.fd = object->fd;
 			r = epoll_ctl(epoll, EPOLL_CTL_ADD, object->fd, &event) == 0;
 			/*if ( ! r  )
@@ -201,6 +202,7 @@ bool NetDaemon::resetObject(nanosoft::ptr<AsyncObject> &object)
 {
 	struct epoll_event event;
 	event.events = object->getEventsMask();
+	if ( fds[object->fd].size > 0 ) event.events |= EPOLLOUT;
 	event.data.fd = object->fd;
 	if ( epoll_ctl(epoll, EPOLL_CTL_MOD, object->fd, &event) != 0 ) stderror();
 }
