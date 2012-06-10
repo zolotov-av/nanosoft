@@ -27,6 +27,7 @@ AsyncStream::AsyncStream(int afd): AsyncObject(afd), flags(0)
 */
 AsyncStream::~AsyncStream()
 {
+	disableTLS();
 	disableCompression();
 	close();
 }
@@ -252,6 +253,60 @@ bool AsyncStream::disableCompression()
 #else
 	return true;
 #endif // HAVE_LIBZ
+}
+
+/**
+* Проверить поддерживается ли TLS
+* @return TRUE - TLS поддерживается, FALSE - TLS не поддерживается
+*/
+bool AsyncStream::canTLS()
+{
+#ifdef HAVE_LIBSSL
+	return true;
+#else
+	return false;
+#endif // HAVE_LIBSSL
+}
+
+/**
+* Вернуть флаг TLS
+* @return TRUE - TLS включен, FALSE - TLS отключен
+*/
+bool AsyncStream::isTLSEnable()
+{
+#ifdef HAVE_LIBSSL
+	return usetls;
+#else
+	return false;
+#endif // HAVE_LIBSSL
+}
+
+/**
+* Включить TLS
+* @return TRUE - TLS включен, FALSE - произошла ошибка
+*/
+bool AsyncStream::enableTLS()
+{
+#ifdef HAVE_LIBSSL
+	return false;
+#else
+	return false;
+#endif // HAVE_LIBSSL
+}
+
+/**
+* Отключить TLS
+* @return TRUE - TLS отключен, FALSE - произошла ошибка
+*/
+bool AsyncStream::disableTLS()
+{
+#ifdef HAVE_LIBSSL
+	if ( usetls )
+	{
+		return false;
+	}
+#endif // HAVE_LIBSSL
+	return true;
 }
 
 #ifdef HAVE_LIBZ

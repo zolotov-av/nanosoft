@@ -14,6 +14,10 @@
 #include <pthread.h>
 #endif
 
+#ifdef HAVE_LIBSSL
+#include <openssl/ssl.h>
+#endif // HAVE_LIBSSL
+
 /**
 * Callback таймера
 */

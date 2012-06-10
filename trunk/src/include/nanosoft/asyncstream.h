@@ -9,6 +9,10 @@
 #include <zlib.h>
 #endif // HAVE_LIBZ
 
+#ifdef HAVE_LIBSSL
+#include <openssl/ssl.h>
+#endif // HAVE_LIBSSL
+
 /**
 * Название метода компрессии
 */
@@ -64,6 +68,16 @@ private:
 	*/
 	bool putDeflate(const char *data, size_t len);
 #endif // HAVE_LIBZ
+	
+#ifdef HAVE_LIBSSL
+	/**
+	* Флаг TLS
+	*
+	* TRUE - TLS вклчен
+	* FALSE - TLS отключен
+	*/
+	bool usetls;
+#endif // HAVE_LIBSSL
 	
 	/**
 	* Обработка поступивших данных
@@ -187,6 +201,30 @@ public:
 	* @return TRUE - компрессия отключена, FALSE - произошла ошибка
 	*/
 	bool disableCompression();
+	
+	/**
+	* Проверить поддерживается ли TLS
+	* @return TRUE - TLS поддерживается, FALSE - TLS не поддерживается
+	*/
+	bool canTLS();
+	
+	/**
+	* Вернуть флаг TLS
+	* @return TRUE - TLS включен, FALSE - TLS отключен
+	*/
+	bool isTLSEnable();
+	
+	/**
+	* Включить TLS
+	* @return TRUE - TLS включен, FALSE - произошла ошибка
+	*/
+	bool enableTLS();
+	
+	/**
+	* Отключить TLS
+	* @return TRUE - TLS отключен, FALSE - произошла ошибка
+	*/
+	bool disableTLS();
 	
 	/**
 	* Записать данные

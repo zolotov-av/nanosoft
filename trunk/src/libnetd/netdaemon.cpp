@@ -54,6 +54,10 @@ NetDaemon::NetDaemon(int fd_limit, int buf_size):
 		stack = block;
 	}
 	
+#ifdef HAVE_LIBSSL
+	SSL_load_error_strings();
+	SSL_library_init();
+#endif // HAVE_LIBSSL
 }
 
 /**
