@@ -14,19 +14,10 @@
 #include <pthread.h>
 #endif
 
-#ifdef HAVE_LIBZ
-#include <zlib.h>
-#endif // HAVE_LIBZ
-
 /**
 * Callback таймера
 */
 typedef void (*timer_callback_t) (int wid, void *data);
-
-/**
-* Название метода компрессии
-*/
-typedef const char *compression_method_t;
 
 /**
 * Главный класс сетевого демона
@@ -166,21 +157,6 @@ private:
 		* Указатель на объект
 		*/
 		nanosoft::ptr<AsyncObject> obj;
-		
-#ifdef HAVE_LIBZ
-		/**
-		* Контекст компрессора zlib
-		*/
-		z_stream strm;
-		
-		/**
-		* Флаг компрессии zlib
-		*
-		* TRUE - компрессия включена
-		* FALSE - компрессия отключена
-		*/
-		bool compression;
-#endif // HAVE_LIBZ
 		
 		/**
 		* Размер буферизованных данных (в байтах)
@@ -360,19 +336,7 @@ private:
 	void freeBlocks(block_t *top);
 	
 	/**
-	* Включить компрессию
-	*/
-	bool enableCompression(int fd, fd_info_t *fb);
-	
-	/**
-	* Отключить компрессию
-	*/
-	bool disableCompression(int fd, fd_info_t *fb);
-	
-	/**
 	* Добавить данные в буфер (thread-unsafe)
-	*
-	* Если включена компрессия, то сначала сжать данные
 	*
 	* @param fd файловый дескриптор
 	* @param fb указатель на описание файлового буфера
@@ -381,19 +345,6 @@ private:
 	* @return TRUE данные приняты, FALSE данные не приняты - нет места
 	*/
 	bool put(int fd, fd_info_t *fb, const char *data, size_t len);
-	
-	/**
-	* Добавить данные в буфер (thread-unsafe)
-	*
-	* Записать данные как есть без какой-либо обработки
-	*
-	* @param fd файловый дескриптор
-	* @param fb указатель на описание файлового буфера
-	* @param data указатель на данные
-	* @param len размер данных
-	* @return TRUE данные приняты, FALSE данные не приняты - нет места
-	*/
-	bool putRaw(int fd, fd_info_t *fb, const char *data, size_t len);
 protected:
 	/**
 	* Запустить воркеров
@@ -558,56 +509,6 @@ public:
 	bool setQuota(int fd, size_t quota);
 	
 	/**
-	* Проверить поддерживается ли компрессия
-	* @param fd файловый дескриптор
-	* @return TRUE - компрессия поддерживается, FALSE - компрессия не поддерживается
-	*/
-	bool canCompression(int fd);
-	
-	/**
-	* Проверить поддерживается ли компрессия конкретным методом
-	* @param fd файловый дескриптор
-	* @param method метод компрессии
-	* @return TRUE - компрессия поддерживается, FALSE - компрессия не поддерживается
-	*/
-	bool canCompression(int fd, const char *method);
-	
-	/**
-	* Вернуть список поддерживаемых методов компрессии
-	* @param fd файловый дескриптор
-	*/
-	const compression_method_t* getCompressionMethods(int fd);
-	
-	/**
-	* Вернуть флаг компрессии
-	* @param fd файловый дескриптор
-	* @return TRUE - компрессия включена, FALSE - компрессия отключена
-	*/
-	bool isCompressionEnable(int fd);
-	
-	/**
-	* Вернуть текущий метод компрессии
-	* @param fd файловый дескриптор
-	* @return имя метода компрессии или NULL если компрессия не включена
-	*/
-	compression_method_t getCompressionMethod(int fd);
-	
-	/**
-	* Включить компрессию
-	* @param fd файловый дескриптор
-	* @param method метод компрессии
-	* @return TRUE - компрессия включена, FALSE - компрессия не включена
-	*/
-	bool enableCompression(int fd, compression_method_t method);
-	
-	/**
-	* Отключить компрессию
-	* @param fd файловый дескриптор
-	* @return TRUE - компрессия отключена, FALSE - произошла ошибка
-	*/
-	bool disableCompression(int fd);
-	
-	/**
 	* Добавить данные в буфер (thread-safe)
 	*
 	* @param fd файловый дескриптор в который надо записать
@@ -616,19 +517,6 @@ public:
 	* @return TRUE данные приняты, FALSE данные не приняты - нет места
 	*/
 	bool put(int fd, const char *data, size_t len);
-	
-	/**
-	* Добавить данные в буфер как есть (thread-safe)
-	*
-	* Данные добавляются в буфер как есть без какой-либо
-	* обработки типа сжатия и шифрования
-	*
-	* @param fd файловый дескриптор в который надо записать
-	* @param data указатель на данные
-	* @param len размер данных
-	* @return TRUE данные приняты, FALSE данные не приняты - нет места
-	*/
-	bool putRaw(int fd, const char *data, size_t len);
 	
 	/**
 	* Записать данные из буфера в файл/сокет

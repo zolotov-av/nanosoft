@@ -29,6 +29,16 @@
 #define ZLIB_COMPRESS_LEVEL 6
 
 /**
+* Размер блока-буфера компрессии zlib
+*/
+#define ZLIB_DEFLATE_CHUNK_SIZE 4096
+
+/**
+* Размер блока-буфера для декомпрессии zlib
+*/
+#define ZLIB_INFLATE_CHUNK_SIZE (FD_READ_CHUNK_SIZE * 8)
+
+/**
 * Поддержка openssl сконфигурирована?
 */
 #undef HAVE_LIBSSL

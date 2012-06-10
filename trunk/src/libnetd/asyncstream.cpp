@@ -17,6 +17,9 @@ using namespace std;
 */
 AsyncStream::AsyncStream(int afd): AsyncObject(afd), flags(0)
 {
+#ifdef HAVE_LIBZ
+	compression = false;
+#endif // HAVE_LIBZ
 }
 
 /**
@@ -26,6 +29,7 @@ AsyncStream::~AsyncStream()
 {
 	printf("AsyncStream[%d]: deleting\n", getFd());
 	close();
+	disableCompression();
 }
 
 /**
@@ -39,10 +43,58 @@ void AsyncStream::handleRead()
 	ssize_t r = ::read(getFd(), chunk, sizeof(chunk));
 	while ( r > 0 )
 	{
-		onRead(chunk, r);
+#ifdef HAVE_LIBZ
+		if ( compression ) handleInflate(chunk, r);
+		else handleRead(chunk, r);
+#else
+		handleRead(chunk, r);
+#endif // HAVE_LIBZ
 		r = ::read(getFd(), chunk, sizeof(chunk));
 	}
 	if ( r < 0 ) stderror();
+}
+
+#ifdef HAVE_LIBZ
+/**
+* Обработка поступивших сжатых данных
+*/
+void AsyncStream::handleInflate(const char *data, size_t len)
+{
+	printf("AsyncStream[%d]: handleInflate\n", getFd());
+	
+	char buf[ZLIB_INFLATE_CHUNK_SIZE];
+	
+	strm_rx.next_in = (unsigned char*)data;
+	strm_rx.avail_in = len;
+	
+	while ( strm_rx.avail_out == 0 )
+	{
+		strm_rx.next_out = (unsigned char*)buf;
+		strm_rx.avail_out = sizeof(buf);
+		
+		inflate(&strm_rx, Z_SYNC_FLUSH);
+		
+		size_t have = sizeof(buf) - strm_rx.avail_out;
+		
+		string s(buf, have);
+		printf("inlated: %s\n", s.c_str());
+		handleRead(buf, have);
+	}
+	
+	strm_rx.avail_out = 0;
+}
+#endif // HAVE_LIBZ
+
+/**
+* Обработка поступивших данных после распаковки
+*/
+void AsyncStream::handleRead(const char *data, size_t len)
+{
+#ifdef DUMP_IO
+	string io_dump(data, len);
+	fprintf(stdout, "DUMP READ[%d]: \033[22;32m%s\033[0m\n", getFd(), io_dump.c_str());
+#endif
+	onRead(data, len);
 }
 
 /**
@@ -79,12 +131,11 @@ void AsyncStream::onEvent(uint32_t events)
 */
 bool AsyncStream::canCompression()
 {
-	NetDaemon *daemon = getDaemon();
-	if ( daemon )
-	{
-		return daemon->canCompression(getFd());
-	}
+#ifdef HAVE_LIBZ
+	return true;
+#else
 	return false;
+#endif // HAVE_LIBZ
 }
 
 /**
@@ -94,12 +145,11 @@ bool AsyncStream::canCompression()
 */
 bool AsyncStream::canCompression(const char *method)
 {
-	NetDaemon *daemon = getDaemon();
-	if ( daemon )
-	{
-		return daemon->canCompression(getFd(), method);
-	}
+#ifdef HAVE_LIBZ
+	return strcmp(method, "zlib") == 0;
+#else
 	return false;
+#endif // HAVE_LIBZ
 }
 
 /**
@@ -107,13 +157,13 @@ bool AsyncStream::canCompression(const char *method)
 */
 const compression_method_t* AsyncStream::getCompressionMethods()
 {
-	NetDaemon *daemon = getDaemon();
-	if ( daemon )
-	{
-		return daemon->getCompressionMethods(getFd());
-	}
-	static const compression_method_t *empty = {0};
-	return empty;
+	static compression_method_t methods[] = {
+#ifdef HAVE_LIBZ
+		"zlib",
+#endif // HAVE_LIBZ
+		0
+	};
+	return methods;
 }
 
 /**
@@ -122,12 +172,11 @@ const compression_method_t* AsyncStream::getCompressionMethods()
 */
 bool AsyncStream::isCompressionEnable()
 {
-	NetDaemon *daemon = getDaemon();
-	if ( daemon )
-	{
-		return daemon->isCompressionEnable(getFd());
-	}
+#ifdef HAVE_LIBZ
+	return compression;
+#else
 	return false;
+#endif // HAVE_LIBZ
 }
 
 /**
@@ -136,12 +185,11 @@ bool AsyncStream::isCompressionEnable()
 */
 compression_method_t AsyncStream::getCompressionMethod()
 {
-	NetDaemon *daemon = getDaemon();
-	if ( daemon )
-	{
-		return daemon->getCompressionMethod(getFd());
-	}
+#ifdef HAVE_LIBZ
+	return compression ? "zlib" : 0;
+#else
 	return 0;
+#endif // HAVE_LIBZ
 }
 
 /**
@@ -151,12 +199,37 @@ compression_method_t AsyncStream::getCompressionMethod()
 */
 bool AsyncStream::enableCompression(compression_method_t method)
 {
-	NetDaemon *daemon = getDaemon();
-	if ( daemon )
+#ifdef HAVE_LIBZ
+	if ( ! compression && canCompression(method) )
 	{
-		return daemon->enableCompression(getFd(), method);
+		int status;
+		
+		// инициализация компрессора исходящего трафика
+		memset(&strm_tx, 0, sizeof(strm_tx));
+		status = deflateInit(&strm_tx, ZLIB_COMPRESS_LEVEL);
+		if ( status != Z_OK )
+		{
+			(void)deflateEnd(&strm_tx);
+			return false;
+		}
+		
+		// инициализация декомпрессора входящего трафика
+		memset(&strm_rx, 0, sizeof(strm_rx));
+		status = inflateInit(&strm_rx);
+		if ( status != Z_OK )
+		{
+			(void)deflateEnd(&strm_tx);
+			(void)inflateEnd(&strm_rx);
+			return false;
+		}
+		
+		compression = true;
+		return true;
 	}
 	return false;
+#else
+	return false;
+#endif // HAVE_LIBZ
 }
 
 /**
@@ -165,13 +238,64 @@ bool AsyncStream::enableCompression(compression_method_t method)
 */
 bool AsyncStream::disableCompression()
 {
-	NetDaemon *daemon = getDaemon();
-	if ( daemon )
+#ifdef HAVE_LIBZ
+	if ( compression )
 	{
-		return daemon->disableCompression(getFd());
+		(void)deflateEnd(&strm_tx);
+		(void)inflateEnd(&strm_rx);
+		
+		compression = false;
 	}
-	return false;
+#else
+	return true;
+#endif // HAVE_LIBZ
 }
+
+#ifdef HAVE_LIBZ
+/**
+* Записать данные со сжатием zlib deflate
+*
+* Данные сжимаются и записываются в файловый буфер. Данная функция
+* пытается принять все данные и возвращает TRUE если это удалось.
+*
+* TODO В случае неудачи пока не возможно определить какая часть данных
+* была записана, а какая утеряна.
+*
+* @param data указатель на данные
+* @param len размер данных
+* @return TRUE данные приняты, FALSE произошла ошибка
+*/
+bool AsyncStream::putDeflate(const char *data, size_t len)
+{
+	printf("AsyncStream[%d] deflate\n", getFd());
+	
+	size_t out_len = 0;
+	char buf[ZLIB_DEFLATE_CHUNK_SIZE];
+	
+	strm_tx.next_in = (unsigned char*)data;
+	strm_tx.avail_in = len;
+	
+	while ( strm_tx.avail_out == 0 )
+	{
+		strm_tx.next_out = (unsigned char*)buf;
+		strm_tx.avail_out = sizeof(buf);
+		
+		deflate(&strm_tx, Z_PARTIAL_FLUSH);
+		
+		size_t have = sizeof(buf) - strm_tx.avail_out;
+		out_len += have;
+		
+		if ( ! putUncompressed(buf, have) ) return false;
+	}
+	
+	strm_tx.avail_out = 0;
+	
+	float ratio = static_cast<float>(len) / out_len;
+	printf("compression ratio: %d / %d = %.2f\n", len, out_len, ratio);
+	
+	return true;
+}
+#endif // HAVE_LIBZ
 
 /**
 * Записать данные
@@ -187,8 +311,36 @@ bool AsyncStream::disableCompression()
 */
 bool AsyncStream::put(const char *data, size_t len)
 {
+#ifdef DUMP_IO
+	string io_dump(data, len);
+	fprintf(stdout, "DUMP WRITE[%d]: \033[22;34m%s\033[0m\n", getFd(), io_dump.c_str());
+#endif
+	
+#ifdef HAVE_LIBZ
+	if ( compression )
+	{
+		return putDeflate(data, len);
+	}
+#endif // HAVE_LIBZ
+	return putUncompressed(data, len);
+}
+
+/**
+* Записать данные без компрессии
+*
+* Данные записываются сначала в файловый буфер и только потом отправляются.
+* Для обеспечения целостности переданный блок либо записывается целиком
+* и функция возвращает TRUE, либо ничего не записывается и функция
+* возвращает FALSE
+*
+* @param data указатель на данные
+* @param len размер данных
+* @return TRUE данные приняты, FALSE данные не приняты - нет места
+*/
+bool AsyncStream::putUncompressed(const char *data, size_t len)
+{
 	NetDaemon *daemon = getDaemon();
-	printf("AsyncStream[%d, %p] put\n", getFd(), daemon);
+	printf("AsyncStream[%d, %p] put uncompressed\n", getFd(), daemon);
 	if ( daemon )
 	{
 		if ( daemon->put(getFd(), data, len) )

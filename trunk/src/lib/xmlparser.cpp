@@ -9,7 +9,7 @@ namespace nanosoft
 	/**
 	* Конструктор
 	*/
-	XMLParser::XMLParser(): parser(0), parsing(false), resetNeed(false), compression(false)
+	XMLParser::XMLParser(): parser(0), parsing(false), resetNeed(false)
 	{
 		initParser();
 	}
@@ -20,62 +20,6 @@ namespace nanosoft
 	XMLParser::~XMLParser()
 	{
 		if ( parser ) XML_ParserFree(parser);
-		disableCompression();
-	}
-	
-	/**
-	* Вернуть флаг компрессии
-	* @return TRUE - компрессия включена, FALSE - компрессия отключена
-	*/
-	bool XMLParser::getCompression()
-	{
-		return compression;
-	}
-	
-	/**
-	* Включить/отключить компрессию
-	* @param state TRUE - включить компрессию, FALSE - отключить компрессию
-	* @return TRUE - операция успешна, FALSE - операция прошла с ошибкой
-	*/
-	bool XMLParser::setCompression(bool state)
-	{
-		if ( state ) enableCompression();
-		else disableCompression();
-	}
-	
-	/**
-	* Включить компрессию
-	*/
-	bool XMLParser::enableCompression()
-	{
-		if ( ! compression )
-		{
-			memset(&strm, 0, sizeof(strm));
-			int status = inflateInit(&strm);
-			if ( status != Z_OK )
-			{
-				(void)inflateEnd(&strm);
-				return false;
-			}
-			
-			compression = true;
-		}
-		return true;
-	}
-	
-	/**
-	* Отключить компрессию
-	*/
-	bool XMLParser::disableCompression()
-	{
-		if ( compression )
-		{
-			(void)inflateEnd(&strm);
-			
-			compression = false;
-		}
-		
-		return true;
 	}
 	
 	/**
@@ -104,33 +48,7 @@ namespace nanosoft
 	*/
 	bool XMLParser::parseXML(const char *data, size_t len, bool isFinal)
 	{
-		char buf[1024 * 16];
-		
-		if ( compression )
-		{
-			strm.next_in = (unsigned char*)data;
-			strm.avail_in = len;
-			
-			while ( strm.avail_out == 0 )
-			{
-				strm.next_out = (unsigned char*)buf;
-				strm.avail_out = sizeof(buf);
-				
-				inflate(&strm, Z_SYNC_FLUSH);
-				
-				size_t have = sizeof(buf) - strm.avail_out;
-				
-				if ( ! realParseXML(buf, have, false) ) return false;
-			}
-			
-			strm.avail_out = 0;
-			
-			if ( isFinal ) return realParseXML(0, 0, true);
-		}
-		else
-		{
-			return realParseXML(data, len, isFinal);
-		}
+		return realParseXML(data, len, isFinal);
 	}
 	
 	/**

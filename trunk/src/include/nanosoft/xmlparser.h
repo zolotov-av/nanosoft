@@ -4,7 +4,6 @@
 #include <expat.h>
 #include <map>
 #include <string>
-#include "zlib.h"
 
 namespace nanosoft
 {
@@ -28,19 +27,6 @@ namespace nanosoft
 		* Деструктор
 		*/
 		virtual ~XMLParser();
-		
-		/**
-		* Вернуть флаг компрессии
-		* @return TRUE - компрессия включена, FALSE - компрессия отключена
-		*/
-		bool getCompression();
-		
-		/**
-		* Включить/отключить компрессию
-		* @param state TRUE - включить компрессию, FALSE - отключить компрессию
-		* @return TRUE - операция успешна, FALSE - операция прошла с ошибкой
-		*/
-		bool setCompression(bool state);
 		
 		/**
 		* Парсинг XML
@@ -87,19 +73,6 @@ namespace nanosoft
 		XML_Parser parser;
 		
 		/**
-		* Контекст компрессора zlib
-		*/
-		z_stream strm;
-		
-		/**
-		* Флаг компрессии zlib
-		*
-		* TRUE - компрессия включена
-		* FALSE - компрессия отключена
-		*/
-		bool compression;
-		
-		/**
 		* Признак парсинга
 		* TRUE - парсер в состоянии обработка куска файла
 		*/
@@ -111,16 +84,6 @@ namespace nanosoft
 		*   обработкой следующего куска файла
 		*/
 		bool resetNeed;
-		
-		/**
-		* Включить компрессию
-		*/
-		bool enableCompression();
-		
-		/**
-		* Отключить компрессию
-		*/
-		bool disableCompression();
 		
 		/**
 		* Инициализация парсера
