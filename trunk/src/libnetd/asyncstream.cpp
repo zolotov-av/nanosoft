@@ -27,19 +27,21 @@ AsyncStream::AsyncStream(int afd): AsyncObject(afd), flags(0)
 */
 AsyncStream::~AsyncStream()
 {
-	printf("AsyncStream[%d]: deleting\n", getFd());
-	close();
 	disableCompression();
+	close();
 }
 
 /**
 * Обработка поступивших данных
+* 
+* Данные читаются из сокета и при необходимости обрабатываются
+* (сжатие, шифрование и т.п.). Обработанные данные затем передаются
+* виртуальному методу onRead()
 */
 void AsyncStream::handleRead()
 {
-	printf("AsyncStream[%d]: handleRead\n", getFd());
-	
 	char chunk[FD_READ_CHUNK_SIZE];
+	
 	ssize_t r = ::read(getFd(), chunk, sizeof(chunk));
 	while ( r > 0 )
 	{
@@ -60,8 +62,6 @@ void AsyncStream::handleRead()
 */
 void AsyncStream::handleInflate(const char *data, size_t len)
 {
-	printf("AsyncStream[%d]: handleInflate\n", getFd());
-	
 	char buf[ZLIB_INFLATE_CHUNK_SIZE];
 	
 	strm_rx.next_in = (unsigned char*)data;
@@ -76,8 +76,6 @@ void AsyncStream::handleInflate(const char *data, size_t len)
 		
 		size_t have = sizeof(buf) - strm_rx.avail_out;
 		
-		string s(buf, have);
-		printf("inlated: %s\n", s.c_str());
 		handleRead(buf, have);
 	}
 	
@@ -86,23 +84,28 @@ void AsyncStream::handleInflate(const char *data, size_t len)
 #endif // HAVE_LIBZ
 
 /**
-* Обработка поступивших данных после распаковки
+* Обработка поступивших данных
+*
+* Данные уже прочтены и обработанны, это общая точка через которую
+* проходят обработанные данные перед вызовом onRead()
 */
 void AsyncStream::handleRead(const char *data, size_t len)
 {
 #ifdef DUMP_IO
 	string io_dump(data, len);
-	fprintf(stdout, "DUMP READ[%d]: \033[22;32m%s\033[0m\n", getFd(), io_dump.c_str());
+	printf("DUMP READ[%d]: \033[22;32m%s\033[0m\n", getFd(), io_dump.c_str());
 #endif
 	onRead(data, len);
 }
 
 /**
 * Отправка накопленных данных
+*
+* Эта функция вызывается когда сокет готов принять данные и производит
+* отправку данных накопленных в файловом буфере
 */
 void AsyncStream::handleWrite()
 {
-	printf("AsyncStream[%d]: handleWrite\n", getFd());
 	getDaemon()->push(getFd());
 }
 
@@ -267,9 +270,6 @@ bool AsyncStream::disableCompression()
 */
 bool AsyncStream::putDeflate(const char *data, size_t len)
 {
-	printf("AsyncStream[%d] deflate\n", getFd());
-	
-	size_t out_len = 0;
 	char buf[ZLIB_DEFLATE_CHUNK_SIZE];
 	
 	strm_tx.next_in = (unsigned char*)data;
@@ -283,15 +283,11 @@ bool AsyncStream::putDeflate(const char *data, size_t len)
 		deflate(&strm_tx, Z_PARTIAL_FLUSH);
 		
 		size_t have = sizeof(buf) - strm_tx.avail_out;
-		out_len += have;
 		
 		if ( ! putUncompressed(buf, have) ) return false;
 	}
 	
 	strm_tx.avail_out = 0;
-	
-	float ratio = static_cast<float>(len) / out_len;
-	printf("compression ratio: %d / %d = %.2f\n", len, out_len, ratio);
 	
 	return true;
 }
@@ -313,7 +309,7 @@ bool AsyncStream::put(const char *data, size_t len)
 {
 #ifdef DUMP_IO
 	string io_dump(data, len);
-	fprintf(stdout, "DUMP WRITE[%d]: \033[22;34m%s\033[0m\n", getFd(), io_dump.c_str());
+	printf("DUMP WRITE[%d]: \033[22;34m%s\033[0m\n", getFd(), io_dump.c_str());
 #endif
 	
 #ifdef HAVE_LIBZ
@@ -340,7 +336,6 @@ bool AsyncStream::put(const char *data, size_t len)
 bool AsyncStream::putUncompressed(const char *data, size_t len)
 {
 	NetDaemon *daemon = getDaemon();
-	printf("AsyncStream[%d, %p] put uncompressed\n", getFd(), daemon);
 	if ( daemon )
 	{
 		if ( daemon->put(getFd(), data, len) )
@@ -358,7 +353,6 @@ bool AsyncStream::putUncompressed(const char *data, size_t len)
 */
 bool AsyncStream::shutdown(int how)
 {
-	printf("AsyncStream[%d] shutdown\n", getFd());
 	if ( how & READ & ~ flags ) {
 		if ( ::shutdown(getFd(), SHUT_RD) != 0 ) stderror();
 		flags |= READ;
