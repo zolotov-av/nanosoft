@@ -5,6 +5,8 @@
 #include <sys/types.h>
 #include <nanosoft/object.h>
 
+class NetDaemon;
+
 /**
 * Базовый класс для всех асинхронных объектов
 */
@@ -16,6 +18,11 @@ private:
 	* Файловый дескриптор объекта
 	*/
 	int fd;
+	
+	/**
+	* Ссылка на демона
+	*/
+	NetDaemon *daemon;
 	
 	/**
 	* Признак завершения
@@ -38,6 +45,11 @@ private:
 	AsyncObject& operator = (const AsyncObject &);
 	
 protected:
+	
+	/**
+	* Вернуть указатель на демона
+	*/
+	NetDaemon* getDaemon() const { return daemon; }
 	
 	/**
 	* Обработка системной ошибки

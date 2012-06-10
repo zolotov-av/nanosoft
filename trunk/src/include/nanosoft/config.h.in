@@ -16,7 +16,7 @@
 /**
 * Размер буфера чтения
 */
-#define FD_READ_BUFFER 4096
+#define FD_READ_CHUNK_SIZE 4096
 
 /**
 * Поддержка zlib сконфигурирована?

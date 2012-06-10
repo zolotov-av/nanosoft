@@ -9,6 +9,22 @@
 */
 class AsyncStream: public AsyncObject
 {
+private:
+	/**
+	* Флаги
+	*/
+	int flags;
+	
+	/**
+	* Обработка поступивших данных
+	*/
+	void handleRead();
+	
+	/**
+	* Отправка накопленных данных
+	*/
+	void handleWrite();
+	
 protected:
 	
 	/**
@@ -22,20 +38,9 @@ protected:
 	virtual void onEvent(uint32_t events);
 	
 	/**
-	* Событие готовности к чтению
-	*
-	* Вызывается когда в потоке есть данные,
-	* которые можно прочитать без блокирования
+	* Обработчик прочитанных данных
 	*/
-	virtual void onRead() = 0;
-	
-	/**
-	* Событие готовности к записи
-	*
-	* Вызывается, когда в поток готов принять
-	* данные для записи без блокировки
-	*/
-	virtual void onWrite() = 0;
+	virtual void onRead(const char *data, size_t len) = 0;
 	
 	/**
 	* Пир (peer) закрыл поток.
@@ -44,8 +49,14 @@ protected:
 	* можем только корректно закрыть соединение с нашей стороны.
 	*/
 	virtual void onPeerDown() = 0;
-	virtual void onShutdown() = 0;
+	
 public:
+	
+	/**
+	* Для shutdown()
+	*/
+	enum { READ = 1, WRITE = 2 };
+	
 	/**
 	* Конструктор
 	*/
@@ -57,16 +68,18 @@ public:
 	virtual ~AsyncStream();
 	
 	/**
-	* Неблокирующее чтение из потока
+	* Записать данные
+	*
+	* Данные записываются сначала в файловый буфер и только потом отправляются.
+	* Для обеспечения целостности переданный блок либо записывается целиком
+	* и функция возвращает TRUE, либо ничего не записывается и функция
+	* возвращает FALSE
+	*
+	* @param data указатель на данные
+	* @param len размер данных
+	* @return TRUE данные приняты, FALSE данные не приняты - нет места
 	*/
-	ssize_t read(void *buf, size_t count);
-	
-	/**
-	* Неблокирующая запись в поток
-	*/
-	ssize_t write(const void *buf, size_t count);
-	
-	enum { READ = 1, WRITE = 2 };
+	bool put(const char *data, size_t len);
 	
 	/**
 	* Завершить чтение/запись
@@ -78,11 +91,6 @@ public:
 	* Закрыть поток
 	*/
 	void close();
-private:
-	/**
-	* Флаги
-	*/
-	int flags;
 };
 
 #endif // NANOSOFT_ASYNCSTREAM_H

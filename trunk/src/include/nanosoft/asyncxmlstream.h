@@ -12,12 +12,9 @@ class AsyncXMLStream: public AsyncStream, public nanosoft::XMLParser
 {
 protected:
 	/**
-	* Событие готовности к чтению
-	*
-	* Вызывается когда в потоке есть данные,
-	* которые можно прочитать без блокирования
+	* Обработчик прочитанных данных
 	*/
-	virtual void onRead();
+	virtual void onRead(const char *data, size_t len);
 	
 	/**
 	* Обработчик открытия тега
@@ -46,7 +43,6 @@ protected:
 	* можем только корректно закрыть соединение с нашей стороны.
 	*/
 	virtual void onPeerDown();
-	virtual void onShutdown();
 public:
 	/**
 	* Класс описывающий атрибуты тега

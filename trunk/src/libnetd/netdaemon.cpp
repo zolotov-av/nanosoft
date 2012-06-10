@@ -142,6 +142,7 @@ bool NetDaemon::addObject(nanosoft::ptr<AsyncObject> object)
 			count ++;
 			fb->obj = object;
 			object->lock();
+			object->daemon = this;
 			
 			// принудительно выставить O_NONBLOCK
 			int flags = fcntl(object->fd, F_GETFL, 0);
@@ -186,6 +187,7 @@ bool NetDaemon::removeObject(nanosoft::ptr<AsyncObject> object)
 	mutex.lock();
 		if ( fds[object->fd].obj == object )
 		{
+			object->daemon = 0;
 			object->release();
 			if ( epoll_ctl(epoll, EPOLL_CTL_DEL, object->fd, 0) != 0 ) stderror();
 			fds[object->fd].obj = 0;

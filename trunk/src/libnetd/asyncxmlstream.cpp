@@ -21,19 +21,11 @@ AsyncXMLStream::~AsyncXMLStream()
 }
 
 /**
-* Событие готовности к чтению
-*
-* Вызывается когда в потоке есть данные,
-* которые можно прочитать без блокирования
+* Обработчик прочитанных данных
 */
-void AsyncXMLStream::onRead()
+void AsyncXMLStream::onRead(const char *data, size_t len)
 {
-	char buf[4096];
-	ssize_t r = read(buf, sizeof(buf));
-	if ( r > 0 )
-	{
-		parseXML(buf, r, false);
-	}
+	parseXML(data, len, false);
 }
 
 /**
@@ -53,38 +45,6 @@ void AsyncXMLStream::onParseError(const char *message)
 void AsyncXMLStream::onPeerDown()
 {
 	fprintf(stderr, "AsyncXMLStream[%d]: peer down\n", getFd());
-	
-	// читаем и парсим все, что осталось в потоке
-	while ( 1 )
-	{
-		char buf[4096];
-		ssize_t r = read(buf, sizeof(buf));
-		if ( r <= 0 ) break;
-		parseXML(buf, r, false);
-	}
-	
-	// и сообщаем парсеру об EOF
-	parseXML(0, 0, true);
-}
-
-/**
-* Пир (peer) закрыл поток.
-*
-* Мы уже ничего не можем отправить в ответ,
-* можем только корректно закрыть соединение с нашей стороны.
-*/
-void AsyncXMLStream::onShutdown()
-{
-	fprintf(stderr, "AsyncXMLStream[%d] onShutdown\n", getFd());
-	
-	// читаем и парсим все, что осталось в потоке
-	while ( 1 )
-	{
-		char buf[4096];
-		ssize_t r = read(buf, sizeof(buf));
-		if ( r <= 0 ) break;
-		parseXML(buf, r, false);
-	}
 	
 	// и сообщаем парсеру об EOF
 	parseXML(0, 0, true);

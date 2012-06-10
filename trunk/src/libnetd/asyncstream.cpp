@@ -5,7 +5,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <nanosoft/asyncstream.h>
+#include <nanosoft/netdaemon.h>
 #include <nanosoft/error.h>
+#include <nanosoft/config.h>
 #include <sys/socket.h>
 
 using namespace std;
@@ -27,6 +29,32 @@ AsyncStream::~AsyncStream()
 }
 
 /**
+* Обработка поступивших данных
+*/
+void AsyncStream::handleRead()
+{
+	printf("AsyncStream[%d]: handleRead\n", getFd());
+	
+	char chunk[FD_READ_CHUNK_SIZE];
+	ssize_t r = ::read(getFd(), chunk, sizeof(chunk));
+	while ( r > 0 )
+	{
+		onRead(chunk, r);
+		r = ::read(getFd(), chunk, sizeof(chunk));
+	}
+	if ( r < 0 ) stderror();
+}
+
+/**
+* Отправка накопленных данных
+*/
+void AsyncStream::handleWrite()
+{
+	printf("AsyncStream[%d]: handleWrite\n", getFd());
+	getDaemon()->push(getFd());
+}
+
+/**
 * Вернуть маску ожидаемых событий
 */
 uint32_t AsyncStream::getEventsMask()
@@ -40,29 +68,36 @@ uint32_t AsyncStream::getEventsMask()
 void AsyncStream::onEvent(uint32_t events)
 {
 	if ( events & EPOLLERR ) onError("epoll report some error in stream...");
-	if ( events & EPOLLIN ) onRead();
-	if ( events & EPOLLOUT ) onWrite();
+	if ( events & EPOLLIN ) handleRead();
+	if ( events & EPOLLOUT ) handleWrite();
 	if ( (events & EPOLLRDHUP) || (events & EPOLLHUP) ) onPeerDown();
 }
 
 /**
-* Неблокирующее чтение из потока
+* Записать данные
+*
+* Данные записываются сначала в файловый буфер и только потом отправляются.
+* Для обеспечения целостности переданный блок либо записывается целиком
+* и функция возвращает TRUE, либо ничего не записывается и функция
+* возвращает FALSE
+*
+* @param data указатель на данные
+* @param len размер данных
+* @return TRUE данные приняты, FALSE данные не приняты - нет места
 */
-ssize_t AsyncStream::read(void *buf, size_t count)
+bool AsyncStream::put(const char *data, size_t len)
 {
-	ssize_t r = ::read(getFd(), buf, count);
-	if ( r < 0 ) stderror();
-	return r;
-}
-
-/**
-* Неблокирующая запись в поток
-*/
-ssize_t AsyncStream::write(const void *buf, size_t count)
-{
-	ssize_t r = ::write(getFd(), buf, count);
-	if ( r < 0 ) stderror();
-	return r;
+	NetDaemon *daemon = getDaemon();
+	printf("AsyncStream[%d, %p] put\n", getFd(), daemon);
+	if ( daemon )
+	{
+		if ( daemon->put(getFd(), data, len) )
+		{
+			daemon->modifyObject(this);
+			return true;
+		}
+	}
+	return false;
 }
 
 /**
