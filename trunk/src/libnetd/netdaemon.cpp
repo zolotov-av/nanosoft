@@ -66,8 +66,11 @@ NetDaemon::NetDaemon(int fd_limit, int buf_size):
 		fprintf(stderr, "GnuTLS global init fault\n");
 	}
 	printf("AFTER gnutls_global_init()\n");
+	
+#ifdef DEBUG_TLS
 	gnutls_global_set_log_level(9);
 	gnutls_global_set_log_function(my_gnutls_log_func);
+#endif // DEBUG_TLS
 #endif // HAVE_GNUTLS
 }
 
