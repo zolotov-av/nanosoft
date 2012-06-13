@@ -10,11 +10,6 @@
 #include <nanosoft/config.h>
 #include <sys/socket.h>
 
-#ifdef HAVE_LIBSSL
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#endif // HAVE_LIBSSL
-
 using namespace std;
 
 /**
@@ -26,10 +21,9 @@ AsyncStream::AsyncStream(int afd): AsyncObject(afd), flags(0)
 	compression = false;
 #endif // HAVE_LIBZ
 
-#ifdef HAVE_LIBSSL
+#ifdef HAVE_GNUTLS
 	tls_status = tls_off;
-	ssl = 0;
-#endif // HAVE_LIBSSL
+#endif // HAVE_GNUTLS
 }
 
 /**
@@ -52,19 +46,90 @@ AsyncStream::~AsyncStream()
 void AsyncStream::handleRead()
 {
 	char chunk[FD_READ_CHUNK_SIZE];
+	ssize_t ret;
 	
-	ssize_t r = ::read(getFd(), chunk, sizeof(chunk));
-	while ( r > 0 )
+#ifdef HAVE_GNUTLS
+	if ( tls_status == tls_handshake )
 	{
-#ifdef HAVE_LIBZ
-		if ( compression ) handleInflate(chunk, r);
-		else handleRead(chunk, r);
-#else
-		handleRead(chunk, r);
-#endif // HAVE_LIBZ
-		r = ::read(getFd(), chunk, sizeof(chunk));
+		int ret = gnutls_handshake(tls_session);
+		if ( ret == GNUTLS_E_SUCCESS )
+		{
+			tls_status = tls_on;
+			printf("AsyncStream[%d]: gnutls_handshake ok\n", getFd());
+		}
+		else
+		{
+			if ( gnutls_error_is_fatal(ret) )
+			{
+				fprintf(stderr, "AsyncStream[%d]: gnutls_handshake fatal error: %s\n", getFd(), gnutls_strerror(ret));
+				terminate();
+				return;
+			}
+			return;
+		}
 	}
-	if ( r < 0 ) stderror();
+	
+	if ( tls_status == tls_on )
+	{
+		ret = gnutls_record_recv(tls_session, chunk, sizeof(chunk));
+		while ( ret > 0 )
+		{
+			putInDecompressor(chunk, ret);
+			ret = gnutls_record_recv(tls_session, chunk, sizeof(chunk));
+		}
+		if ( gnutls_error_is_fatal(ret) )
+		{
+			fprintf(stderr, "AsyncStream[%d]: gnutls_record_recv fatal error: %s\n", getFd(), gnutls_strerror(ret));
+			terminate();
+			return;
+		}
+		onError(gnutls_strerror(ret));
+		return;
+	}
+#endif // HAVE_GNUTLS
+	
+	ret = ::read(getFd(), chunk, sizeof(chunk));
+	while ( ret > 0 )
+	{
+		putInDecompressor(chunk, ret);
+		ret = ::read(getFd(), chunk, sizeof(chunk));
+	}
+	if ( ret < 0 )
+	{
+		stderror();
+	}
+}
+
+/**
+* Передать полученные данные в декомпрессор
+*
+* Если компрессия поддерживается и включена, то данные распаковываются
+* и передаются нижележащему уровню
+*/
+void AsyncStream::putInDecompressor(const char *data, size_t len)
+{
+#ifdef HAVE_LIBZ
+	if ( compression )
+	{
+		handleInflate(data, len);
+		return;
+	}
+#endif // HAVE_LIBZ
+	
+	putInReadEvent(data, len);
+}
+
+/**
+* Передать данные обработчику onRead()
+*/
+void AsyncStream::putInReadEvent(const char *data, size_t len)
+{
+#ifdef DUMP_IO
+	string io_dump(data, len);
+	printf("DUMP READ[%d]: \033[22;32m%s\033[0m\n", getFd(), io_dump.c_str());
+#endif
+	
+	onRead(data, len);
 }
 
 #ifdef HAVE_LIBZ
@@ -87,27 +152,12 @@ void AsyncStream::handleInflate(const char *data, size_t len)
 		
 		size_t have = sizeof(buf) - strm_rx.avail_out;
 		
-		handleRead(buf, have);
+		putInReadEvent(buf, have);
 	}
 	
 	strm_rx.avail_out = 0;
 }
 #endif // HAVE_LIBZ
-
-/**
-* Обработка поступивших данных
-*
-* Данные уже прочтены и обработанны, это общая точка через которую
-* проходят обработанные данные перед вызовом onRead()
-*/
-void AsyncStream::handleRead(const char *data, size_t len)
-{
-#ifdef DUMP_IO
-	string io_dump(data, len);
-	printf("DUMP READ[%d]: \033[22;32m%s\033[0m\n", getFd(), io_dump.c_str());
-#endif
-	onRead(data, len);
-}
 
 /**
 * Отправка накопленных данных
@@ -271,11 +321,11 @@ bool AsyncStream::disableCompression()
 */
 bool AsyncStream::canTLS()
 {
-#ifdef HAVE_LIBSSL
+#ifdef HAVE_GNUTLS
 	return true;
 #else
 	return false;
-#endif // HAVE_LIBSSL
+#endif // HAVE_GNUTLS
 }
 
 /**
@@ -284,11 +334,11 @@ bool AsyncStream::canTLS()
 */
 bool AsyncStream::isTLSEnable()
 {
-#ifdef HAVE_LIBSSL
+#ifdef HAVE_GNUTLS
 	return tls_status != tls_off;
 #else
 	return false;
-#endif // HAVE_LIBSSL
+#endif // HAVE_GNUTLS
 }
 
 /**
@@ -296,37 +346,26 @@ bool AsyncStream::isTLSEnable()
 * @param ctx контекст TLS
 * @return TRUE - TLS включен, FALSE - произошла ошибка
 */
-bool AsyncStream::enableTLS(SSL_CTX *ctx)
+bool AsyncStream::enableTLS(AsyncStream::tls_ctx *ctx)
 {
-#ifdef HAVE_LIBSSL
+#ifdef HAVE_GNUTLS
 	if ( tls_status != tls_off ) return true;
 	
-	ssl = SSL_new(ctx);
-	if ( ssl == 0 ) return false;
+	gnutls_init(&tls_session, GNUTLS_SERVER);
 	
-	SSL_set_fd (ssl, getFd());
+	gnutls_priority_set (tls_session, ctx->priority_cache);
+	gnutls_credentials_set(tls_session, GNUTLS_CRD_CERTIFICATE, ctx->x509_cred);
+	gnutls_certificate_server_set_request(tls_session, GNUTLS_CERT_IGNORE);
 	
-	int status = SSL_get_error(ssl, SSL_accept (ssl));
+	gnutls_transport_set_push_function(tls_session, tls_push);
+	gnutls_transport_set_pull_function(tls_session, tls_pull);
+	gnutls_transport_set_ptr(tls_session, static_cast<gnutls_transport_ptr_t>(this));
 	
-	if ( status == SSL_ERROR_NONE )
-	{
-		tls_status = tls_on;
-		return true;
-	}
-	
-	if ( status == SSL_ERROR_WANT_READ || status == SSL_ERROR_WANT_WRITE )
-	{
-		tls_status = tls_handshake;
-		return true;
-	}
-	
-	SSL_free(ssl);
-	ssl = 0;
-	ERR_print_errors_fp(stderr);
-	
+	tls_status = tls_handshake;
+	return true;
 #else
 	return false;
-#endif // HAVE_LIBSSL
+#endif // HAVE_GNUTLS
 }
 
 /**
@@ -335,16 +374,43 @@ bool AsyncStream::enableTLS(SSL_CTX *ctx)
 */
 bool AsyncStream::disableTLS()
 {
-#ifdef HAVE_LIBSSL
+#ifdef HAVE_GNUTLS
 	if ( tls_status == tls_off )
 	{
 		return false;
 	}
 	
 	// TODO ???
-#endif // HAVE_LIBSSL
+#endif // HAVE_GNUTLS
 	return true;
 }
+
+#ifdef HAVE_GNUTLS
+/**
+* Push (write) function для GnuTLS
+*/
+ssize_t AsyncStream::tls_push(gnutls_transport_ptr_t ptr, const void *data, size_t len)
+{
+	AsyncStream *s = static_cast<AsyncStream*>(ptr);
+	printf("AsyncStream[%d]::tls_push\n", s->getFd());
+	if ( s->putInBuffer(static_cast<const char *>(data), len) ) return len;
+	gnutls_transport_set_errno(s->tls_session, EAGAIN);
+	return -1;
+}
+#endif // HAVE_GNUTLS
+
+#ifdef HAVE_GNUTLS
+/**
+* Pull (read) function для GnuTLS
+*/
+ssize_t AsyncStream::tls_pull(gnutls_transport_ptr_t ptr, void *data, size_t len)
+{
+	AsyncStream *s = static_cast<AsyncStream*>(ptr);
+	printf("AsyncStream[%d]::tls_pull\n", s->getFd());
+	//gnutls_transport_set_errno(s->tls_session, 0);
+	return ::read(s->getFd(), data, len);
+}
+#endif // HAVE_GNUTLS
 
 #ifdef HAVE_LIBZ
 /**
@@ -376,7 +442,7 @@ bool AsyncStream::putDeflate(const char *data, size_t len)
 		
 		size_t have = sizeof(buf) - strm_tx.avail_out;
 		
-		if ( ! putUncompressed(buf, have) ) return false;
+		if ( ! putInTLS(buf, have) ) return false;
 	}
 	
 	strm_tx.avail_out = 0;
@@ -388,10 +454,13 @@ bool AsyncStream::putDeflate(const char *data, size_t len)
 /**
 * Записать данные
 *
-* Данные записываются сначала в файловый буфер и только потом отправляются.
-* Для обеспечения целостности переданный блок либо записывается целиком
-* и функция возвращает TRUE, либо ничего не записывается и функция
-* возвращает FALSE
+* При необходимости данные обрабатываются (сжимаются, шифруются и т.п.)
+* и записываются в файловый буфер. Фактическая отправка данных будет
+* когда сокет готов будет принять очередную порцию данных. Эта функция
+* старается принять все переданные данные и возвращает TRUE если это удалось.
+* Если принять данные не удалось, то возвращается FALSE. В случае
+* использования сжатия и/или компрессии невозможно точно установить
+* какая часть данных была записана в буфер.
 *
 * @param data указатель на данные
 * @param len размер данных
@@ -404,17 +473,64 @@ bool AsyncStream::put(const char *data, size_t len)
 	printf("DUMP WRITE[%d]: \033[22;34m%s\033[0m\n", getFd(), io_dump.c_str());
 #endif
 	
+	return putInCompressor(data, len);
+}
+
+/**
+* Передать данные компрессору
+*
+* Если сжатие поддерживается и включено, то сжать данные
+* и передать на нижележащий уровень (TLS).
+*
+* @param data указатель на данные
+* @param len размер данных
+* @return TRUE данные приняты, FALSE данные не приняты - нет места
+*/
+bool AsyncStream::putInCompressor(const char *data, size_t len)
+{
 #ifdef HAVE_LIBZ
 	if ( compression )
 	{
 		return putDeflate(data, len);
 	}
 #endif // HAVE_LIBZ
-	return putUncompressed(data, len);
+	return putInTLS(data, len);
 }
 
 /**
-* Записать данные без компрессии
+* Передать данные в TLS
+*
+* Если TLS поддерживается и включено, то данные шифруются
+* и передаются на нижележащий уровень (socket)
+*
+* @param data указатель на данные
+* @param len размер данных
+* @return TRUE данные приняты, FALSE данные не приняты - нет места
+*/
+bool AsyncStream::putInTLS(const char *data, size_t len)
+{
+#ifdef HAVE_GNUTLS
+	if ( tls_status == tls_on )
+	{
+		ssize_t r = gnutls_record_send(tls_session, data, len);
+		if ( r < 0 )
+		{
+			onError(gnutls_strerror(r));
+			return false;
+		}
+		return r == len;
+	}
+	if ( tls_status == tls_handshake )
+	{
+		// нужно подождать окончания handshake
+		return false;
+	}
+#endif // HAVE_GNUTLS
+	return putInBuffer(data, len);
+}
+
+/**
+* Передать данные в файловый буфер
 *
 * Данные записываются сначала в файловый буфер и только потом отправляются.
 * Для обеспечения целостности переданный блок либо записывается целиком
@@ -425,7 +541,7 @@ bool AsyncStream::put(const char *data, size_t len)
 * @param len размер данных
 * @return TRUE данные приняты, FALSE данные не приняты - нет места
 */
-bool AsyncStream::putUncompressed(const char *data, size_t len)
+bool AsyncStream::putInBuffer(const char *data, size_t len)
 {
 	NetDaemon *daemon = getDaemon();
 	if ( daemon )

@@ -15,6 +15,11 @@ using namespace nanosoft;
 
 #define DEFAULT_WORKER_STACK_SIZE (sizeof(size_t) * 1024 * 1024)
 
+void my_gnutls_log_func( int level, const char *message)
+{
+	printf("gnutls: level=%d %s", level, message);
+}
+
 /**
 * Конструктор демона
 * @param fd_limit максимальное число одновременных виртуальных потоков
@@ -61,6 +66,8 @@ NetDaemon::NetDaemon(int fd_limit, int buf_size):
 		fprintf(stderr, "GnuTLS global init fault\n");
 	}
 	printf("AFTER gnutls_global_init()\n");
+	gnutls_global_set_log_level(9);
+	gnutls_global_set_log_function(my_gnutls_log_func);
 #endif // HAVE_GNUTLS
 }
 

@@ -9,11 +9,9 @@
 #include <zlib.h>
 #endif // HAVE_LIBZ
 
-#ifdef HAVE_LIBSSL
-#include <openssl/ssl.h>
-#else
-#define SSL_CTX void
-#endif // HAVE_LIBSSL
+#ifdef HAVE_GNUTLS
+#include <gnutls/gnutls.h>
+#endif // HAVE_GNUTLS
 
 /**
 * Название метода компрессии
@@ -25,6 +23,18 @@ typedef const char *compression_method_t;
 */
 class AsyncStream: public AsyncObject
 {
+#ifdef HAVE_GNUTLS
+public:
+	/**
+	* Контекст TLS
+	*/
+	struct tls_ctx
+	{
+		gnutls_certificate_credentials_t x509_cred;
+		gnutls_priority_t priority_cache;
+		gnutls_dh_params_t dh_params;
+	};
+#endif // HAVE_GNUTLS
 private:
 	/**
 	* Флаги
@@ -71,7 +81,7 @@ private:
 	bool putDeflate(const char *data, size_t len);
 #endif // HAVE_LIBZ
 	
-#ifdef HAVE_LIBSSL
+#ifdef HAVE_GNUTLS
 	/**
 	* Флаг TLS
 	*
@@ -84,8 +94,18 @@ private:
 	/**
 	* SSL
 	*/
-	SSL *ssl;
-#endif // HAVE_LIBSSL
+	gnutls_session_t tls_session;
+	
+	/**
+	* Push (write) function для GnuTLS
+	*/
+	static ssize_t tls_push(gnutls_transport_ptr_t ptr, const void *data, size_t len);
+	
+	/**
+	* Pull (read) function для GnuTLS
+	*/
+	static ssize_t tls_pull(gnutls_transport_ptr_t ptr, void *data, size_t len);
+#endif // HAVE_GNUTLS
 	
 	/**
 	* Обработка поступивших данных
@@ -97,12 +117,17 @@ private:
 	void handleRead();
 	
 	/**
-	* Обработка поступивших данных
+	* Передать полученные данные в декомпрессор
 	*
-	* Данные уже прочтены и обработанны, это общая точка через которую
-	* проходят обработанные данные перед вызовом onRead()
+	* Если компрессия поддерживается и включена, то данные распаковываются
+	* и передаются нижележащему уровню
 	*/
-	void handleRead(const char *data, size_t len);
+	void putInDecompressor(const char *data, size_t len);
+	
+	/**
+	* Передать данные обработчику onRead()
+	*/
+	void putInReadEvent(const char *data, size_t len);
 	
 	/**
 	* Отправка накопленных данных
@@ -111,21 +136,6 @@ private:
 	* отправку данных накопленных в файловом буфере
 	*/
 	void handleWrite();
-	
-	/**
-	* Записать данные без компрессии
-	*
-	* Данные записываются сначала в файловый буфер и только потом отправляются.
-	* Для обеспечения целостности переданный блок либо записывается целиком
-	* и функция возвращает TRUE, либо ничего не записывается и функция
-	* возвращает FALSE
-	*
-	* @param data указатель на данные
-	* @param len размер данных
-	* @return TRUE данные приняты, FALSE данные не приняты - нет места
-	*/
-	bool putUncompressed(const char *data, size_t len);
-	
 protected:
 	
 	/**
@@ -150,6 +160,44 @@ protected:
 	* можем только корректно закрыть соединение с нашей стороны.
 	*/
 	virtual void onPeerDown() = 0;
+	
+	/**
+	* Передать данные компрессору
+	*
+	* Если сжатие поддерживается и включено, то сжать данные
+	* и передать на нижележащий уровень (TLS).
+	*
+	* @param data указатель на данные
+	* @param len размер данных
+	* @return TRUE данные приняты, FALSE данные не приняты - нет места
+	*/
+	bool putInCompressor(const char *data, size_t len);
+	
+	/**
+	* Передать данные в TLS
+	*
+	* Если TLS поддерживается и включено, то данные шифруются
+	* и передаются на нижележащий уровень (файловый буфер)
+	*
+	* @param data указатель на данные
+	* @param len размер данных
+	* @return TRUE данные приняты, FALSE данные не приняты - нет места
+	*/
+	bool putInTLS(const char *data, size_t len);
+	
+	/**
+	* Передать данные в файловый буфер
+	*
+	* Данные записываются сначала в файловый буфер и только потом отправляются.
+	* Для обеспечения целостности переданный блок либо записывается целиком
+	* и функция возвращает TRUE, либо ничего не записывается и функция
+	* возвращает FALSE
+	*
+	* @param data указатель на данные
+	* @param len размер данных
+	* @return TRUE данные приняты, FALSE данные не приняты - нет места
+	*/
+	bool putInBuffer(const char *data, size_t len);
 public:
 	
 	/**
@@ -227,7 +275,7 @@ public:
 	* @param ctx контекст TLS
 	* @return TRUE - TLS включен, FALSE - произошла ошибка
 	*/
-	bool enableTLS(SSL_CTX *ctx);
+	bool enableTLS(tls_ctx *ctx);
 	
 	/**
 	* Отключить TLS
