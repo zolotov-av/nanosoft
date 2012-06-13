@@ -392,7 +392,6 @@ bool AsyncStream::disableTLS()
 ssize_t AsyncStream::tls_push(gnutls_transport_ptr_t ptr, const void *data, size_t len)
 {
 	AsyncStream *s = static_cast<AsyncStream*>(ptr);
-	printf("AsyncStream[%d]::tls_push\n", s->getFd());
 	if ( s->putInBuffer(static_cast<const char *>(data), len) ) return len;
 	gnutls_transport_set_errno(s->tls_session, EAGAIN);
 	return -1;
@@ -406,8 +405,6 @@ ssize_t AsyncStream::tls_push(gnutls_transport_ptr_t ptr, const void *data, size
 ssize_t AsyncStream::tls_pull(gnutls_transport_ptr_t ptr, void *data, size_t len)
 {
 	AsyncStream *s = static_cast<AsyncStream*>(ptr);
-	printf("AsyncStream[%d]::tls_pull\n", s->getFd());
-	//gnutls_transport_set_errno(s->tls_session, 0);
 	return ::read(s->getFd(), data, len);
 }
 #endif // HAVE_GNUTLS
