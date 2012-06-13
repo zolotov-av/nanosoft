@@ -39,14 +39,9 @@
 #define ZLIB_INFLATE_CHUNK_SIZE (FD_READ_CHUNK_SIZE * 8)
 
 /**
-* Поддержка openssl сконфигурирована?
+* Поддержка GnuTLS
 */
-#undef HAVE_LIBSSL
-
-/**
-* Поддержка openssl сконфигурирована?
-*/
-#undef HAVE_LIBCRYPTO
+#undef HAVE_GNUTLS
 
 ///////////////////////////////////////////////////////////////////////////
 

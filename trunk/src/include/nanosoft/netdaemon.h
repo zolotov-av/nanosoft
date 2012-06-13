@@ -14,9 +14,9 @@
 #include <pthread.h>
 #endif
 
-#ifdef HAVE_LIBSSL
-#include <openssl/ssl.h>
-#endif // HAVE_LIBSSL
+#ifdef HAVE_GNUTLS
+#include <gnutls/gnutls.h>
+#endif // HAVE_GNUTLS
 
 /**
 * Callback таймера

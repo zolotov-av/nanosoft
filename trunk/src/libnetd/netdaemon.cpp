@@ -54,10 +54,14 @@ NetDaemon::NetDaemon(int fd_limit, int buf_size):
 		stack = block;
 	}
 	
-#ifdef HAVE_LIBSSL
-	SSL_load_error_strings();
-	SSL_library_init();
-#endif // HAVE_LIBSSL
+#ifdef HAVE_GNUTLS
+	printf("BEFORE gnutls_global_init()\n");
+	if ( gnutls_global_init() )
+	{
+		fprintf(stderr, "GnuTLS global init fault\n");
+	}
+	printf("AFTER gnutls_global_init()\n");
+#endif // HAVE_GNUTLS
 }
 
 /**
@@ -70,6 +74,10 @@ NetDaemon::~NetDaemon()
 	
 	delete [] fds;
 	delete [] buffer;
+	
+#ifdef HAVE_GNUTLS
+	gnutls_global_deinit();
+#endif // HAVE_GNUTLS
 }
 
 /**
