@@ -528,13 +528,23 @@ bool AsyncStream::putInTLS(const char *data, size_t len)
 #ifdef HAVE_GNUTLS
 	if ( tls_status == tls_on )
 	{
-		ssize_t r = gnutls_record_send(tls_session, data, len);
-		if ( r < 0 )
+		while ( len > 0 )
 		{
-			onError(gnutls_strerror(r));
-			return false;
+			ssize_t ret = gnutls_record_send(tls_session, data, len);
+			if ( ret == 0 )
+			{
+				onError("gnutls_record_send ret=0");
+				return false;
+			}
+			if ( ret < 0 )
+			{
+				onError(gnutls_strerror(ret));
+				return false;
+			}
+			len -= ret;
+			data += ret;
 		}
-		return r == len;
+		return true;
 	}
 	if ( tls_status == tls_handshake )
 	{
