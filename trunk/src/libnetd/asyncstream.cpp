@@ -83,7 +83,7 @@ void AsyncStream::handleRead()
 			terminate();
 			return;
 		}
-		onError(gnutls_strerror(ret));
+		if ( ret != GNUTLS_E_AGAIN ) onError(gnutls_strerror(ret));
 		return;
 	}
 #endif // HAVE_GNUTLS
@@ -96,7 +96,7 @@ void AsyncStream::handleRead()
 	}
 	if ( ret < 0 )
 	{
-		stderror();
+		if ( errno != EAGAIN ) stderror();
 	}
 }
 
