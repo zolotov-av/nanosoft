@@ -43,6 +43,11 @@
 */
 #undef HAVE_GNUTLS
 
+/**
+* Поддержка GNU SASL library
+*/
+#undef HAVE_GSASL
+
 ///////////////////////////////////////////////////////////////////////////
 
 #ifdef WINDOWS

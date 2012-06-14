@@ -59,6 +59,7 @@ int GSASLServer::gsaslCallback(Gsasl *ctx, Gsasl_session *sctx, Gsasl_property p
 			const char *user = gsasl_property_fast(sctx, GSASL_AUTHID);
 			const char *realm = gsasl_property_fast(sctx, GSASL_REALM);
 			string password = server->getUserPassword(realm, user);
+			printf("user: '%s', realm: '%s', password: '%s'\n", user, realm, password.c_str());
 			gsasl_property_set_raw(sctx, GSASL_PASSWORD, password.c_str(), password.length());
 			return GSASL_OK;
 		}
@@ -134,17 +135,20 @@ GSASLSession* GSASLServer::start(const std::string &service, const std::string &
 */
 GSASLServer::status_t GSASLServer::step(GSASLSession *session, const std::string &input, std::string &output)
 {
+	printf("GSASLServer::step(%s)\n", input.c_str());
 	char *data;
-	size_t len;
-	int status = gsasl_step (session->sctx, input.c_str(), input.length(), &data, &len);
+	int status = gsasl_step64 (session->sctx, input.c_str(), &data);
+	printf("status: %d, OK: %d, NEED: %d\n", status, GSASL_OK, GSASL_NEEDS_MORE);
 	switch ( status )
 	{
 	case GSASL_OK:
-		output.assign(data, len);
+		printf("GSASL_OK: %s\n", data);
+		output.assign(data);
 		gsasl_free(data);
 		return ok;
 	case GSASL_NEEDS_MORE:
-		output.assign(data, len);
+		printf("GSASL_NEEDS_MORE: %s\n", data);
+		output.assign(data);
 		gsasl_free(data);
 		return next;
 	default:
