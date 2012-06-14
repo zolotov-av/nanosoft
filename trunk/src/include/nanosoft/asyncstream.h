@@ -136,6 +136,11 @@ private:
 	* отправку данных накопленных в файловом буфере
 	*/
 	void handleWrite();
+	
+	/**
+	* Обработка обрыва связи
+	*/
+	void handlePeerDown();
 protected:
 	
 	/**

@@ -31,8 +31,8 @@ AsyncStream::AsyncStream(int afd): AsyncObject(afd), flags(0)
 */
 AsyncStream::~AsyncStream()
 {
-	disableTLS();
 	disableCompression();
+	disableTLS();
 	close();
 }
 
@@ -171,6 +171,15 @@ void AsyncStream::handleWrite()
 }
 
 /**
+* Обработка обрыва связи
+*/
+void AsyncStream::handlePeerDown()
+{
+	printf("AsyncStream[%d] peer down\n", getFd());
+	onPeerDown();
+}
+
+/**
 * Вернуть маску ожидаемых событий
 */
 uint32_t AsyncStream::getEventsMask()
@@ -186,7 +195,7 @@ void AsyncStream::onEvent(uint32_t events)
 	if ( events & EPOLLERR ) onError("epoll report some error in stream...");
 	if ( events & EPOLLIN ) handleRead();
 	if ( events & EPOLLOUT ) handleWrite();
-	if ( (events & EPOLLRDHUP) || (events & EPOLLHUP) ) onPeerDown();
+	if ( (events & EPOLLRDHUP) || (events & EPOLLHUP) ) handlePeerDown();
 }
 
 /**
@@ -374,13 +383,23 @@ bool AsyncStream::enableTLS(AsyncStream::tls_ctx *ctx)
 */
 bool AsyncStream::disableTLS()
 {
+	printf("AsyncStream[%d] enter disableTLS\n", getFd());
 #ifdef HAVE_GNUTLS
+	int ret;
 	if ( tls_status == tls_off )
 	{
 		return false;
 	}
-	
-	// TODO ???
+	if ( tls_status == tls_on )
+	{
+		printf("AsyncStream[%d]::gnutls_bye\n", getFd());
+		ret = gnutls_bye(tls_session, GNUTLS_SHUT_RDWR);
+		if ( ret < 0 ) onError(gnutls_strerror(ret));
+	}
+	printf("AsyncStream[%d]::gnutls_deinit\n", getFd());
+	gnutls_deinit(tls_session);
+	tls_status = tls_off;
+	printf("AsyncStream[%d] leave disableTLS\n", getFd());
 #endif // HAVE_GNUTLS
 	return true;
 }
