@@ -77,13 +77,19 @@ void AsyncStream::handleRead()
 			putInDecompressor(chunk, ret);
 			ret = gnutls_record_recv(tls_session, chunk, sizeof(chunk));
 		}
+		if ( ret == GNUTLS_E_AGAIN ) return;
+		if ( ret == GNUTLS_E_REHANDSHAKE )
+		{
+			tls_status = tls_handshake;
+			return;
+		}
 		if ( gnutls_error_is_fatal(ret) )
 		{
 			fprintf(stderr, "AsyncStream[%d]: gnutls_record_recv fatal error: %s\n", getFd(), gnutls_strerror(ret));
 			terminate();
 			return;
 		}
-		if ( ret != GNUTLS_E_AGAIN ) onError(gnutls_strerror(ret));
+		onError(gnutls_strerror(ret));
 		return;
 	}
 #endif // HAVE_GNUTLS
