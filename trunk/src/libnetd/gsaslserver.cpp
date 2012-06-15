@@ -135,21 +135,22 @@ GSASLSession* GSASLServer::start(const std::string &service, const std::string &
 */
 GSASLServer::status_t GSASLServer::step(GSASLSession *session, const std::string &input, std::string &output)
 {
-	printf("GSASLServer::step(%s)\n", input.c_str());
-	char *data;
+	char *data = 0;
 	int status = gsasl_step64 (session->sctx, input.c_str(), &data);
-	printf("status: %d, OK: %d, NEED: %d\n", status, GSASL_OK, GSASL_NEEDS_MORE);
+	if ( data )
+	{
+		output.assign(data);
+		gsasl_free(data);
+	}
+	else
+	{
+		output = "";
+	}
 	switch ( status )
 	{
 	case GSASL_OK:
-		printf("GSASL_OK: %s\n", data);
-		output.assign(data);
-		gsasl_free(data);
 		return ok;
 	case GSASL_NEEDS_MORE:
-		printf("GSASL_NEEDS_MORE: %s\n", data);
-		output.assign(data);
-		gsasl_free(data);
 		return next;
 	default:
 		fprintf(stderr, "GNU SASL starting SASL negotiation fault: %s\n", gsasl_strerror(status));
