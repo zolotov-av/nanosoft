@@ -173,7 +173,11 @@ void AsyncStream::handleInflate(const char *data, size_t len)
 */
 void AsyncStream::handleWrite()
 {
-	getDaemon()->push(getFd());
+	printf("AsyncStream[%d]::handleWrite\n", getFd());
+	NetDaemon *d = getDaemon();
+	if ( d ) d->push(getFd());
+	else fprintf(stderr, "AsyncStream[%d]::handleWrite, daemon=NULL\n", getFd());
+	printf("AsyncStream[%d]::handleWrite leave\n", getFd());
 }
 
 /**

@@ -65,7 +65,7 @@ namespace nanosoft
 	template <class type>
 	class ptr
 	{
-	private:
+	public:
 		type *p;
 	public:
 		ptr() {

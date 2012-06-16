@@ -155,12 +155,14 @@ void NetDaemon::setWorkerStackSize(size_t size)
 */
 bool NetDaemon::addObject(nanosoft::ptr<AsyncObject> object)
 {
+	printf("NetDaemon::addObject(%d)\n", object->fd);
 	int r = false;
 	struct epoll_event event;
 	mutex.lock();
 		fd_info_t *fb = &fds[object->fd];
 		if ( fb->obj == 0 )
 		{
+			printf("NetDaemon::addObject(%d) real\n", object->fd);
 			count ++;
 			fb->obj = object;
 			object->lock();
@@ -185,6 +187,7 @@ bool NetDaemon::addObject(nanosoft::ptr<AsyncObject> object)
 			}*/
 		}
 	mutex.unlock();
+	printf("NetDaemon::addObject(%d) leave\n", object->fd);
 	return r;
 }
 
@@ -193,12 +196,14 @@ bool NetDaemon::addObject(nanosoft::ptr<AsyncObject> object)
 */
 void NetDaemon::modifyObject(nanosoft::ptr<AsyncObject> object)
 {
+	printf("NetDaemon::modifyObject(%d)\n", object->fd);
 	mutex.lock();
 		if ( fds[object->fd].obj == object )
 		{
 			resetObject(object);
 		}
 	mutex.unlock();
+	printf("NetDaemon::modifyObject(%d) leave\n", object->fd);
 }
 
 /**
@@ -206,17 +211,24 @@ void NetDaemon::modifyObject(nanosoft::ptr<AsyncObject> object)
 */
 bool NetDaemon::removeObject(nanosoft::ptr<AsyncObject> object)
 {
+	printf("NetDaemon::removeObject(%d)\n", object->fd);
 	mutex.lock();
 		if ( fds[object->fd].obj == object )
 		{
+			printf("NetDaemon::removeObject(%d) real\n", object->fd);
+			if ( epoll_ctl(epoll, EPOLL_CTL_DEL, object->fd, 0) != 0 )
+			{
+				printf("NetDaemon::removeObject(%d) epoll_ctl != 0\n", object->fd);
+				stderror();
+			}
+			fds[object->fd].obj = 0;
 			object->daemon = 0;
 			object->release();
-			if ( epoll_ctl(epoll, EPOLL_CTL_DEL, object->fd, 0) != 0 ) stderror();
-			fds[object->fd].obj = 0;
 			count --;
 			if ( count == 0 ) stopWorkers();
 		}
 	mutex.unlock();
+	printf("NetDaemon::removeObject(%d) leave\n", object->fd);
 }
 
 /**
@@ -224,11 +236,13 @@ bool NetDaemon::removeObject(nanosoft::ptr<AsyncObject> object)
 */
 bool NetDaemon::resetObject(nanosoft::ptr<AsyncObject> &object)
 {
+	printf("NetDaemon::resetObject(%d)\n", object->fd);
 	struct epoll_event event;
 	event.events = object->getEventsMask();
 	if ( fds[object->fd].size > 0 ) event.events |= EPOLLOUT;
 	event.data.fd = object->fd;
 	if ( epoll_ctl(epoll, EPOLL_CTL_MOD, object->fd, &event) != 0 ) stderror();
+	printf("NetDaemon::resetObject(%d) leave\n", object->fd);
 }
 
 /**
@@ -244,6 +258,7 @@ void NetDaemon::doActiveAction(worker_t *worker)
 		mutex.lock();
 			obj = fds[event.data.fd].obj;
 		mutex.unlock();
+		printf("NetDaemon::doActiveAction(fd=%d, obj=%p)\n", event.data.fd, obj.p);
 		if ( obj != 0 )
 		{
 			obj->onEvent(event.events);
