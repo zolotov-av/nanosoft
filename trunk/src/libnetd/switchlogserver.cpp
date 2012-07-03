@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include <string>
 
 using namespace std;
@@ -208,26 +209,83 @@ void SwitchLogServer::handlePortLoop(const char *sw_ip, int port)
 	string log_switch_port = IntToStr(port);
 	string log_switch_id = "NULL";
 	string log_house_id = "NULL";
+	string log_event_id = "NULL";
 	string log_status = db.quote("loop");
 	string log_speed = "NULL";
+	string house_addr = sw_ip;
+	bool haveEvent = false;
 	
-	DB::result r = db.query("SELECT * FROM switches LEFT JOIN houses ON switch_house_id = house_id WHERE switch_ip = %s", db.quote(sw_ip).c_str());
+	DB::result r = db.query("BEGIN");
+	if ( r ) r.free();
+	
+	// ищем коммутатор и информацию о доме
+	r = db.query("SELECT * FROM switches LEFT JOIN houses ON switch_house_id = house_id LEFT JOIN streets ON house_street_id = street_id WHERE switch_ip = %s", db.quote(sw_ip).c_str());
 	if ( r )
 	{
 		if ( ! r.eof() )
 		{
 			if ( ! r.isNull("switch_id") ) log_switch_id = db.quote(r["switch_id"]);
 			if ( ! r.isNull("house_id") ) log_house_id = db.quote(r["house_id"]);
+			if ( ! r.isNull("house_number") && ! r.isNull("street_name") )
+			{
+				house_addr = r["street_name"] + " " + r["house_number"];
+			}
 		}
 		r.free();
 	}
 	
-	db.query("INSERT INTO switch_port_log (log_switch_ip, log_switch_port, log_switch_id, log_house_id, log_status, log_speed) VALUES (%s, %s, %s, %s, %s, %s)",
+	// ищем событие
+	r = db.query("SELECT * FROM events WHERE event_switch_ip = %s AND event_switch_port = %d AND event_status='active'", db.quote(sw_ip).c_str(), port);
+	if ( r )
+	{
+		if ( ! r.eof() )
+		{
+			if ( ! r.isNull("event_id") )
+			{
+				haveEvent = true;
+				log_event_id = db.quote(r["event_id"]);
+			}
+		}
+		r.free();
+	}
+	
+	// если события нет, то создаем
+	if ( ! haveEvent )
+	{
+		char buf[80];
+		time_t rawtime;
+		struct tm *timeinfo;
+		time (&rawtime);
+		timeinfo = localtime(&rawtime);
+		strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", timeinfo);
+		string ctime = db.quote(buf);
+		
+		string title = db.quote(house_addr + ": Loop detect");
+		db.query("INSERT INTO events (event_regtime, event_updtime, event_start, event_end, event_title, event_switch_ip, event_switch_port, event_switch_id, event_house_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+			ctime.c_str(),
+			ctime.c_str(),
+			ctime.c_str(),
+			ctime.c_str(),
+			title.c_str(),
+			log_switch_ip.c_str(),
+			log_switch_port.c_str(),
+			log_switch_id.c_str(),
+			log_house_id.c_str()
+		);
+		log_event_id = IntToStr(db.getLastInsertId());
+	}
+	
+	// вставляем лог-запись
+	db.query("INSERT INTO switch_port_log (log_switch_ip, log_switch_port, log_switch_id, log_house_id, log_event_id, log_status, log_speed) VALUES (%s, %s, %s, %s, %s, %s, %s)",
 		log_switch_ip.c_str(),
 		log_switch_port.c_str(),
 		log_switch_id.c_str(),
 		log_house_id.c_str(),
+		log_event_id.c_str(),
 		log_status.c_str(),
 		log_speed.c_str()
 	);
+	
+	r = db.query("COMMIT");
+	if ( r ) r.free();
 }

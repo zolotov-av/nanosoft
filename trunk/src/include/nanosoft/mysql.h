@@ -246,6 +246,11 @@ namespace nanosoft
 		MySQL::result query(const char *sql, ...);
 		
 		/**
+		* Вернуть ID последней вставленой записи
+		*/
+		int getLastInsertId();
+		
+		/**
 		* Закрыть соединение с сервером
 		*/
 		void close();

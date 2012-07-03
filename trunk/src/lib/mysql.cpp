@@ -122,6 +122,7 @@ namespace nanosoft
 	*/
 	MySQL::result MySQL::queryRaw(const char *sql, size_t len)
 	{
+		printf("sql: %s\n", sql);
 		mutex.lock();
 		int status = mysql_real_query(&conn, sql, len);
 		if ( status )
@@ -190,6 +191,14 @@ namespace nanosoft
 	}
 	
 	/**
+	* Вернуть ID последней вставленой записи
+	*/
+	int MySQL::getLastInsertId()
+	{
+		return mysql_insert_id(&conn);
+	}
+	
+	/**
 	* Закрыть соединение с сервером
 	*/
 	void MySQL::close()
@@ -229,13 +238,13 @@ namespace nanosoft
 	
 	bool MySQL::result::isNull(size_t num)
 	{
-		return res->values[num] != 0;
+		return res->values[num] == 0;
 	}
 	
 	bool MySQL::result::isNull(const char *name)
 	{
 		int num = indexOf(name);
-		return res->values[num] != 0;
+		return res->values[num] == 0;
 	}
 	
 	/**
