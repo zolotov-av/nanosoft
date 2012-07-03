@@ -110,6 +110,11 @@ public:
 	* Послать сигнал завершения
 	*/
 	void terminate();
+	
+	/**
+	* Отсоединиться от сервера
+	*/
+	void dettach();
 };
 
 #endif // NANOSOFT_ASYNCOBJECT_H

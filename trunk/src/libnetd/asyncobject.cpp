@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <nanosoft/asyncobject.h>
+#include <nanosoft/netdaemon.h>
 
 using namespace std;
 
@@ -63,5 +64,16 @@ void AsyncObject::terminate()
 	{
 		terminating = true;
 		onTerminate();
+	}
+}
+
+/**
+* Отсоединиться от сервера
+*/
+void AsyncObject::dettach()
+{
+	if ( daemon )
+	{
+		daemon->removeObject(this);
 	}
 }

@@ -3,14 +3,18 @@ NANOSOFT_NETD=netdaemon.o
 NANOSOFT_NETD+=asyncobject.o
 NANOSOFT_NETD+=asyncstream.o
 NANOSOFT_NETD+=asyncserver.o
+NANOSOFT_NETD+=asyncudpserver.o
 NANOSOFT_NETD+=asyncxmlstream.o
 NANOSOFT_NETD+=asyncdns.o
+
+NANOSOFT_NETD+=switchlogserver.o
 
 install-netd-headers:
 	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/asyncobject.h $(INCLUDEDIR)/nanosoft/asyncobject.h
 	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/asyncstream.h $(INCLUDEDIR)/nanosoft/asyncstream.h
 	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/asyncxmlstream.h $(INCLUDEDIR)/nanosoft/asyncxmlstream.h
 	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/asyncserver.h $(INCLUDEDIR)/nanosoft/asyncserver.h
+	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/asyncudpserver.h $(INCLUDEDIR)/nanosoft/asyncudpserver.h
 	$(INSTALL_INC) $(ns_srcdir)/include/nanosoft/netdaemon.h $(INCLUDEDIR)/nanosoft/netdaemon.h
 
 libns_netd.a: $(NANOSOFT_NETD)
@@ -29,8 +33,14 @@ asyncstream.o: $(ns_srcdir)/libnetd/asyncstream.cpp $(ns_srcinc)/nanosoft/asyncs
 asyncserver.o: $(ns_srcdir)/libnetd/asyncserver.cpp $(ns_srcinc)/nanosoft/asyncserver.h $(ns_srcinc)/nanosoft/asyncobject.h
 	$(CXX) -c $(ns_srcdir)/libnetd/asyncserver.cpp
 
+asyncudpserver.o: $(ns_srcdir)/libnetd/asyncudpserver.cpp $(ns_srcinc)/nanosoft/asyncudpserver.h $(ns_srcinc)/nanosoft/asyncobject.h
+	$(CXX) -c $(ns_srcdir)/libnetd/asyncudpserver.cpp
+
 asyncdns.o: $(ns_srcdir)/libnetd/asyncdns.cpp $(ns_srcinc)/nanosoft/asyncobject.h
 	$(CXX) -c $(ns_srcdir)/libnetd/asyncdns.cpp
 
 asyncobject.o: $(ns_srcdir)/libnetd/asyncobject.cpp $(ns_srcinc)/nanosoft/asyncobject.h
 	$(CXX) -c $(ns_srcdir)/libnetd/asyncobject.cpp
+
+switchlogserver.o: $(ns_srcdir)/libnetd/switchlogserver.cpp $(ns_srcinc)/nanosoft/switchlogserver.h $(ns_srcinc)/nanosoft/asyncserver.h
+	$(CXX) -c $(ns_srcdir)/libnetd/switchlogserver.cpp
