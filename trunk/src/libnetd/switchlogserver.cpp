@@ -132,6 +132,8 @@ void SwitchLogServer::handlePortUp(const char *sw_ip, int port, const char *spee
 {
 	printf("switch[%s] port[%d] up, speed[%s]\n", sw_ip, port, speed);
 	
+	time_t rawtime;
+	time (&rawtime);
 	string log_switch_ip = db.quote(sw_ip);
 	string log_switch_port = IntToStr(port);
 	string log_switch_id = "NULL";
@@ -175,7 +177,8 @@ void SwitchLogServer::handlePortUp(const char *sw_ip, int port, const char *spee
 	}
 	
 	// вставляем лог-запись
-	db.query("INSERT INTO switch_port_log (log_switch_ip, log_switch_port, log_switch_id, log_house_id, log_event_id, log_status, log_speed) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+	db.query("INSERT INTO switch_port_log (log_time, log_switch_ip, log_switch_port, log_switch_id, log_house_id, log_event_id, log_status, log_speed) VALUES (%d, %s, %s, %s, %s, %s, %s, %s)",
+		rawtime,
 		log_switch_ip.c_str(),
 		log_switch_port.c_str(),
 		log_switch_id.c_str(),
@@ -199,6 +202,8 @@ void SwitchLogServer::handlePortDown(const char *sw_ip, int port)
 {
 	printf("switch[%s] port[%d] down\n", sw_ip, port);
 	
+	time_t rawtime;
+	time (&rawtime);
 	string log_switch_ip = db.quote(sw_ip);
 	string log_switch_port = IntToStr(port);
 	string log_switch_id = "NULL";
@@ -267,9 +272,7 @@ void SwitchLogServer::handlePortDown(const char *sw_ip, int port)
 	if ( isMagistral && ! haveEvent )
 	{
 		char buf[80];
-		time_t rawtime;
 		struct tm *timeinfo;
-		time (&rawtime);
 		timeinfo = localtime(&rawtime);
 		strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", timeinfo);
 		string ctime = db.quote(buf);
@@ -290,7 +293,8 @@ void SwitchLogServer::handlePortDown(const char *sw_ip, int port)
 	}
 	
 	// вставляем лог-запись
-	db.query("INSERT INTO switch_port_log (log_switch_ip, log_switch_port, log_switch_id, log_house_id, log_event_id, log_status, log_speed) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+	db.query("INSERT INTO switch_port_log (log_time, log_switch_ip, log_switch_port, log_switch_id, log_house_id, log_event_id, log_status, log_speed) VALUES (%d, %s, %s, %s, %s, %s, %s, %s)",
+		rawtime,
 		log_switch_ip.c_str(),
 		log_switch_port.c_str(),
 		log_switch_id.c_str(),
@@ -314,6 +318,8 @@ void SwitchLogServer::handlePortLoop(const char *sw_ip, int port)
 {
 	printf("switch[%s] port[%d] loop detected\n", sw_ip, port);
 	
+	time_t rawtime;
+	time (&rawtime);
 	string log_switch_ip = db.quote(sw_ip);
 	string log_switch_port = IntToStr(port);
 	string log_switch_id = "NULL";
@@ -362,9 +368,7 @@ void SwitchLogServer::handlePortLoop(const char *sw_ip, int port)
 	if ( ! haveEvent )
 	{
 		char buf[80];
-		time_t rawtime;
 		struct tm *timeinfo;
-		time (&rawtime);
 		timeinfo = localtime(&rawtime);
 		strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", timeinfo);
 		string ctime = db.quote(buf);
@@ -385,7 +389,8 @@ void SwitchLogServer::handlePortLoop(const char *sw_ip, int port)
 	}
 	
 	// вставляем лог-запись
-	db.query("INSERT INTO switch_port_log (log_switch_ip, log_switch_port, log_switch_id, log_house_id, log_event_id, log_status, log_speed) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+	db.query("INSERT INTO switch_port_log (log_time, log_switch_ip, log_switch_port, log_switch_id, log_house_id, log_event_id, log_status, log_speed) VALUES (%d, %s, %s, %s, %s, %s, %s, %s)",
+		rawtime,
 		log_switch_ip.c_str(),
 		log_switch_port.c_str(),
 		log_switch_id.c_str(),
