@@ -17,7 +17,7 @@ SwitchLogServer::SwitchLogServer()
 	const char *error;
 	int erroffset;
 	//
-	re = pcre_compile("^[^:]*:\\s*(?:Port\\s+([\\d]+)\\s+link\\s+(up|down)(?:,\\s*(.*))?|Port\\s+(\\d+)\\s+LBD port recovered. Loop detection restarted|Configuration Testing Protocol detects a loop in port\\s+(\\d+))", options, &error, &erroffset, NULL);
+	re = pcre_compile("(?:Port\\s+([\\d]+)\\s+link\\s+(up|down)(?:,\\s*(.*))?|Port\\s+(\\d+)\\s+LBD port recovered. Loop detection restarted|Configuration Testing Protocol detects a loop in port\\s+(\\d+))", options, &error, &erroffset, NULL);
 	if ( !re )
 	{
 		fprintf(stderr, "pcre_compile: %s\n", error);
