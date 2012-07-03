@@ -122,7 +122,6 @@ namespace nanosoft
 	*/
 	MySQL::result MySQL::queryRaw(const char *sql, size_t len)
 	{
-		printf("sql: %s\n", sql);
 		mutex.lock();
 		int status = mysql_real_query(&conn, sql, len);
 		if ( status )

@@ -187,12 +187,6 @@ void AsyncUDPServer::handleRead()
 			port = ipv6->sin6_port;
 		}
 		
-		message[r] = 0;
-		printf("udp message from[%s]: %s\n", ip, message);
-		onRead(ip, port, "INFO: Port 9 link down", sizeof("INFO: Port 9 link down"));
-		onRead(ip, port, "INFO: Port 9 link up, 100Mbps  FULL duplex", sizeof("INFO: Port 9 link up, 100Mbps  FULL duplex"));
-		
-		onRead(ip, port, "INFO: Configuration Testing Protocol detects a loop in port 4", sizeof("INFO: Configuration Testing Protocol detects a loop in port 4"));
-		onRead(ip, port, "INFO: Port 3 LBD port recovered. Loop detection restarted", sizeof("INFO: Port 3 LBD port recovered. Loop detection restarted"));
+		onRead(ip, port, message, r);
 	}
 }
