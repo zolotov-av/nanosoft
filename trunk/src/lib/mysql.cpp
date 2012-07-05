@@ -1,5 +1,6 @@
 #include <nanosoft/mysql.h>
 #include <nanosoft/error.h>
+#include <nanosoft/config.h>
 #include <mysql/mysql.h>
 #include <mysql/errmsg.h>
 #include <pthread.h>
@@ -7,6 +8,10 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
+
+#ifdef DUMP_SQL
+#include <string>
+#endif
 
 namespace nanosoft
 {
@@ -122,7 +127,10 @@ namespace nanosoft
 	*/
 	MySQL::result MySQL::queryRaw(const char *sql, size_t len)
 	{
-		printf("SQL: %s\n", sql);
+#ifdef DUMP_SQL
+	std::string sql_dump(sql, len);
+	printf("DUMP SQL[%s]: \033[22;31m%s\033[0m\n", this->database.c_str(), sql_dump.c_str());
+#endif
 		mutex.lock();
 		int status = mysql_real_query(&conn, sql, len);
 		if ( status )
