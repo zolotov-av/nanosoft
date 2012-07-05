@@ -188,9 +188,5 @@ void AsyncUDPServer::handleRead()
 		}
 		
 		onRead(ip, port, message, r);
-#define inject(msg) onRead("192.169.13.8", port, msg, sizeof(msg))
-		//inject("Port 25 link down");
-		//inject("Port 25 link up, 10Mbps FULL duplex");
-		inject("Jul  1 09:49:26 192.169.17.18 INFO: Configuration Testing Protocol detects a loop in port 4");
 	}
 }
