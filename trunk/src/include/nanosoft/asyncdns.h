@@ -35,7 +35,7 @@ protected:
 	/**
 	* Таймер
 	*/
-	static void timer(int wid, void *data);
+	static void timer(const timeval &tv, NetDaemon *data);
 	
 public:
 	

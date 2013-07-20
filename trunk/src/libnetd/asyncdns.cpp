@@ -53,12 +53,12 @@ void AsyncDNS::onTerminate()
 /**
 * Таймер
 */
-void AsyncDNS::timer(int wid, void *data)
+void AsyncDNS::timer(const timeval &tv, NetDaemon *daemon)
 {
-	time_t now = time(0);
+	time_t now = tv.tv_sec;
 	int expires = dns_timeouts(0, -1, now);
 	if ( expires >= 0 ) {
-		static_cast<NetDaemon*>(data)->setTimer(expires + now, AsyncDNS::timer, data);
+		daemon->setTimer(expires + now, AsyncDNS::timer, daemon);
 	}
 }
 
@@ -69,7 +69,9 @@ bool AsyncDNS::a4(const char *name, dns_query_a4_fn callback, void *data)
 {
 	struct dns_query *q = dns_submit_a4(0, name, 0, callback, data);
 	if ( q == 0 ) return false;
-	timer(0, daemon);
+	timeval tv;
+	gettimeofday(&tv, 0);
+	timer(tv, daemon);
 	return true;
 }
 
@@ -80,6 +82,8 @@ bool AsyncDNS::srv(const char *name, const char *service, const char *protocol, 
 {
 	struct dns_query *q = dns_submit_srv(0, name, service, protocol, 0, callback, data);
 	if ( q == 0 ) return false;
-	timer(0, daemon);
+	timeval tv;
+	gettimeofday(&tv, 0);
+	timer(tv, daemon);
 	return true;
 }

@@ -30,6 +30,7 @@ NetDaemon::NetDaemon(int fd_limit, int buf_size):
 	workerCount(0),
 	activeCount(0),
 	timerCount(0),
+	gtimer(0),
 	count(0),
 	active(0)
 {
@@ -252,7 +253,7 @@ void NetDaemon::doActiveAction(worker_t *worker)
 {
 	ptr<AsyncObject> obj;
 	struct epoll_event event;
-	int r = epoll_wait(epoll, &event, 1, nextTimer());
+	int r = epoll_wait(epoll, &event, 1, 200);
 	if ( r > 0 )
 	{
 		mutex.lock();
@@ -272,7 +273,7 @@ void NetDaemon::doActiveAction(worker_t *worker)
 		}
 	}
 	if ( r < 0 ) fprintf(stderr, "#%d: %s\n", worker->workerId, nanosoft::stderror());
-	if ( r == 0 ) processTimers(worker->workerId);
+	if ( r == 0 ) processTimers();
 }
 
 /**
@@ -502,17 +503,18 @@ void NetDaemon::terminate()
 
 /**
 * Установить таймер
-* @param expires время запуска таймера
+* @param calltime время запуска таймера
 * @param callback функция обратного вызова
 * @param data указатель на пользовательские данные
+* @return TRUE - таймер установлен, FALSE - таймер установить не удалось
 */
-void NetDaemon::setTimer(int expires, timer_callback_t callback, void *data)
+bool NetDaemon::callAt(time_t calltime, timer_callback_t callback, void *data)
 {
-	printf("setTimer(%d)\n", expires);
+	printf("callAt(%d)\n", calltime);
 	bool hup = false;
 	mutex.lock();
-		timers.push(timer(expires, callback, data));
-		hup = timerCount = 0;
+		timers.push(timer(calltime, callback, data));
+		hup = (timerCount == 0);
 		timerCount++;
 	mutex.unlock();
 #ifdef USE_PTHREAD
@@ -525,49 +527,36 @@ void NetDaemon::setTimer(int expires, timer_callback_t callback, void *data)
 		pthread_kill(main.thread, SIGHUP);
 	}
 #endif
-}
-
-/**
-* Вернуть время следущего таймера
-* @return время (Unix time) следующего таймера или -1 если таймеров нет
-*/
-int NetDaemon::nextTimer()
-{
-	int timeout = -1;
-	int expires;
-	if ( timerCount > 0 ) {
-		mutex.lock();
-			expires = timers.top().expires - time(0);
-		mutex.unlock();
-		timeout = expires > 0 ? expires * 1000 : 0;
-	}
-	return timeout;
+	return true;
 }
 
 /**
 * Обработать таймеры
 */
-void NetDaemon::processTimers(int wid)
+void NetDaemon::processTimers()
 {
-	printf("processTimers(%d) enter\n", wid);
 	timer t;
-	time_t now = time(0);
+	timeval tv;
+	gettimeofday(&tv, 0);
+	if ( gtimer )
+	{
+		gtimer(tv, gtimer_data);
+	}
 	while ( timerCount > 0 )
 	{
 		bool process = false;
 		mutex.lock();
 			t = timers.top();
-			if ( t.expires <= now )
+			if ( t.expires <= tv.tv_sec )
 			{
 				timers.pop();
 				timerCount --;
 				process = true;
 			}
 		mutex.unlock();
-		if ( process ) t.fire(wid);
+		if ( process ) t.fire(tv);
 		else break;
 	}
-	printf("processTimers(%d) leave\n", wid);
 }
 
 /**

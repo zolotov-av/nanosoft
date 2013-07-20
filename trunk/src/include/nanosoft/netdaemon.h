@@ -2,6 +2,7 @@
 #define NANOSOFT_NETDAEMON_H
 
 #include <sys/epoll.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <queue>
@@ -21,7 +22,7 @@
 /**
 * Callback таймера
 */
-typedef void (*timer_callback_t) (int wid, void *data);
+typedef void (*timer_callback_t) (const timeval &tv, void *data);
 
 /**
 * Главный класс сетевого демона
@@ -86,8 +87,8 @@ private:
 		/**
 		* Запустить таймер
 		*/
-		void fire(int wid) {
-			callback(wid, data);
+		void fire(const timeval &tv) {
+			callback(tv, data);
 		}
 	};
 	
@@ -100,6 +101,16 @@ private:
 	* Таймеры
 	*/
 	timers_queue_t timers;
+	
+	/**
+	 * Глобальный таймер
+	 */
+	timer_callback_t gtimer;
+	
+	/**
+	 * Пользовательские данные для глобального таймера
+	 */
+	void *gtimer_data;
 	
 	/**
 	* Максимальное число обслуживаемых объектов
@@ -316,15 +327,18 @@ private:
 	size_t workerStackSize;
 	
 	/**
-	* Вернуть время следущего таймера
-	* @return время (Unix time) следующего таймера или -1 если таймеров нет
+	* Установить таймер
+	* @param calltime время запуска таймера
+	* @param callback функция обратного вызова
+	* @param data указатель на пользовательские данные
+	* @return TRUE - таймер установлен, FALSE - таймер установить не удалось
 	*/
-	int nextTimer();
+	bool callAt(time_t calltime, timer_callback_t callback, void *data);
 	
 	/**
 	* Обработать таймеры
 	*/
-	void processTimers(int wid);
+	void processTimers();
 	
 	/**
 	* Выделить цепочку блоков достаточную для буферизации указаного размера
@@ -470,12 +484,41 @@ public:
 	void terminate();
 	
 	/**
-	* Установить таймер
-	* @param expires время запуска таймера
+	* Установить таймер однократного вызова
+	* 
+	* Указанная функция будет вызвана один раз в указанное время.
+	* Можно устанавливать несколько таймеров и они будут вызваны в указанное
+	* время
+	* 
+	* @param calltime время запуска таймера
 	* @param callback функция обратного вызова
 	* @param data указатель на пользовательские данные
+	* @return TRUE - таймер установлен, FALSE - таймер установить не удалось
 	*/
-	void setTimer(int expires, timer_callback_t callback, void *data);
+	template <class data_t>
+	bool setTimer(time_t calltime, void (*callback)(const timeval &tv, data_t *data), data_t *data)
+	{
+		return callAt(calltime, reinterpret_cast<timer_callback_t>(callback), data);
+	}
+	
+	/**
+	* Установить глобальный таймер
+	* 
+	* Указанная функция будет вызываться перодически примерно каждые 200-300мс
+	* Повторная установка таймера заменяет предыдущий, таким образом можно
+	* указать только один глобальный таймер
+	* 
+	* @param calltime время запуска таймера
+	* @param callback функция обратного вызова
+	* @param data указатель на пользовательские данные
+	* @return TRUE - таймер установлен, FALSE - таймер установить не удалось
+	*/
+	template <class data_t>
+	bool setGlobalTimer(void (*callback)(const timeval &tv, data_t *data), data_t *data)
+	{
+		gtimer = reinterpret_cast<timer_callback_t>(callback);
+		gtimer_data = data;
+	}
 	
 	/**
 	* Обработчик ошибок
