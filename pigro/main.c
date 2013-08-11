@@ -1,7 +1,7 @@
 //
 // Простой программатор микроконтроллеров AVR для Raspberry Pi
 // для программирования используются стандартные выводы шины GPIO
-// (MOSI - 19, MISO - 21, SCK - 23) + 1й пин для подачи сигнала RESET
+// (MOSI - 19, MISO - 21, SCK - 23) + 15й пин для подачи сигнала RESET
 //
 // Written on Raspberry Pi for Raspberry Pi
 //
