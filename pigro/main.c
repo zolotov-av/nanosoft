@@ -11,6 +11,7 @@
 
 #include <bcm2835.h>
 #include <stdio.h>
+#include <time.h>
 
 enum {
 	AT_ACT_INFO,
@@ -45,6 +46,17 @@ const char *fname;
 * Нужно ли выводить дополнительный отладочный вывод или быть тихим?
 */
 int verbose = 0;
+
+/**
+* Приостановить процесс на указанное число надосекунд
+*/
+void at_nanosleep(unsigned int ns)
+{
+	struct timespec ts;
+	ts.tv_sec = 0;
+	ts.tv_nsec = ns;
+	nanosleep(&ts, 0);
+}
 
 /**
 * Считать значение с пина
@@ -86,7 +98,7 @@ void at_init()
 void at_set_clk()
 {
 	at_write(AT_SCK, HIGH);
-	bcm2835_delay(1);
+	at_nanosleep(1000);
 }
 
 /**
@@ -95,7 +107,7 @@ void at_set_clk()
 void at_clr_clk()
 {
 	at_write(AT_SCK, LOW);
-	bcm2835_delay(1);
+	at_nanosleep(1000);
 }
 
 /**
