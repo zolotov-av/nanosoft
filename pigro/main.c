@@ -501,9 +501,17 @@ int at_act_check()
 */
 int at_act_write()
 {
-	int r = at_write_firmware(fname);
+	int r = at_chip_erase();
+	if ( r )
+	{
+		r = at_write_firmware(fname);
+	}
+	else
+	{
+		printf("firmware erase fault\n");
+	}
 	printf("firmware write: %s\n", (r ? "ok" : "fail"));
-	return 0;
+	return r;
 }
 
 /**
