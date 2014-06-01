@@ -17,16 +17,20 @@ enum {
 	AT_ACT_INFO,
 	AT_ACT_CHECK,
 	AT_ACT_WRITE,
-	AT_ACT_ERASE
+	AT_ACT_ERASE,
+	AT_ACT_READ_FUSE,
+	AT_ACT_WRITE_FUSE_LO,
+	AT_ACT_WRITE_FUSE_HI,
+	AT_ACT_WRITE_FUSE_EX
 };
 
 #define AT_PB3   RPI_V2_GPIO_P1_11
 #define AT_PB4   RPI_V2_GPIO_P1_13
 #define AT_RESET RPI_V2_GPIO_P1_15
 #define AT_PWR   RPI_V2_GPIO_P1_17
-#define AT_MOSI  RPI_V2_GPIO_P1_19
+#define AT_SCK   RPI_V2_GPIO_P1_19
 #define AT_MISO  RPI_V2_GPIO_P1_21
-#define AT_SCK   RPI_V2_GPIO_P1_23
+#define AT_MOSI  RPI_V2_GPIO_P1_23
 #define AT_GND   RPI_V2_GPIO_P1_25
 
 #define GPIO_OUT(pin) bcm2835_gpio_fsel(pin, BCM2835_GPIO_FSEL_OUTP)
@@ -41,6 +45,8 @@ int action;
 * Имя hex-файла
 */
 const char *fname;
+
+unsigned int fuse_bits;
 
 /**
 * Нужно ли выводить дополнительный отладочный вывод или быть тихим?
@@ -79,8 +85,8 @@ void at_write(unsigned int pin, unsigned int value)
 */
 void at_init()
 {
-	GPIO_INP(AT_PB3);
-	GPIO_INP(AT_PB4);
+//	GPIO_INP(AT_PB3);
+//	GPIO_INP(AT_PB4);
 	GPIO_OUT(AT_RESET);
 	at_write(AT_RESET, HIGH);
 //	GPIO_INP(AT_PWR);
@@ -311,6 +317,23 @@ unsigned char at_hex_digit(char ch)
 	return 0;
 }
 
+unsigned int at_hex_to_int(const char *s)
+{
+	unsigned int r = 0;
+	while ( *s )
+	{
+		char ch = *s++;
+		unsigned int hex = 0x10;
+		if ( ch >= '0' && ch <= '9' ) hex = ch - '0';
+		else if ( ch >= 'A' && ch <= 'F' ) hex = ch - 'A' + 10;
+		else if ( ch >= 'a' && ch <= 'f' ) hex = ch - 'a' + 10;
+		else hex = 0x10;
+		if ( hex > 0xF ) return r;
+		r = r * 0x10 + hex;
+	}
+	return r;
+}
+
 /**
 * Прочитать байт
 */
@@ -347,6 +370,7 @@ int at_check_firmware(const char *fname)
 	{
 		int lineno = 0;
 		int result = 1;
+		int bytes = 0;
 		while ( 1 )
 		{
 			char line[1024];
@@ -369,6 +393,7 @@ int at_check_firmware(const char *fname)
 				int i;
 				for(i = 0; i < len; i++)
 				{
+					bytes ++;
 					unsigned char fbyte = at_hex_get_data(line, i);
 					unsigned char dbyte = at_read_memory(addr + i);
 					int r = (fbyte == dbyte);
@@ -391,7 +416,7 @@ int at_check_firmware(const char *fname)
 		if ( verbose )
 		{
 			char *st = result ? "same" : "differ";
-			printf("firmware has checked: %s\n", st);
+			printf("firmware has checked: %s, bytes: %d\n", st, bytes);
 		}
 		return result;
 	}
@@ -428,6 +453,7 @@ int at_write_firmware(const char *fname)
 	{
 		int lineno = 0;
 		int result = 1;
+		int bytes = 0;
 		while ( 1 )
 		{
 			char line[1024];
@@ -450,6 +476,7 @@ int at_write_firmware(const char *fname)
 				int i;
 				for(i = 0; i < len; i++)
 				{
+					bytes++;
 					unsigned char fbyte = at_hex_get_data(line, i);
 					int r = at_write_memory(addr + i, fbyte);
 					result = result && r;
@@ -468,7 +495,7 @@ int at_write_firmware(const char *fname)
 		if ( verbose )
 		{
 			char *st = result ? "ok" : "fail";
-			printf("memory write: %s\n", st);
+			printf("memory write: %s, bytes: %d\n", st, bytes);
 		}
 		return result;
 	}
@@ -523,6 +550,108 @@ int at_act_erase()
 	printf("chip erase: %s\n", (r ? "ok" : "fail"));
 }
 
+/**
+* Действие - прочитать биты fuse
+*/
+int at_act_read_fuse()
+{
+	if ( verbose )
+	{
+		printf("read device's fuses\n");
+	}
+	unsigned int fuse_lo;
+	unsigned int fuse_hi;
+	unsigned int fuse_ex;
+	
+	fuse_lo = at_io(0x50000000);
+	fuse_hi = at_io(0x58080000);
+	fuse_ex = at_io(0x50080000);
+	
+	printf("fuse[lo]: %02X (%08X)\n", (fuse_lo % 0x100), fuse_lo);
+	printf("fuse[hi]: %02X (%08X)\n", (fuse_hi % 0x100), fuse_hi);
+	printf("fuse[ex]: %02X (%08X)\n", (fuse_ex % 0x100), fuse_ex);
+	
+	return 1;
+}
+
+/**
+* Действие - записать младшие биты fuse
+*/
+int at_act_write_fuse_lo()
+{
+	if ( verbose )
+	{
+		printf("write device's low fuse bits (0x%02X)\n", fuse_bits);
+	}
+	if ( fuse_bits > 0xFF )
+	{
+		printf("wrong fuse bits\n");
+		return 0;
+	}
+	
+	unsigned int r = at_io(0xACA00000 + (fuse_bits & 0xFF));
+	int ok = ((r >> 16) & 0xFF) == 0xAC;
+	if ( verbose )
+	{
+		const char *status = ok ? "[ ok ]" : "[ fail ]";
+		printf("write device's low fuse bits %s\n", status);
+	}
+	
+	return ok;
+}
+
+/**
+* Действие - записать старшие биты fuse
+*/
+int at_act_write_fuse_hi()
+{
+	if ( verbose )
+	{
+		printf("write device's high fuse bits (0x%02X)\n", fuse_bits);
+	}
+	if ( fuse_bits > 0xFF )
+	{
+		printf("wrong fuse bits\n");
+		return 0;
+	}
+	
+	unsigned int r = at_io(0xACA80000 + (fuse_bits & 0xFF));
+	int ok = ((r >> 16) & 0xFF) == 0xAC;
+	if ( verbose )
+	{
+		const char *status = ok ? "[ ok ]" : "[ fail ]";
+		printf("write device's high fuse bits %s\n", status);
+	}
+	
+	return ok;
+}
+
+/**
+* Действие - записать расширеные биты fuse
+*/
+int at_act_write_fuse_ex()
+{
+	if ( verbose )
+	{
+		printf("write device's extended fuse bits (0x%02X)\n", fuse_bits);
+	}
+	if ( fuse_bits > 0xFF )
+	{
+		printf("wrong fuse bits\n");
+		return 0;
+	}
+	
+	unsigned int r = at_io(0xACA40000 + (fuse_bits & 0xFF));
+	int ok = ((r >> 16) & 0xFF) == 0xAC;
+	if ( verbose )
+	{
+		const char *status = ok ? "[ ok ]" : "[ fail ]";
+		printf("write device's extended fuse bits %s\n", status);
+	}
+	
+	return ok;
+}
+
 int run()
 {
 	switch ( action )
@@ -531,6 +660,10 @@ int run()
 	case AT_ACT_CHECK: return at_act_check();
 	case AT_ACT_WRITE: return at_act_write();
 	case AT_ACT_ERASE: return at_act_erase();
+	case AT_ACT_READ_FUSE: return at_act_read_fuse();
+	case AT_ACT_WRITE_FUSE_LO: return at_act_write_fuse_lo();
+	case AT_ACT_WRITE_FUSE_HI: return at_act_write_fuse_hi();
+	case AT_ACT_WRITE_FUSE_EX: return at_act_write_fuse_ex();
 	}
 	printf("Victory!\n");
 	return 0;
@@ -544,6 +677,10 @@ int help()
 	printf("    check - read file and compare with device\n");
 	printf("    write - read file and write to device\n");
 	printf("    erase - just erase chip\n");
+	printf("    rfuse - read fuses\n");
+	printf("    wfuse_lo - write low fuse bits\n");
+	printf("    wfuse_hi - write high fuse bits\n");
+	printf("    wfuse_ex - write extended fuse bits\n");
 	return 0;
 }
 
@@ -557,7 +694,17 @@ int main(int argc, char *argv[])
 	else if ( strcmp(argv[1], "check") == 0 ) action = AT_ACT_CHECK;
 	else if ( strcmp(argv[1], "write") == 0 ) action = AT_ACT_WRITE;
 	else if ( strcmp(argv[1], "erase") == 0 ) action = AT_ACT_ERASE;
+	else if ( strcmp(argv[1], "rfuse") == 0 ) action = AT_ACT_READ_FUSE;
+	else if ( strcmp(argv[1], "wfuse_lo") == 0 ) action = AT_ACT_WRITE_FUSE_LO;
+	else if ( strcmp(argv[1], "wfuse_hi") == 0 ) action = AT_ACT_WRITE_FUSE_HI;
+	else if ( strcmp(argv[1], "wfuse_ex") == 0 ) action = AT_ACT_WRITE_FUSE_EX;
 	else return help();
+	
+	fuse_bits = 0x100;
+	if ( argc > 2 )
+	{
+		fuse_bits = at_hex_to_int(argv[2]);
+	}
 	
 	fname = argc > 2 ? argv[2] : "firmware.hex";
 	verbose = argc > 3 && strcmp(argv[3], "verbose") == 0;
