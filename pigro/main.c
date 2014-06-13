@@ -26,11 +26,12 @@ enum {
 
 #define AT_PB3   RPI_V2_GPIO_P1_11
 #define AT_PB4   RPI_V2_GPIO_P1_13
-#define AT_RESET RPI_V2_GPIO_P1_15
+
 #define AT_PWR   RPI_V2_GPIO_P1_17
-#define AT_SCK   RPI_V2_GPIO_P1_19
+#define AT_RESET RPI_V2_GPIO_P1_18
+#define AT_MOSI  RPI_V2_GPIO_P1_19
 #define AT_MISO  RPI_V2_GPIO_P1_21
-#define AT_MOSI  RPI_V2_GPIO_P1_23
+#define AT_SCK   RPI_V2_GPIO_P1_23
 #define AT_GND   RPI_V2_GPIO_P1_25
 
 #define GPIO_OUT(pin) bcm2835_gpio_fsel(pin, BCM2835_GPIO_FSEL_OUTP)
@@ -89,12 +90,19 @@ void at_init()
 //	GPIO_INP(AT_PB4);
 	GPIO_OUT(AT_RESET);
 	at_write(AT_RESET, HIGH);
+	bcm2835_spi_begin();
+	//Set CS pins polarity to low
+	bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, 0);
+	bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS1, 0);
+	bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_2048);
+	bcm2835_spi_setDataMode(BCM2835_SPI_MODE0);
+	bcm2835_spi_chipSelect(BCM2835_SPI_CS0);
 //	GPIO_INP(AT_PWR);
-	GPIO_OUT(AT_MOSI);
-	at_write(AT_MOSI, LOW);
-	GPIO_INP(AT_MISO);
-	GPIO_OUT(AT_SCK);
-	at_write(AT_SCK, LOW);
+//	GPIO_OUT(AT_MOSI);
+//	at_write(AT_MOSI, LOW);
+//	GPIO_INP(AT_MISO);
+//	GPIO_OUT(AT_SCK);
+//	at_write(AT_SCK, LOW);
 //	GPIO_INP(AT_GND);
 }
 
@@ -139,6 +147,15 @@ unsigned char at_spi_io(unsigned char data)
 }
 
 /**
+* Отправить байт по SPI и прочитать ответный
+*/
+unsigned char at_spi_io_hw(unsigned char data)
+{
+	return bcm2835_spi_transfer((uint8_t)data);
+}
+
+
+/**
 * Отправить комманду микроконтроллеру и прочтать ответ
 * Все комманды размером 4 байта
 */
@@ -149,7 +166,7 @@ unsigned int at_io(unsigned int cmd)
 	for(i = 0; i < 4; i++)
 	{
 		unsigned char byte = cmd >> 24;
-		byte = at_spi_io(byte);
+		byte = at_spi_io_hw(byte);
 		result = result * 256 + byte;
 		cmd <<= 8;
 	}
@@ -199,8 +216,8 @@ void at_reboot()
 */
 int at_program_enable()
 {
-	at_write(AT_SCK, LOW);
-	at_write(AT_MOSI, LOW);
+//	at_write(AT_SCK, LOW);
+//	at_write(AT_MOSI, LOW);
 	at_write(AT_RESET, LOW);
 	bcm2835_delay(1);
 	at_write(AT_RESET, HIGH);
@@ -730,14 +747,15 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "ac_program_enable() failed\n");
 	}
 	
-	GPIO_INP(AT_PB3);
-	GPIO_INP(AT_PB4);
+//	GPIO_INP(AT_PB3);
+//	GPIO_INP(AT_PB4);
 	GPIO_INP(AT_RESET);
 //	GPIO_INP(AT_PWR);
-	GPIO_INP(AT_MOSI);
-	GPIO_INP(AT_MISO);
-	GPIO_INP(AT_SCK);
+//	GPIO_INP(AT_MOSI);
+//	GPIO_INP(AT_MISO);
+//	GPIO_INP(AT_SCK);
 //	GPIO_INP(AT_GND);
+	bcm2835_spi_end();
 	
 	if ( verbose )
 	{
