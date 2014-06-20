@@ -19,7 +19,7 @@ test.o: main.o libnano.a
 	$(GCC) $(LD_OPTS) main.o -o test.o -Wl,-L=. -lnano
 	$(OBJDUMP) -d test.o > test.dump
 
-main.o: main.c pictl.h
+main.o: main.c pictl.h timers.h
 	$(GCC) $(CC_OPTS) $(ASM_LIST)=main.s -O2 -c main.c -o main.o
 	$(OBJDUMP) -d main.o > main.dump
 

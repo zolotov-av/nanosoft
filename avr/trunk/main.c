@@ -7,6 +7,11 @@
 
 #include "pictl.h"
 
+#define TIM2_OCI_ENABLE 1
+#define TIM2_TOI_ENABLE 1
+
+#include "timers.h"
+
 #define DD_MISO PB6
 
 volatile char counter = 1;
@@ -15,6 +20,24 @@ ISR(SPISTC_vect)
 {
 	pictl_put(SPDR);
 	SPDR = pictl_fetch();
+}
+
+static unsigned char tim2_prescale = 0;
+static unsigned int timer2 = 0;
+
+ISR(TIMER2_COMP_vect)
+{
+	tim2_prescale++;
+	if ( tim2_prescale == 10 )
+	{
+		tim2_prescale = 0;
+		timer2++;
+		PORTD = timer2;
+	}
+}
+
+ISR(TIMER2_OVF_vect)
+{
 }
 
 void command1(const struct pictl_packet *packet)
@@ -56,13 +79,19 @@ void pictl_on_packet(const struct pictl_packet *packet)
 
 int main()
 {
+	timer2_init(TIMER_WGM_CTC, TIMER_CTC_NOPE, TIMER_CLOCK_1024);
+	timer2_set_compare(97);
+	
 	// init SPI slave
 	MISO_DDR = (1<<MISO_BIT);
 	DDRA = 0xFF;
+	DDRD = 0xFF;
 	SPCR = (1 << SPIE) | (1 << SPE);
 	PORTA = counter;
+	PORTD = 1;
 	SPDR = counter;
 	pictl_init(pictl_on_packet);
+
 	while ( 1 )
 	{
 		//PORTA = spi_read(counter++);
