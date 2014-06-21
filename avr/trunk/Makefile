@@ -23,11 +23,14 @@ main.o: main.c pictl.h timers.h
 	$(GCC) $(CC_OPTS) $(ASM_LIST)=main.s -O2 -c main.c -o main.o
 	$(OBJDUMP) -d main.o > main.dump
 
-libnano.a: pictl.o
-	$(AR) rcs libnano.a pictl.o
+libnano.a: pictl.o http.o
+	$(AR) rcs libnano.a pictl.o http.o
 
 pictl.o: pictl.c pictl.h
 	$(GCC) $(CC_OPTS) $(ASM_LIST)=pictl.s -O2 -c pictl.c -o pictl.o
+
+http.o: http.c http.h
+	$(GCC) $(CC_OPTS) $(ASM_LIST)=http.s -O2 -c http.c -o http.o
 
 clean:
 	rm -rfv *.o *.s *.a *.dump *.hex
