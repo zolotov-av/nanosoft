@@ -23,8 +23,8 @@ main.o: main.cpp
 	$(GCC) $(CC_OPTS) $(ASM_LIST)=main.s -O2 -c main.cpp -o main.o
 	$(OBJDUMP) -d main.o > main.dump
 
-libfoo.a: foo.o ringbuf.o
-	$(AR) rcs libfoo.a foo.o ringbuf.o
+libfoo.a: foo.o ringbuf.o bigint.o
+	$(AR) rcs libfoo.a foo.o ringbuf.o bigint.o
 
 foo.o: foo.cpp foo.h
 	$(GCC) $(CC_OPTS) $(ASM_LIST)=foo.s -O2 -c foo.cpp -o foo.o
@@ -32,6 +32,8 @@ foo.o: foo.cpp foo.h
 ringbuf.o: ringbuf.cpp ringbuf.h
 	$(GCC) $(CC_OPTS) $(ASM_LIST)=ringbuf.s -O2 -c ringbuf.cpp -o ringbuf.o
 
+bigint.o: bigint.cpp bigint.h
+	$(GCC) $(CC_OPTS) $(ASM_LIST)=bigint.s -O2 -c bigint.cpp -o bigint.o
 
 clean:
 	rm -rfv *.o *.s *.a *.dump *.hex
