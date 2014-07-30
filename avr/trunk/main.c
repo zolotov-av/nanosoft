@@ -6,6 +6,7 @@
 #include <avr/sleep.h>
 
 #include "pictl.h"
+#include "iom16a_usart.h"
 
 #define TIM2_OCI_ENABLE 1
 #define TIM2_TOI_ENABLE 1
@@ -14,7 +15,9 @@
 
 #define DD_MISO PB6
 
-volatile char counter = 1;
+unsigned char counter = 1;
+char counter_enable = 1;
+char x = 0;
 
 ISR(SPISTC_vect)
 {
@@ -32,35 +35,30 @@ ISR(TIMER2_COMP_vect)
 	{
 		tim2_prescale = 0;
 		timer2++;
-		PORTD = timer2;
-	}
-}
-
-ISR(TIMER2_OVF_vect)
-{
-}
-
-void command1(const struct pictl_packet *packet)
-{
-	if ( packet->len >= 4 )
-	{
-		unsigned char pin = packet->opt[0];
-		if ( pin < 8 )
+		if ( counter_enable )
 		{
-			PORTA |= (1 << pin);
+			//PORTC = ++counter;
 		}
 	}
 }
 
-void command2(const struct pictl_packet *packet)
+//ISR(TIMER2_OVF_vect)
+//{
+//}
+
+void cmd_set_enabled(const struct pictl_packet *packet)
 {
 	if ( packet->len >= 4 )
 	{
-		unsigned char pin = packet->opt[0];
-		if ( pin < 8 )
-		{
-			PORTA &= ~(1 << pin);
-		}
+		counter_enable = packet->opt[0];
+	}
+}
+
+void cmd_set_counter(const struct pictl_packet *packet)
+{
+	if ( packet->len >= 4 )
+	{
+		//PORTC = counter = packet->opt[0];
 	}
 }
 
@@ -69,29 +67,42 @@ void pictl_on_packet(const struct pictl_packet *packet)
 	switch (packet->cmd)
 	{
 	case 1:
-		command1(packet);
+		cmd_set_enabled(packet);
 		return;
 	case 2:
-		command2(packet);
+		cmd_set_counter(packet);
 		return;
 	}
 }
 
+#define UART_BAUD_K 207
+
 int main()
 {
-	timer2_init(TIMER_WGM_CTC, TIMER_CTC_NOPE, TIMER_CLOCK_1024);
-	timer2_set_compare(97);
+	//timer2_init(TIMER_WGM_CTC, TIMER_CTC_NOPE, TIMER_CLOCK_1024);
+	//timer2_set_compare(97);
 	
 	// init SPI slave
 	MISO_DDR = (1<<MISO_BIT);
 	DDRA = 0xFF;
-	DDRD = 0xFF;
+	DDRC = 0xFF;
 	SPCR = (1 << SPIE) | (1 << SPE);
-	PORTA = counter;
-	PORTD = 1;
+	PORTA = 0xFF;
+	PORTC = 0xFF;
 	SPDR = counter;
 	pictl_init(pictl_on_packet);
-
+	
+	UCSRA = 0;
+	UCSRB = (1<<RXEN)|(1<<TXEN)|(1<<RXCIE)|(1<<TXCIE)|(1<<UDRIE);
+	UCSRC = (1<<URSEL)|(1<<UCSZ0)|(1<<UCSZ1);
+	
+	UBRRH = (UART_BAUD_K / 256) & ~(1 <<URSEL);
+	UBRRL = UART_BAUD_K % 256;
+	
+	//unsigned char x = 0;
+	
+	OSCCAL = 0xA9;
+	
 	while ( 1 )
 	{
 		//PORTA = spi_read(counter++);
@@ -99,6 +110,13 @@ int main()
 		set_sleep_mode(0);
 		sleep_enable();
 		sleep_cpu();
+		
+		char data;
+		while ( usart_getc(&data) )
+		{
+			PORTA = data;
+			usart_putc(data);
+		}
 	}
 	
 	return 0;
