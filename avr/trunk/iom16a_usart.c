@@ -74,7 +74,7 @@ char usart_getc(char *data)
 	char status;
 	if ( inp_len > 0 )
 	{
-		*data = inp_buf[out_ofs_s++];
+		*data = inp_buf[inp_ofs_s++];
 		inp_ofs_s %= sizeof(inp_buf);
 		inp_len--;
 		status = 1;
