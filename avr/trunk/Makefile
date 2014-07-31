@@ -15,11 +15,11 @@ AR = $(GCC_TARGET)-ar
 test.hex: test.o
 	$(OBJCOPY) -O ihex test.o test.hex
 
-test.o: main.o libnano.a iom16a_usart.o
-	$(GCC) $(LD_OPTS) main.o iom16a_usart.o -o test.o -Wl,-L=. -lnano
+test.o: main.o libnano.a iom16a_usart.o iom16a_spi.o
+	$(GCC) $(LD_OPTS) main.o iom16a_usart.o iom16a_spi.o -o test.o -Wl,-L=. -lnano
 	$(OBJDUMP) -d test.o > test.dump
 
-main.o: main.c pictl.h timers.h iom16a_usart.h
+main.o: main.c pictl.h timers.h iom16a_usart.h iom16a_spi.h
 	$(GCC) $(CC_OPTS) $(ASM_LIST)=main.s -O2 -c main.c -o main.o
 	$(OBJDUMP) -d main.o > main.dump
 
@@ -34,6 +34,9 @@ http.o: http.c http.h
 
 iom16a_usart.o: iom16a_usart.c iom16a_usart.h
 	$(GCC) $(CC_OPTS) $(ASM_LIST)=iom16a_usart.s -O2 -c iom16a_usart.c -o iom16a_usart.o
+
+iom16a_spi.o: iom16a_spi.c iom16a_spi.h
+	$(GCC) $(CC_OPTS) $(ASM_LIST)=iom16a_spi.s -O2 -c iom16a_spi.c -o iom16a_spi.o
 
 clean:
 	rm -rfv *.o *.s *.a *.dump *.hex

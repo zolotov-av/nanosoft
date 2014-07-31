@@ -14,17 +14,20 @@
 #include "timers.h"
 
 #define DD_MISO PB6
-
+/*
 unsigned char counter = 1;
 char counter_enable = 1;
 char x = 0;
-
+*/
+/*
 ISR(SPISTC_vect)
 {
 	pictl_put(SPDR);
 	SPDR = pictl_fetch();
 }
+*/
 
+/*
 static unsigned char tim2_prescale = 0;
 static unsigned int timer2 = 0;
 
@@ -41,11 +44,11 @@ ISR(TIMER2_COMP_vect)
 		}
 	}
 }
-
+*/
 //ISR(TIMER2_OVF_vect)
 //{
 //}
-
+/*
 void cmd_set_enabled(const struct pictl_packet *packet)
 {
 	if ( packet->len >= 4 )
@@ -74,8 +77,10 @@ void pictl_on_packet(const struct pictl_packet *packet)
 		return;
 	}
 }
-
+*/
 #define UART_BAUD_K 207
+
+char spi_data;
 
 int main()
 {
@@ -89,8 +94,8 @@ int main()
 	SPCR = (1 << SPIE) | (1 << SPE);
 	PORTA = 0xFF;
 	PORTC = 0xFF;
-	SPDR = counter;
-	pictl_init(pictl_on_packet);
+	//pictl_init(pictl_on_packet);
+	
 	
 	UCSRA = 0;
 	UCSRB = (1<<RXEN)|(1<<TXEN)|(1<<RXCIE)|(1<<TXCIE)|(1<<UDRIE);
@@ -99,23 +104,25 @@ int main()
 	UBRRH = (UART_BAUD_K / 256) & ~(1 <<URSEL);
 	UBRRL = UART_BAUD_K % 256;
 	
-	//unsigned char x = 0;
 	
-	OSCCAL = 0xA9;
+	spi_init();
 	
 	while ( 1 )
 	{
-		//PORTA = spi_read(counter++);
 		sei();
 		set_sleep_mode(0);
 		sleep_enable();
 		sleep_cpu();
 		
-		char data;
-		while ( usart_getc(&data) )
+		
+		if ( usart_getc(&spi_data) )
 		{
-			PORTA = data;
-			usart_putc(data);
+			usart_putc(spi_data);
+		}
+		
+		if ( spi_getc(&spi_data) )
+		{
+			spi_putc(spi_data + 100);
 		}
 	}
 	
