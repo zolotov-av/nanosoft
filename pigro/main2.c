@@ -96,8 +96,8 @@ int serial_init()
 	* Установка скорости передачи в 19200...
 	*/
 	
-	cfsetispeed(&options, B2400);
-	cfsetospeed(&options, B2400);
+	cfsetispeed(&options, B9600);
+	cfsetospeed(&options, B9600);
 	
 	/*
 	* Разрешение приемника и установка локального режима...
@@ -728,7 +728,7 @@ int main(int argc, char *argv[])
 	fuse_bits = 0x100;
 	if ( argc > 2 )
 	{
-		//fuse_bits = at_hex_to_int(argv[2]);
+		fuse_bits = at_hex_to_int(argv[2]);
 	}
 	
 	fname = argc > 2 ? argv[2] : "firmware.hex";
