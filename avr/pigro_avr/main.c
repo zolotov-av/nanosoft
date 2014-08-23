@@ -6,7 +6,9 @@
 #include "iom16a_usart.h"
 
 #define PACKET_MAXLEN 6
-#define UART_BAUD_K 207
+
+// 51 at 8MHz = 9600
+#define UART_BAUD_K 51
 
 typedef struct
 {
@@ -154,7 +156,7 @@ int main()
 	// Инициализация SPI в режиме мастера
 	// PB1 управляет RESET-ом прошиваемого контроллера
 	DDRB = (1 << MOSI_BIT) | (1 << PB7) | (1 << SS_BIT) | (1<<PB1);
-	SPCR = (1 << SPIE) | (1 << SPE) | (1 << MSTR) | (1 << SPR1) | (1 << SPR0);
+	SPCR = (1 << SPIE) | (1 << SPE) | (1 << MSTR) | (0 << SPI2X) | (1 << SPR1) | (1 << SPR0);
 	spi_init();
 	
 	// Настройка UART
