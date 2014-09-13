@@ -73,52 +73,39 @@ int serial_fd = 0;
 int serial_init()
 {
 	serial_fd = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY | O_NDELAY);
-	
 	if (serial_fd == -1)
 	{
-		/*
-		* Could not open the port.
-		*/
-		perror("open_port: Unable to open /dev/ttyUSB0 - ");
+		perror("serial_init() Unable to open /dev/ttyUSB0");
 		return 0;
 	}
 	
-	fcntl(serial_fd, F_SETFL, 0);
-	
 	struct termios options;
 
-	/*
-	* Получение текущих опций для порта...
-	*/
+	// Получение текущих опций для порта...
 	tcgetattr(serial_fd, &options);
 	
-	/*
-	* Установка скорости передачи в 19200...
-	*/
+	speed_t speed = B9600;
 	
-	cfsetispeed(&options, B9600);
-	cfsetospeed(&options, B9600);
-	
-	/*
-	* Разрешение приемника и установка локального режима...
-	*/
+	cfsetispeed(&options, speed);
+	cfsetospeed(&options, speed);
 	options.c_cflag |= (CLOCAL | CREAD);
-	
 	options.c_cflag &= ~PARENB;
 	options.c_cflag &= ~CSTOPB;
 	options.c_cflag &= ~CSIZE;
 	options.c_cflag |= CS8;
 	
 	options.c_cflag &= ~CRTSCTS;
-	
 	options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-	options.c_iflag &= ~(IXON | IXOFF | IXANY);
 	
-	options.c_oflag &= ~OPOST;
+	options.c_iflag = 0;
+	//options.c_iflag &= ~(IXON | IXOFF | IXANY);
+	//options.c_iflag &= ~(ICRNL | INLCR | IGNCR);
 	
-	/*
-	* Установка новых опций для порта...
-	*/
+	options.c_oflag = 0;
+	//options.c_oflag &= ~OPOST;
+	//options.c_oflag &= ~(ICRNL | INLCR | IGNCR);
+	
+	// Установка новых опций для порта...
 	tcsetattr(serial_fd, TCSANOW, &options);
 	
 	fcntl(serial_fd, F_SETFL, 0);
@@ -226,15 +213,13 @@ unsigned int at_io(unsigned int cmd)
 */
 int at_program_enable()
 {
-//	at_write(AT_SCK, LOW);
-//	at_write(AT_MOSI, LOW);
 	cmd_isp_reset(0);
 	cmd_isp_reset(1);
 	cmd_isp_reset(0);
 	
 	unsigned int r = cmd_isp_io(0xAC53000F);
 	int status = (r & 0xFF00) == 0x5300;
-	if ( 1 )
+	if ( verbose )
 	{
 		const char *s = status ? "ok" : "fault";
 		printf("at_program_enable(): %s\n", s);
@@ -254,6 +239,7 @@ unsigned char at_read_memory(unsigned int addr)
 }
 
 static active_page = 0;
+static dirty_page = 0;
 
 /**
 * Записать байт прошивки в устройство
@@ -274,13 +260,13 @@ int at_write_memory(unsigned int addr, unsigned char byte)
 		at_flush();
 		active_page = page;
 	}
+	dirty_page = 1;
 	unsigned int result = at_io(x = (cmd << 24) | (offset << 8 ) | (byte & 0xFF) );
 	unsigned int r = (result >> 16) & 0xFF;
-	int status = r == cmd;
+	int status = (r == cmd);
 	if ( verbose )
 	{
-		printf(".");
-		fflush(stdout);
+		printf(status ? "." : "*");
 		//printf("[%04X]=%02X%s ", offset, byte, (status ? "+" : "-"));
 	}
 	return status;
@@ -291,17 +277,22 @@ int at_write_memory(unsigned int addr, unsigned char byte)
 */
 int at_flush()
 {
+	if ( ! dirty_page )
+	{
+		return 1;
+	}
+	
 	unsigned int cmd = 0x4C;
 	unsigned int offset = active_page & 0xFFF0;
 	unsigned int x = 0;
 	unsigned int result = at_io(x = (cmd << 24) | (offset << 8 ) );
 	unsigned int r = (result >> 16) & 0xFF;
-	int status = r == cmd;
+	int status = (r == cmd);
+	dirty_page = 0;
 	if ( verbose )
 	{
 		printf("FLUSH[%04X]%s\n", offset, (status ? "+" : "-"));
 	}
-	//bcm2835_delay(10);
 	return status;
 }
 
@@ -384,7 +375,6 @@ int at_check_firmware(const char *fname)
 			char line[1024];
 			const char *s = fgets(line, sizeof(line), f);
 			if ( s == NULL ) break;
-			//printf("%s", line);
 			lineno++;
 			if ( line[0] != ':' )
 			{
@@ -395,7 +385,7 @@ int at_check_firmware(const char *fname)
 			unsigned int addr = at_hex_get_word(line, 1);
 			unsigned char type = at_hex_get_byte(line, 3);
 			unsigned char cc = at_hex_get_byte(line, 4 + len);
-			//printf("len: %u, addr: %u, type: %u, cc: %u\n", len, addr, type, cc);
+			if ( verbose ) printf("[%04X]", addr);
 			if ( type == 0 )
 			{
 				int i;
@@ -408,24 +398,18 @@ int at_check_firmware(const char *fname)
 					result = result && r;
 					if ( verbose )
 					{
-						printf("%02X%s ", fbyte, (r ? "+" : "-"));
-						fflush(stdout);
+						printf(r ? "." : "*");
 					}
 				}
 				if ( verbose ) printf("\n");
 			}
 			if ( type == 1 )
 			{
-				if ( verbose) printf("end of hex-file\n");
+				if ( verbose ) printf("end of hex-file\n");
 				break;
 			}
 		}
 		fclose(f);
-		if ( verbose )
-		{
-			char *st = result ? "same" : "differ";
-			printf("firmware has checked: %s, bytes: %d\n", st, bytes);
-		}
 		return result;
 	}
 	return 0;
@@ -441,14 +425,7 @@ int at_chip_erase()
 		printf("erase device's firmware\n");
 	}
 	unsigned int r = at_io(0xAC800000);
-	int ok = ((r >> 16) & 0xFF) == 0xAC;
-	if ( ok )
-	{
-		//bcm2835_delay(10);
-		//at_reboot();
-		at_program_enable();
-	}
-	return ok;
+	return ((r >> 16) & 0xFF) == 0xAC;
 }
 
 /**
@@ -467,7 +444,6 @@ int at_write_firmware(const char *fname)
 			char line[1024];
 			const char *s = fgets(line, sizeof(line), f);
 			if ( s == NULL ) break;
-			//printf("%s", line);
 			lineno++;
 			if ( line[0] != ':' )
 			{
@@ -478,7 +454,6 @@ int at_write_firmware(const char *fname)
 			unsigned int addr = at_hex_get_word(line, 1);
 			unsigned char type = at_hex_get_byte(line, 3);
 			unsigned char cc = at_hex_get_byte(line, 4 + len);
-			//printf("len: %u, addr: %u, type: %u, cc: %u\n", len, addr, type, cc);
 			if ( type == 0 )
 			{
 				int i;
@@ -488,13 +463,12 @@ int at_write_firmware(const char *fname)
 					unsigned char fbyte = at_hex_get_data(line, i);
 					int r = at_write_memory(addr + i, fbyte);
 					result = result && r;
-					//printf("%02X%s ", fbyte, (r ? "+" : "-"));
 				}
-				//printf("\n");
 			}
 			if ( type == 1 )
 			{
-				if ( verbose ) printf("\nend of hex-file\n");
+				at_flush();
+				if ( verbose ) printf("end of hex-file\n");
 				break;
 			}
 		}
@@ -518,7 +492,7 @@ int at_act_check()
 	int r = at_check_firmware(fname);
 	if ( r ) printf("firmware is same\n");
 	else printf("firmware differ\n");
-	return 0;
+	return r;
 }
 
 /**
@@ -533,7 +507,7 @@ int at_act_write()
 	}
 	else
 	{
-		printf("firmware erase fault\n");
+		fprintf(stderr, "firmware erase fault\n");
 	}
 	printf("firmware write: %s\n", (r ? "ok" : "fail"));
 	return r;
@@ -544,8 +518,7 @@ int at_act_write()
 */
 int at_act_erase()
 {
-	int r = at_chip_erase();
-	printf("chip erase: %s\n", (r ? "ok" : "fail"));
+	return at_chip_erase();
 }
 
 /**
@@ -735,9 +708,8 @@ int main(int argc, char *argv[])
 	verbose = argc > 3 && strcmp(argv[3], "verbose") == 0;
 	if ( verbose )
 	{
-		printf("fname: %s\n", fname);
+		printf("firmware file: %s\n", fname);
 	}
-	
 	
 	if ( ! serial_init() )
 	{
@@ -745,11 +717,11 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	
-	cmd_isp_reset(0);
 	if ( at_program_enable() )
 	{
-		status = run();
+		status = run() ? 0 : 1;
 	}
+	cmd_isp_reset(1);
 	
 	if ( verbose )
 	{
