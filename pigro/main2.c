@@ -12,6 +12,7 @@
 //#include <bcm2835.h>
 #include <stdio.h>
 #include <time.h>
+#include <stdint.h>
 
 #include <unistd.h>  /* Объявления стандартных функций UNIX */
 #include <fcntl.h>   /* Объявления управления файлами */
@@ -26,7 +27,8 @@ enum {
 	AT_ACT_READ_FUSE,
 	AT_ACT_WRITE_FUSE_LO,
 	AT_ACT_WRITE_FUSE_HI,
-	AT_ACT_WRITE_FUSE_EX
+	AT_ACT_WRITE_FUSE_EX,
+	AT_ACT_ADC
 };
 
 #define AT_PB3   RPI_V2_GPIO_P1_11
@@ -197,6 +199,26 @@ unsigned int cmd_isp_io(unsigned int cmd)
 	}
 	
 	return result;
+}
+
+int cmd_adc(uint8_t admux, uint16_t *value)
+{
+	packet_t pkt;
+	pkt.cmd = 4;
+	pkt.len = 1;
+	pkt.data[0] = admux;
+	if ( ! send_packet(&pkt) )
+	{
+		fprintf(stderr, "send_packet fault (ADC)\n");
+		return 0;
+	}
+	
+	int r = recv_packet(&pkt);
+	if ( !r ) fprintf(stderr, "recv_packet failed (ADC)\n");
+	if ( pkt.cmd != 4 ) fprintf(stderr, "wrong packet (ADC), cmd: %d\n", pkt.cmd);
+	if ( pkt.len != 2 ) fprintf(stderr, "wrong packet (ADC), len: %d\n", pkt.len);
+	*value = pkt.data[1] * 256 + pkt.data[0];
+	return 1;
 }
 
 /**
@@ -649,6 +671,33 @@ int at_act_info()
 	return 1;
 }
 
+int adc(char pin, double aref, double *result)
+{
+	uint16_t value = 0;
+	int r = cmd_adc(pin & 0x07, &value);
+	if ( ! r )
+	{
+		fprintf(stderr, "ADC fault\n");
+		return 0;
+	}
+	*result = value * (aref / 1024.0);
+	return 1;
+}
+
+int at_act_adc()
+{
+	double u;
+	int i;
+	for(i = 0; i < 10; i++)
+	{
+	if ( adc(0, 5.05, &u) )
+	{
+		printf("ADC result: U=%.2f\n", u);
+	}
+	}
+	return 1;
+}
+
 int run()
 {
 	switch ( action )
@@ -661,6 +710,7 @@ int run()
 	case AT_ACT_WRITE_FUSE_LO: return at_act_write_fuse_lo();
 	case AT_ACT_WRITE_FUSE_HI: return at_act_write_fuse_hi();
 	case AT_ACT_WRITE_FUSE_EX: return at_act_write_fuse_ex();
+	case AT_ACT_ADC: return at_act_adc();
 	}
 	printf("Victory!\n");
 	return 0;
@@ -678,6 +728,7 @@ int help()
 	printf("    wfuse_lo - write low fuse bits\n");
 	printf("    wfuse_hi - write high fuse bits\n");
 	printf("    wfuse_ex - write extended fuse bits\n");
+	printf("    adc - run ADC mesure\n");
 	return 0;
 }
 
@@ -696,6 +747,7 @@ int main(int argc, char *argv[])
 	else if ( strcmp(argv[1], "wfuse_lo") == 0 ) action = AT_ACT_WRITE_FUSE_LO;
 	else if ( strcmp(argv[1], "wfuse_hi") == 0 ) action = AT_ACT_WRITE_FUSE_HI;
 	else if ( strcmp(argv[1], "wfuse_ex") == 0 ) action = AT_ACT_WRITE_FUSE_EX;
+	else if ( strcmp(argv[1], "adc") == 0 ) action = AT_ACT_ADC;
 	else return help();
 	
 	fuse_bits = 0x100;
@@ -717,7 +769,12 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	
-	if ( at_program_enable() )
+	if ( action == AT_ACT_ADC )
+	{
+		status = run() ? 0 : 1;
+		
+	}
+	else if ( at_program_enable() )
 	{
 		status = run() ? 0 : 1;
 	}
