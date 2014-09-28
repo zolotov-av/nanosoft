@@ -110,6 +110,35 @@ void cmd_isp_io()
 	}
 }
 
+static char adc_en = 0;
+
+ISR(ADC_vect)
+{
+	if ( adc_en )
+	{
+		pkt.cmd = 4;
+		pkt.len = 2;
+		pkt.data[0] = ADCL;
+		pkt.data[1] = ADCH;
+		send_packet();
+	}
+	adc_en = 0;
+	ADCSRA &= ~(1 << ADEN);
+}
+
+/**
+* Обработчик команды ADC
+*/
+void cmd_adc()
+{
+	if ( pkt.len == 1 )
+	{
+		ADMUX = pkt.data[0] & ~(1 << ADLAR);
+	}
+	adc_en = 1;
+	ADCSRA |= (1 << ADEN);
+}
+
 /**
 * Обработка команд
 */
@@ -125,6 +154,9 @@ void handle_packet()
 		return;
 	case 3:
 		cmd_isp_io();
+		return;
+	case 4:
+		cmd_adc();
 		return;
 	}
 }
@@ -144,7 +176,7 @@ void read_packet()
 	else
 	{
 		for(i = 0; i < pkt.len; i++)
-		{
+		{	
 			pkt.data[i] = usart_getc_sync();
 		}
 		handle_packet();
@@ -169,10 +201,13 @@ int main()
 	UBRRL = UART_BAUD_K % 256;
 	
 	// Настройка прочих портов
-	DDRA = 0xFF;
+	DDRA = 0x00;
 	DDRC = 0xFF;
-	PORTA = 0xFF;
 	PORTC = 0xFF;
+	
+	ADMUX = (1 << ADLAR);
+	ADCSRA = (0 << ADEN) | (0 << ADSC) | (1 << ADIE) | (1 << ADPS2) | (1 << ADPS1) | (0 << ADPS0);
+	SFIOR = 0;
 	
 	// В бесконечом цикле читаем и обрабатываем пакеты
 	while ( 1 )
