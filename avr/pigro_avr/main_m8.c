@@ -3,8 +3,8 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 
-#include "iom16a_usart.h"
-#include "iom16a_spi.h"
+#include "iom8_usart.h"
+#include "iom8_spi.h"
 
 #define PACKET_MAXLEN 6
 
@@ -76,7 +76,7 @@ void send_packet()
 */
 void cmd_seta()
 {
-	if ( pkt.len == 1 ) PORTA = pkt.data[0];
+	//if ( pkt.len == 1 ) PORTA = pkt.data[0];
 }
 
 /**
@@ -188,7 +188,7 @@ int main()
 {
 	// Инициализация SPI в режиме мастера
 	// PB1 управляет RESET-ом прошиваемого контроллера
-	DDRB = (1 << MOSI_BIT) | (1 << PB7) | (1 << SS_BIT) | (1<<PB1);
+	DDRB = (1 << PB3) | (1 << PB5) | (1 << PB2) | (1<<PB1);
 	SPCR = (1 << SPIE) | (1 << SPE) | (1 << MSTR) | (0 << SPI2X) | (1 << SPR1) | (1 << SPR0);
 	spi_init();
 	
@@ -202,9 +202,9 @@ int main()
 	UBRRL = UART_BAUD_K % 256;
 	
 	// Настройка прочих портов
-	DDRA = 0x00;
-	DDRC = 0xFF;
-	PORTC = 0xFF;
+	//DDRA = 0x00;
+	//DDRC = 0xFF;
+	//PORTC = 0xFF;
 	
 	ADMUX = (1 << ADLAR);
 	ADCSRA = (0 << ADEN) | (0 << ADSC) | (1 << ADIE) | (1 << ADPS2) | (1 << ADPS1) | (0 << ADPS0);
