@@ -50,6 +50,9 @@ int action;
 */
 const char *fname;
 
+/**
+* FUSE-биты
+*/
 unsigned int fuse_bits;
 
 /**
@@ -57,8 +60,14 @@ unsigned int fuse_bits;
 */
 int verbose = 0;
 
+/**
+* Файловый дескриптор (виртуального) последовательного порта
+*/
 int serial_fd = 0;
 
+/**
+* Инициализация последовательного порта
+*/
 int serial_init()
 {
 	serial_fd = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY | O_NDELAY);
@@ -102,6 +111,9 @@ int serial_init()
 	return 1;
 }
 
+/**
+* Отправить пакет данных
+*/
 int send_packet(const packet_t *pkt)
 {
 	ssize_t r = write(serial_fd, pkt, pkt->len + 2);
@@ -114,6 +126,9 @@ int send_packet(const packet_t *pkt)
 	}
 }
 
+/**
+* Прочитать пакет данных
+*/
 int recv_packet(packet_t *pkt)
 {
 	ssize_t r;
@@ -140,6 +155,10 @@ int recv_packet(packet_t *pkt)
 	return 1;
 }
 
+/**
+* Тестовая команда, по сути ничего полезного не делает, использовалась
+* для индикации во время отладки
+*/
 int cmd_seta(char value)
 {
 	packet_t pkt;
@@ -149,6 +168,9 @@ int cmd_seta(char value)
 	return send_packet(&pkt);
 }
 
+/**
+* Управление линией RESET программируемого контроллера
+*/
 int cmd_isp_reset(char value)
 {
 	packet_t pkt;
@@ -158,6 +180,9 @@ int cmd_isp_reset(char value)
 	return send_packet(&pkt);
 }
 
+/**
+* Отправить команду программирования (ISP)
+*/
 unsigned int cmd_isp_io(unsigned int cmd)
 {
 	packet_t pkt;
@@ -188,6 +213,11 @@ unsigned int cmd_isp_io(unsigned int cmd)
 	return result;
 }
 
+/**
+* Отправить команду ADC (АЦП).
+* 
+* Тестовая комнада для тестирования функций ADC (АЦП) на демоплате.
+*/
 int cmd_adc(uint8_t admux, uint16_t *value)
 {
 	packet_t pkt;
@@ -247,7 +277,17 @@ unsigned char at_read_memory(unsigned int addr)
 	return byte;
 }
 
+/**
+* Адрес активной страницы
+*/
 static active_page = 0;
+
+/**
+* Флаг грязной страницы
+* 
+* Указывает что в буфер текущей страницы были записаны
+* данные и требуется запись во флеш.
+*/
 static dirty_page = 0;
 
 /**
@@ -325,6 +365,9 @@ unsigned char at_hex_digit(char ch)
 	return 0;
 }
 
+/**
+* Первести шестнадцатеричное число из строки в целочисленное значение
+*/
 unsigned int at_hex_to_int(const char *s)
 {
 	unsigned int r = 0;
@@ -426,6 +469,9 @@ int at_check_firmware(const char *fname)
 
 /**
 * Стереть чип
+* 
+* Отправить команду стирания чипа, чип уже должен быть переведен в режим
+* программирования.
 */
 int at_chip_erase()
 {
@@ -634,6 +680,9 @@ int at_act_write_fuse_ex()
 
 /**
 * Подать команду "Read Device Code"
+* 
+* Лучший способ проверить связь с чипом в режиме программирования.
+* Эта команда возвращает код который индентфицирует модель чипа
 */
 unsigned int at_chip_info()
 {
@@ -658,6 +707,9 @@ int at_act_info()
 	return 1;
 }
 
+/**
+* API для обращения к функции ADC (АЦП)
+*/
 int adc(char pin, double aref, double *result)
 {
 	uint16_t value = 0;
@@ -671,6 +723,9 @@ int adc(char pin, double aref, double *result)
 	return 1;
 }
 
+/**
+* Обработка команды ADC
+*/
 int at_act_adc()
 {
 	double u;
@@ -685,6 +740,9 @@ int at_act_adc()
 	return 1;
 }
 
+/**
+* Запус команды
+*/
 int run()
 {
 	switch ( action )
@@ -703,6 +761,9 @@ int run()
 	return 0;
 }
 
+/**
+* Отобразить подсказку
+*/
 int help()
 {
 	printf("pigro :action: :filename: :verbose|quiet:\n");
@@ -718,7 +779,6 @@ int help()
 	printf("    adc - run ADC mesure\n");
 	return 0;
 }
-
 
 int main(int argc, char *argv[])
 {
