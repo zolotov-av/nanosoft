@@ -1,19 +1,19 @@
 //
-// Простой программатор микроконтроллеров AVR для Raspberry Pi
-// для программирования используются стандартные выводы шины GPIO
-// (MOSI - 19, MISO - 21, SCK - 23) + 15й пин для подачи сигнала RESET
-//
-// Written on Raspberry Pi for Raspberry Pi
+// Программатор микроконтроллеров AVR.
+// 
+// Изначально был написан на Raspberry Pi и для Raspberry Pi и использовал
+// шину GPIO на Raspberry Pi, к которой непосредственно подключался
+// программируемый контроллер. Эта версия программатора использует внешений
+// самодельный переходник USB <-> SPI и может запускаться теоретически на
+// любой linux-системе.
 //
 // (c) Alex V. Zolotov <zolotov-alex@shamangrad.net>, 2013
-//    Fill free to copy, to compile, to use, to redistribute and etc on your own risk.
+//    Fill free to copy, to compile, to use, to redistribute etc on your own risk.
 //
 
-//#include <bcm2835.h>
 #include <stdio.h>
 #include <time.h>
 #include <stdint.h>
-
 #include <unistd.h>  /* Объявления стандартных функций UNIX */
 #include <fcntl.h>   /* Объявления управления файлами */
 #include <errno.h>   /* Объявления кодов ошибок */
@@ -30,19 +30,6 @@ enum {
 	AT_ACT_WRITE_FUSE_EX,
 	AT_ACT_ADC
 };
-
-#define AT_PB3   RPI_V2_GPIO_P1_11
-#define AT_PB4   RPI_V2_GPIO_P1_13
-
-#define AT_PWR   RPI_V2_GPIO_P1_17
-#define AT_RESET RPI_V2_GPIO_P1_18
-#define AT_MOSI  RPI_V2_GPIO_P1_19
-#define AT_MISO  RPI_V2_GPIO_P1_21
-#define AT_SCK   RPI_V2_GPIO_P1_23
-#define AT_GND   RPI_V2_GPIO_P1_25
-
-#define GPIO_OUT(pin) bcm2835_gpio_fsel(pin, BCM2835_GPIO_FSEL_OUTP)
-#define GPIO_INP(pin) bcm2835_gpio_fsel(pin, BCM2835_GPIO_FSEL_INPT)
 
 #define PACKET_MAXLEN 6
 
