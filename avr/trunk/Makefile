@@ -22,7 +22,7 @@ test.o: main.o libnano.a iom16a_usart.o iom16a_spi.o
 	$(GCC) $(LD_OPTS) $(OBJECTS) -o test.o -Wl,-L=. -lnano
 	$(OBJDUMP) -d test.o > test.dump
 
-main.o: main.cpp pictl.h timers.h iom16a_usart.h iom16a_spi.h
+main.o: main.cpp pictl.h iom16a_timer.h iom16a_usart.h iom16a_spi.h
 	$(GCC) $(CC_OPTS) $(ASM_LIST)=main.s -O2 -c main.cpp -o main.o
 	$(OBJDUMP) -d main.o > main.dump
 
