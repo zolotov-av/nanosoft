@@ -15,8 +15,6 @@ int counter = 0;
 
 ISR(TIMER0_COMP_vect)
 {
-	//counter++;
-	//PORTA = counter;
 }
 
 ISR(TIMER0_OVF_vect)
@@ -26,12 +24,29 @@ ISR(TIMER0_OVF_vect)
 	tim0_set_compare(counter);
 }
 
+ISR(TIMER1_COMPA_vect)
+{
+}
+
+ISR(TIMER1_COMPB_vect)
+{
+}
+
+ISR(TIMER1_CAPT_vect)
+{
+	counter = tim1_get_capture();
+}
+
+ISR(TIMER1_OVF_vect)
+{
+}
+
 int main()
 {
-	tim0_fc_pwm(TIM0_CLOCK_1024);
-	tim0_enable_overflow_interrupt();
-	tim0_enable_compare_interrupt();
-	tim0_set_compare(10);
+	//tim0_fc_pwm(TIM0_CLOCK_1024);
+	tim0_set_overflow_interrupt(true);
+	tim0_set_compare_interrupt(true);
+	//tim0_set_compare(10);
 	
 	//timer2_init(TIMER_WGM_CTC, TIMER_CTC_NOPE, TIMER_CLOCK_1024);
 	//timer2_set_compare(97);

@@ -9,7 +9,7 @@
 * 
 * В ATmega16a имеем 3 счетчика:
 *   Counter0 - 8 бит, один PWM-канал
-*   Counter1 - 16 бит, два PWM-канала
+*   Counter1 - 16 бит, два PWM-канала, захват счетчика
 *   Counter2 - 8 бит, один PWM-канал, поддержка часового кварца
 * 
 * (c) Alex V. Zolotov <zolotov-alex@shamangrad.net>, 2014
@@ -38,40 +38,44 @@
 #define TIM0_FC_PWM_NORMAL    2
 #define TIM0_FC_PWM_INVERT    3
 
+typedef unsigned char tim0_t;
+typedef unsigned int tim1_t;
+typedef unsigned char tim2_t;
+
 /**
-* Прочитать значение счетчика
+* Прочитать значение счетчика Counter0
 */
-inline char tim0_get_counter()
+inline tim0_t tim0_get_counter()
 {
 	return TCNT0;
 }
 
 /**
-* Установить значение счетчика
+* Установить значение счетчика Counter0
 */
-inline void tim0_set_counter(char value)
+inline void tim0_set_counter(tim0_t value)
 {
 	TCNT0 = value;
 }
 
 /**
-* Вернуть значение с которым сравнивается счетик
+* Вернуть значение с которым сравнивается счетик Counter0
 */
-inline char tim0_get_compare()
+inline tim0_t tim0_get_compare()
 {
 	return OCR0;
 }
 
 /**
-* Установить значение сравнения счетчика
+* Установить значение сравнения счетчика Counter0
 */
-inline void tim0_set_compare(char value)
+inline void tim0_set_compare(tim0_t value)
 {
 	OCR0 = value;
 }
 
 /**
-* Включить прерывание по совпадению считчика
+* Включить прерывание по совпадению считчика Counter0
 */
 inline void tim0_enable_compare_interrupt()
 {
@@ -79,7 +83,7 @@ inline void tim0_enable_compare_interrupt()
 }
 
 /**
-* Выключить прерывание по совпадению счетчика
+* Выключить прерывание по совпадению счетчика Counter0
 */
 inline void tim0_disable_compare_interrupt()
 {
@@ -87,22 +91,22 @@ inline void tim0_disable_compare_interrupt()
 }
 
 /**
-* Включить/выключить прерывание по совпадению счетчика
+* Включить/выключить прерывание по совпадению счетчика Counter0
 */
 inline void tim0_set_compare_interrupt(bool value)
 {
 	if ( value )
 	{
-		TIMSK |= (1 << OCIE0);
+		tim0_enable_compare_interrupt();
 	}
 	else
 	{
-		TIMSK &= ~(1 << OCIE0);
+		tim0_disable_compare_interrupt();
 	}
 }
 
 /**
-* Проверить включены ли прерывания по совпадению счетчика
+* Проверить включены ли прерывания по совпадению счетчика Counter0
 */
 inline bool tim0_get_compare_interrupt()
 {
@@ -110,7 +114,7 @@ inline bool tim0_get_compare_interrupt()
 }
 
 /**
-* Включить прерывание по переполнению счетчика
+* Включить прерывание по переполнению счетчика Counter0
 */
 inline void tim0_enable_overflow_interrupt()
 {
@@ -118,7 +122,7 @@ inline void tim0_enable_overflow_interrupt()
 }
 
 /**
-* Выключить прерывание по прерыванию счетчика
+* Выключить прерывание по переполнению счетчика Counter0
 */
 inline void tim0_disable_overflow_interrupt()
 {
@@ -126,17 +130,17 @@ inline void tim0_disable_overflow_interrupt()
 }
 
 /**
-* Включить/выключить прерывание по совпадению счетчика
+* Включить/выключить прерывание по переполнению счетчика Counter0
 */
 inline void tim0_set_overflow_interrupt(bool value)
 {
 	if ( value )
 	{
-		TIMSK |= (1 << TOIE0);
+		tim0_enable_overflow_interrupt();
 	}
 	else
 	{
-		TIMSK &= ~(1 << TOIE0);
+		tim0_disable_overflow_interrupt();
 	}
 }
 
@@ -178,6 +182,126 @@ inline void tim0_fc_pwm(char clock, char mode = TIM0_FC_PWM_NORMAL)
 {
 	TCCR0 = (0 << WGM01) | (1 << WGM00) | ((mode & 0x03) << COM00) | (clock & 0x07);
 	DDRB |= (1 << PB3);
+}
+
+/**
+* Прочитать значение счетчика Counter1
+*/
+inline tim1_t tim1_get_counter()
+{
+	return TCNT1;
+}
+
+/**
+* Установить значение счетчика Counter1
+*/
+inline void tim1_set_counter(tim1_t value)
+{
+	TCNT1 = value;
+}
+
+/**
+* Вернуть A-значение с которым сравнивается счетик Counter1
+*/
+inline tim1_t tim1_get_compareA()
+{
+	return OCR1A;
+}
+
+/**
+* Вернуть B-значение с которым сравнивается счетик Counter1
+*/
+inline tim1_t tim1_get_compareB()
+{
+	return OCR1B;
+}
+
+/**
+* Установить A-значение сравнения счетчика Counter1
+*/
+inline void tim1_set_compareA(tim1_t value)
+{
+	OCR1A = value;
+}
+
+/**
+* Установить B-значение сравнения счетчика Counter1
+*/
+inline void tim1_set_compareB(tim1_t value)
+{
+	OCR1B = value;
+}
+
+/**
+* Вернуть значение захваченного значения счетчика Counter1
+*/
+inline tim1_t tim1_get_capture()
+{
+	return ICR1;
+}
+
+/**
+* Включить прерывание по совпадению считчика Counter1 со значением A
+*/
+inline void tim1_enable_compareA_interrupt()
+{
+	TIMSK |= (1 << OCIE1A);
+}
+
+/**
+* Включить прерывание по совпадению считчика Counter1 со значением B
+*/
+inline void tim1_enable_compareB_interrupt()
+{
+	TIMSK |= (1 << OCIE1B);
+}
+
+/**
+* Выключить прерывание по совпадению счетчика Counter1 со значением A
+*/
+inline void tim1_disable_compareA_interrupt()
+{
+	TIMSK &= ~(1 << OCIE1A);
+}
+
+/**
+* Выключить прерывание по совпадению счетчика Counter1 со значением B
+*/
+inline void tim1_disable_compareB_interrupt()
+{
+	TIMSK &= ~(1 << OCIE1B);
+}
+
+/**
+* Включить прерывание по захвату счетчика Counter1
+*/
+inline void tim1_enable_capture_interrupt()
+{
+	TIMSK |= (1 << TICIE1);
+}
+
+/**
+* Выключить прерывание по захвату счетчика Counter1
+*/
+inline void tim1_disable_capture_interrupt()
+{
+	TIMSK &= ~(1 << TICIE1);
+}
+
+/**
+* Включить прерывание по переполнению счетчика Counter1
+*/
+inline void tim1_enable_overflow_interrupt()
+{
+	TIMSK |= (1 << TOIE1);
+}
+
+/**
+* Выключить прерывание по переполнению счетчика Counter1
+*/
+inline void tim1_disable_overflow_interrupt()
+{
+	TIMSK &= ~(1 << TOIE1);
 }
 
 #endif // __IOM16A_TIMER_H_
