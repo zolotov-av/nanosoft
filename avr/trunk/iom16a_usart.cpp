@@ -89,7 +89,7 @@ char usart_puts(const char *s)
 	int r = 0;
 	while ( *s )
 	{
-		if ( uart_putc(*s++) ) r++;
+		if ( usart_putc(*s++) ) r++;
 		else return r;
 	}
 	return r;

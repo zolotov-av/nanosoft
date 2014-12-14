@@ -7,6 +7,7 @@
 
 #include "pictl.h"
 #include "iom16a_usart.h"
+#include "iom16a_spi.h"
 
 #define TIM2_OCI_ENABLE 1
 #define TIM2_TOI_ENABLE 1

@@ -1,7 +1,5 @@
 
-#define bool int
-#define true 1
-#define false 0
+#include "http.h"
 
 const char *http_p;
 const char *http_limit;
