@@ -1,7 +1,7 @@
 
 MCU = atmega16a
 
-CC_OPTS = -mmcu=atmega16a -ffunction-sections
+CC_OPTS = -mmcu=atmega16a -ffunction-sections -fno-exceptions
 LD_OPTS = -mmcu=atmega16a -Wl,--gc-sections
 ASM_LIST = -Wa,-adhln
 
@@ -11,12 +11,15 @@ OBJCOPY = $(GCC_TARGET)-objcopy
 OBJDUMP = $(GCC_TARGET)-objdump
 AR = $(GCC_TARGET)-ar
 
+OBJECTS=main.o
+OBJECTS+=iom16a_usart.o
+OBJECTS+=iom16a_spi.o
 
 test.hex: test.o
 	$(OBJCOPY) -O ihex test.o test.hex
 
 test.o: main.o libnano.a iom16a_usart.o iom16a_spi.o
-	$(GCC) $(LD_OPTS) main.o iom16a_usart.o iom16a_spi.o -o test.o -Wl,-L=. -lnano
+	$(GCC) $(LD_OPTS) $(OBJECTS) -o test.o -Wl,-L=. -lnano
 	$(OBJDUMP) -d test.o > test.dump
 
 main.o: main.cpp pictl.h timers.h iom16a_usart.h iom16a_spi.h
