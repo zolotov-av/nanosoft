@@ -18,11 +18,11 @@ OBJECTS+=iom16a_spi.o
 test.hex: test.o
 	$(OBJCOPY) -O ihex test.o test.hex
 
-test.o: main.o libnano.a iom16a_usart.o iom16a_spi.o
+test.o: main.o libnano.a iom16a_usart.o iom16a_spi.o iom16a_adc.o
 	$(GCC) $(LD_OPTS) $(OBJECTS) -o test.o -Wl,-L=. -lnano
 	$(OBJDUMP) -d test.o > test.dump
 
-main.o: main.cpp pictl.h iom16a_timer.h iom16a_usart.h iom16a_spi.h
+main.o: main.cpp pictl.h iom16a_timer.h iom16a_usart.h iom16a_spi.h iom16a_adc.h
 	$(GCC) $(CC_OPTS) $(ASM_LIST)=main.s -O2 -c main.cpp -o main.o
 	$(OBJDUMP) -d main.o > main.dump
 
@@ -40,6 +40,9 @@ iom16a_usart.o: iom16a_usart.cpp iom16a_usart.h
 
 iom16a_spi.o: iom16a_spi.cpp iom16a_spi.h
 	$(GCC) $(CC_OPTS) $(ASM_LIST)=iom16a_spi.s -O2 -c iom16a_spi.cpp -o iom16a_spi.o
+
+iom16a_adc.o: iom16a_adc.cpp iom16a_adc.h
+	$(GCC) $(CC_OPTS) $(ASM_LIST)=iom16a_adc.s -O2 -c iom16a_adc.cpp -o iom16a_adc.o
 
 clean:
 	rm -rfv *.o *.s *.a *.dump *.hex

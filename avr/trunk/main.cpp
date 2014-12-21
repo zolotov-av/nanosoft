@@ -7,6 +7,7 @@
 #include "iom16a_timer.h"
 #include "iom16a_usart.h"
 #include "iom16a_spi.h"
+#include "iom16a_adc.h"
 
 #define TIM2_OCI_ENABLE 1
 #define TIM2_TOI_ENABLE 1
@@ -19,6 +20,7 @@ ISR(TIMER0_COMP_vect)
 
 ISR(TIMER0_OVF_vect)
 {
+	//ADCSRA |= (1 << ADSC);
 }
 
 ISR(TIMER1_COMPA_vect)
@@ -35,31 +37,35 @@ ISR(TIMER1_CAPT_vect)
 
 ISR(TIMER1_OVF_vect)
 {
+}
+
+ISR(ADC_vect)
+{
 	counter++;
-	PORTA = counter;
+	PORTA = (counter >> 8);
 }
 
 int main()
 {
-	tim1_init(14, TIM1_CLOCK_1024, 0, 0);
-	tim1_set_overflow_interrupt(true);
-	//tim1_set_compareA_interrupt(true);
-	//tim0_set_compare(50);
-	tim1_set_capture(50);
 	
-	//timer2_init(TIMER_WGM_CTC, TIMER_CTC_NOPE, TIMER_CLOCK_1024);
-	//timer2_set_compare(97);
+	//tim0_normal(TIM1_CLOCK_1024);
+	//tim0_set_overflow_interrupt(true);
 	
 	DDRA = 0xFF;
 	PORTA = 0xFF;
 	
+	ADMUX = 0;
+	ADCSRA = 0x8E;
+	adc_set_trigger(0);
+	sei();
+	
+	set_sleep_mode(0);
+	sleep_enable();
+		
 	while ( 1 )
 	{
-		sei();
-		set_sleep_mode(0);
-		sleep_enable();
 		sleep_cpu();
 	}
 	
- 	return 0;
+ 	return -1;
 }
