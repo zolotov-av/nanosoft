@@ -7,13 +7,6 @@ MCU := atmega16a
 CFLAGS := -mmcu=$(MCU) -ffunction-sections -fno-exceptions
 LDFLAGS := -mmcu=$(MCU) -Wl,--gc-sections
 
-GCC_TARGET = avr
-GCC = $(GCC_TARGET)-gcc
-OBJCOPY = $(GCC_TARGET)-objcopy
-OBJDUMP = $(GCC_TARGET)-objdump
-AR = $(GCC_TARGET)-ar
-ASM_LIST = -Wa,-adhln
-
 test.hex: test.o
 	#
 	# конвертируем объектный файл в *.hex
