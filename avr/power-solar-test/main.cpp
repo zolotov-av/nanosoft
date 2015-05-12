@@ -3,7 +3,7 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 
-#include "iotiny2313_timer.h"
+#include "iot2313_timer.h"
 
 int counter1 = 0;
 int counter2 = 0;

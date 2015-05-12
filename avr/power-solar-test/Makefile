@@ -17,7 +17,7 @@ test.o: $(OBJECTS)
 	avr-gcc $(LD_OPTS) $(OBJECTS) -o test.o
 	avr-objdump -d test.o > test.dump
 
-main.o: main.cpp iotiny2313_timer.h
+main.o: main.cpp iot2313_timer.h
 	avr-gcc $(CC_OPTS) -O2 -c main.cpp -o main.o
 	avr-objdump -d main.o > main.dump
 

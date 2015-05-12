@@ -13,7 +13,7 @@
 *   Counter0 - 8 бит, два ШИМ-канала
 *   Counter1 - 16 бит, два ШИМ-канала, захват счетчика
 *
-* (c) Alex V. Zolotov <zolotov-alex@shamangrad.net>, 2014
+* (c) Alex V. Zolotov <zolotov-alex@shamangrad.net>, 2015
 *     Fill free to copy, to compile, to use, to redistribute etc on your own risk.
 */
 
