@@ -11,15 +11,15 @@ OBJECTS=main.o
 #OBJECTS+=iom16a_adc.o
 
 test.hex: test.o
-	$(OBJCOPY) -O ihex test.o test.hex
+	avr-objcopy -O ihex test.o test.hex
 
 test.o: $(OBJECTS)
-	$(GCC) $(LD_OPTS) $(OBJECTS) -o test.o
-	$(OBJDUMP) -d test.o > test.dump
+	avr-gcc $(LD_OPTS) $(OBJECTS) -o test.o
+	avr-objdump -d test.o > test.dump
 
-main.o: main.cpp iom16a_timer.h
-	$(GCC) $(CC_OPTS) -O2 -c main.cpp -o main.o
-	$(OBJDUMP) -d main.o > main.dump
+main.o: main.cpp iotiny2313_timer.h
+	avr-gcc $(CC_OPTS) -O2 -c main.cpp -o main.o
+	avr-objdump -d main.o > main.dump
 
 clean:
 	rm -rfv *.o *.s *.a *.dump *.hex

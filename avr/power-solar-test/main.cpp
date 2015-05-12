@@ -3,11 +3,7 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 
-//#include "pictl.h"
-//#include "iom16a_timer.h"
-//#include "iom16a_usart.h"
-//#include "iom16a_spi.h"
-//#include "iom16a_adc.h"
+#include "iotiny2313_timer.h"
 
 int counter1 = 0;
 int counter2 = 0;
