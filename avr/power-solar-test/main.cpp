@@ -19,13 +19,13 @@
 
 int main()
 {
-	tim0_init(7, TIM1_CLOCK_1, 0, 2);
+	tim0_init(7, TIM1_CLOCK_1, 0, 3);
 	//tim0_set_compareA_interrupt(true);
 	//tim0_set_compareB_interrupt(true);
 	//tim0_set_capture_interrupt(true);
 	//tim0_set_overflow_interrupt(true);
-	OCR0A = 100;
-	tim0_set_compareA(10);
+	OCR0A = 31;
+ 	tim0_set_compareB(15);
 	
 	DDRD |= (1<<PD5);
 	
