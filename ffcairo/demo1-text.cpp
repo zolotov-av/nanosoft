@@ -10,7 +10,47 @@
 #include <ffcairo/ffcimage.h>
 #include <ffcairo/ffcstream.h>
 
-void ModifyFrame(FFCImage *pic, int iFrame)
+class MyInputStream: public FFCDecodedInput
+{
+public:
+	int frameNo;
+	FFCImage *pic;
+	
+	struct SwsContext *sws_ctx;
+	
+	/**
+	 * Обработчик фрейма
+	 */
+	virtual void handleFrame();
+	
+	void ModifyFrame(FFCImage *pic, int iFrame);
+};
+
+void MyInputStream::handleFrame()
+{
+	frameNo ++;
+	
+	// Save the frame to disk
+	if( frameNo < 10 )
+	{
+		printf("handleFrame #%d\n", frameNo);
+		
+		sws_scale(sws_ctx, (uint8_t const * const *)avFrame->data,
+			avFrame->linesize, 0, pic->height,
+			pic->avFrame->data, pic->avFrame->linesize);
+		
+		ModifyFrame(pic, frameNo);
+		
+		// сохраняем фрейм в файл
+		char szFilename[48];
+		sprintf(szFilename, "out/frame%03d.png", frameNo);
+		pic->savePNG(szFilename);
+		
+		if ( frameNo % 50 == 0 ) printf("#%i\n", frameNo);
+	}
+}
+
+void MyInputStream::ModifyFrame(FFCImage *pic, int iFrame)
 {
 	// создаем контекст рисования Cairo
 	cairo_t *cr = cairo_create(pic->surface);
@@ -57,56 +97,20 @@ int main(int argc, char *argv[])
 	
 	printf("video size: %dx%d\n", pCodecCtx->width, pCodecCtx->height);
 	
-	FFCImage *pic = new FFCImage(pCodecCtx->width, pCodecCtx->height);
 	
-	struct SwsContext *sws_ctx = NULL;
-	int frameFinished;
-	AVPacket packet;
 	
+	MyInputStream *videoStream = new MyInputStream;
+	videoStream->avCodecCtx = vin->videoCodecCtx;
 	// initialize SWS context for software scaling
-	sws_ctx = sws_getContext(pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt,
+	videoStream->sws_ctx = sws_getContext(pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt,
 		pCodecCtx->width, pCodecCtx->height, PIX_FMT_BGRA, SWS_BILINEAR,
 		NULL, NULL, NULL);
 	
-	int i=0;
-	while( av_read_frame(vin->avFormatCtx, &packet) >= 0 )
-	{
-		// Is this a packet from the video stream?
-		if( packet.stream_index == vin->videoStream )
-		{
-			// Decode video frame
-			avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &packet);
-			
-			// Did we get a video frame?
-			if(frameFinished) {
-			// Convert the image from its native format to RGB
-				sws_scale(sws_ctx, (uint8_t const * const *)pFrame->data,
-				pFrame->linesize, 0, pCodecCtx->height,
-				pic->avFrame->data, pic->avFrame->linesize);
-			
-				// Save the frame to disk
-				if(++i<10)
-				{
-					ModifyFrame(pic, i);
-					
-					// сохраняем фрейм в файл
-					char szFilename[48];
-					sprintf(szFilename, "out/frame%03d.png", i);
-					pic->savePNG(szFilename);
-					
-					if ( i % 50 == 0 ) printf("#%i\n", i);
-				}
-				else
-				{
-					av_free_packet(&packet);
-					break;
-				}
-			}
-		}
-		
-		// Free the packet that was allocated by av_read_frame
-		av_free_packet(&packet);
-	}
+	videoStream->pic = new FFCImage(pCodecCtx->width, pCodecCtx->height);
+	videoStream->frameNo = 0;
+	vin->bindStream(vin->videoStream, videoStream);
+	
+	while ( vin->processFrame() ) ;
 	
 	return 0;
 }

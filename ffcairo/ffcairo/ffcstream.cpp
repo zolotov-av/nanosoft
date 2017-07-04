@@ -6,7 +6,7 @@
 /**
 * Конструктор
 */
-FFCInput::FFCInput(): avFormatCtx(NULL), videoStream(-1), videoCodecCtx(NULL), audioStream(-1)
+FFCInput::FFCInput(): avFormatCtx(NULL), videoStream(-1), videoCodecCtx(NULL), audioStream(-1), stream_count(0), streams(NULL)
 {
 }
 
@@ -15,6 +15,7 @@ FFCInput::FFCInput(): avFormatCtx(NULL), videoStream(-1), videoCodecCtx(NULL), a
 */
 FFCInput::~FFCInput()
 {
+	if ( streams ) delete [] streams;
 }
 
 /**
@@ -24,6 +25,7 @@ void FFCInput::findVideoStream()
 {
 	videoStream = -1;
 	int count = avFormatCtx->nb_streams;
+	printf("stream's count: %d\n", count);
 	for(int i=0; i<count; i++)
 	{
 		if( avFormatCtx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO )
@@ -80,7 +82,7 @@ void FFCInput::findVideoStream()
 */
 bool FFCInput::open(const char *uri)
 {
-	/* 
+	/*
 	 * TODO something...
 	 * Здесь avFormatCtx должен быть NULL, а что если он не-NULL?
 	 * непонятно, можно ли повторно вызывать avformat_open_input()
@@ -104,9 +106,85 @@ bool FFCInput::open(const char *uri)
 	// Вывести информацию о потоке на стандартный вывод (необязательно)
 	av_dump_format(avFormatCtx, 0, uri, 0);
 	
+	stream_count = avFormatCtx->nb_streams;
+	streams = new ffc_input_stream_p[stream_count];
+	for(int i = 0; i < stream_count; i++) streams[i] = NULL;
+	
 	findVideoStream();
 	
 	printf("Поток[%s] успешно открыт\n", uri);
 	
 	return true;
+}
+
+/**
+* Присоединить приемник потока
+*/
+void FFCInput::bindStream(int i, FFCInputStream *s)
+{
+	if ( i >= 0 && i < stream_count )
+	{
+		streams[i] = s;
+	}
+}
+
+/**
+* Обработать фрейм
+*/
+bool FFCInput::processFrame()
+{
+	AVPacket packet;
+	
+	int r = av_read_frame(avFormatCtx, &packet);
+	if ( r < 0 )
+	{
+		// конец файла или ошибка
+		return false;
+	}
+	
+	int id = packet.stream_index;
+	if ( id >= 0 && id < stream_count )
+	{
+		if ( streams[id] )
+		{
+			streams[id]->handlePacket(&packet);
+		}
+	}
+	
+	// Free the packet that was allocated by av_read_frame
+	av_free_packet(&packet);
+	
+	return true;
+}
+
+/**
+* Конструктор
+*/
+FFCDecodedInput::FFCDecodedInput()
+{
+	avFrame = av_frame_alloc();
+}
+
+/**
+* Деструктор
+*/
+FFCDecodedInput::~FFCDecodedInput()
+{
+	av_frame_free(&avFrame);
+}
+
+/**
+* Обработчик пакета
+*/
+void FFCDecodedInput::handlePacket(AVPacket *packet)
+{
+	// Decode video frame
+	int frameFinished = 0;
+	avcodec_decode_video2(avCodecCtx, avFrame, &frameFinished, packet);
+	
+	// Did we get a video frame?
+	if(frameFinished)
+	{
+		handleFrame();
+	}
 }

@@ -3,6 +3,52 @@
 
 #include <ffcairo/config.h>
 
+class FFCInputStream
+{
+friend class FFCInput;
+protected:
+	/**
+	 * Обработчик пакета
+	 */
+	virtual void handlePacket(AVPacket *packet) = 0;
+};
+
+typedef FFCInputStream *ffc_input_stream_p;
+
+class FFCDecodedInput: public FFCInputStream
+{
+public:
+	/**
+	 * Контекст кодека
+	 */
+	AVCodecContext *avCodecCtx;
+	
+	/**
+	 * Фрейм (кадр)
+	 */
+	AVFrame *avFrame;
+	
+	/**
+	 * Конструктор
+	 */
+	FFCDecodedInput();
+	
+	/**
+	 * Деструктор
+	 */
+	~FFCDecodedInput();
+protected:
+	/**
+	 * Обработчик пакета
+	 */
+	virtual void handlePacket(AVPacket *packet);
+	
+	/**
+	 * Обработчик фрейма
+	 */
+	virtual void handleFrame() = 0;
+};
+
 /**
  * Класс представляющий входящий видеопоток
  *
@@ -13,6 +59,16 @@
  */
 class FFCInput
 {
+private:
+	/**
+	 * Число потоков
+	 */
+	int stream_count;
+	
+	/**
+	 * Потоки
+	 */
+	ffc_input_stream_p *streams;
 public:
 	/**
 	 * Контест avFormat
@@ -54,6 +110,16 @@ public:
 	 * Это может быть файл или URL, любой поддеживаемый FFMPEG-ом ресурс
 	 */
 	bool open(const char *uri);
+	
+	/**
+	 * Присоединить приемник потока
+	 */
+	void bindStream(int i, FFCInputStream *s);
+	
+	/**
+	 * Обработать фрейм
+	 */
+	bool processFrame();
 };
 
 #endif // FFC_STREAM
