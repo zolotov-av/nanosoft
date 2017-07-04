@@ -39,7 +39,7 @@ CXX:=@CXX@ $(CXXFLAGS) -ffunction-sections -I.
 
 LD=@CXX@ -Wl,--gc-sections
 
-LIBS=-lswscale -lavutil -lavformat -lavcodec -lcairo -lstdc++
+LIBS=-lswscale -lavutil -lavformat -lavcodec -lcairo -lnano2 -lstdc++
 
 # можно сделать по аналогии с $(CXX)
 AR:=ar
@@ -89,10 +89,12 @@ $(DEB_FILENAME): deb_clean deb_install
 
 .PHONY: deb_install
 deb_install: $(PROG_FILENAME)
-	mkdir -p deb/usr/lib
-	install libffcairo.a deb/usr/lib
-	mkdir -p deb/usr/share/ffcairo
-	install README deb/usr/share/ffcairo/
+	mkdir -p deb/usr/include/
+	mkdir -p deb/usr/lib/
+	mkdir -p deb/usr/share/ffcairo/
+	install -m 0644 ffcairo/*.h deb/usr/include/
+	install -m 0644 libffcairo.a deb/usr/lib/
+	install -m 0644 README deb/usr/share/ffcairo/
 
 $(PROG_FILENAME): $(OBJECTS)
 	$(LD) $(OBJECTS) -o $(PROG_FILENAME)

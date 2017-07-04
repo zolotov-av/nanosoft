@@ -107,7 +107,7 @@ bool FFCInput::open(const char *uri)
 	av_dump_format(avFormatCtx, 0, uri, 0);
 	
 	stream_count = avFormatCtx->nb_streams;
-	streams = new ffc_input_stream_p[stream_count];
+	streams = new ptr<FFCInputStream>[stream_count];
 	for(int i = 0; i < stream_count; i++) streams[i] = NULL;
 	
 	findVideoStream();
@@ -145,7 +145,7 @@ bool FFCInput::processFrame()
 	int id = packet.stream_index;
 	if ( id >= 0 && id < stream_count )
 	{
-		if ( streams[id] )
+		if ( streams[id].getObject() )
 		{
 			streams[id]->handlePacket(&packet);
 		}

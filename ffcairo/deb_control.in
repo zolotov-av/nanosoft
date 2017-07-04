@@ -4,4 +4,5 @@ Section: misc
 Architecture: @DEB_ARCH@
 Maintainer: Alex V. Zolotov <zolotov-alex@shamangrad.net>
 Priority: extra
+Depends: libnano2
 Description: static library for video processing with ffmpeg and Cairo

@@ -2,8 +2,14 @@
 #define FFC_STREAM
 
 #include <ffcairo/config.h>
+#include <nanosoft/object.h>
 
-class FFCInputStream
+/**
+ * Абстрактный класс входного потока
+ *
+ * Это может быть и видео и аудио и субтитры и что угодно
+ */
+class FFCInputStream: public Object
 {
 friend class FFCInput;
 protected:
@@ -14,6 +20,18 @@ protected:
 };
 
 typedef FFCInputStream *ffc_input_stream_p;
+
+/**
+ * Асбтрактный класс выходного потка
+ *
+ * Это может быть и видео и аудио и субтитры и что угодно
+ */
+class FFCOutputStream: public Object
+{
+	// TODO
+};
+
+typedef FFCOutputStream *ffc_output_stream_p;
 
 class FFCDecodedInput: public FFCInputStream
 {
@@ -68,7 +86,7 @@ private:
 	/**
 	 * Потоки
 	 */
-	ffc_input_stream_p *streams;
+	ptr<FFCInputStream> *streams;
 public:
 	/**
 	 * Контест avFormat
