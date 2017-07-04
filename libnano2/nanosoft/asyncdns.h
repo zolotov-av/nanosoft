@@ -1,8 +1,8 @@
 #ifndef NANOSOFT_ASYNCDNS_H
 #define NANOSOFT_ASYNCDNS_H
 
-#include <maycloud/asyncobject.h>
-#include <maycloud/netdaemon.h>
+#include <nanosoft/asyncobject.h>
+#include <nanosoft/netdaemon.h>
 
 #include <time.h>
 

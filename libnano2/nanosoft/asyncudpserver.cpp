@@ -1,6 +1,6 @@
 
-#include <maycloud/asyncudpserver.h>
-#include <maycloud/config.h>
+#include <nanosoft/asyncudpserver.h>
+#include <nanosoft/config.h>
 
 #include <unistd.h>
 #include <sys/types.h>

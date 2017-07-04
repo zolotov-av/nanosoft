@@ -1,8 +1,8 @@
 #ifndef NANOSOFT_ASYNCXMLSTREAM_H
 #define NANOSOFT_ASYNCXMLSTREAM_H
 
-#include <maycloud/asyncstream.h>
-#include <maycloud/xmlparser.h>
+#include <nanosoft/asyncstream.h>
+#include <nanosoft/xmlparser.h>
 
 #include <errno.h>
 #include <unistd.h>

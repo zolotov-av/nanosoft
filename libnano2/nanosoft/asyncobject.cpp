@@ -1,5 +1,5 @@
-#include <maycloud/asyncobject.h>
-#include <maycloud/netdaemon.h>
+#include <nanosoft/asyncobject.h>
+#include <nanosoft/netdaemon.h>
 
 using namespace std;
 

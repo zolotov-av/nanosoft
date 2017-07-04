@@ -58,6 +58,13 @@ DEB_FILENAME=libnano2-$(DEB_ARCH).deb
 OBJECTS+=obj/main.o
 
 LIBOBJECTS+=obj/object.o
+LIBOBJECTS+=obj/asyncagent.o
+LIBOBJECTS+=obj/asyncdns.o
+LIBOBJECTS+=obj/asyncobject.o
+LIBOBJECTS+=obj/asyncserver.o
+LIBOBJECTS+=obj/asyncstream.o
+LIBOBJECTS+=obj/asyncudpserver.o
+LIBOBJECTS+=obj/asyncxmlstream.o
 
 ############################# GENERIC RULES ##################################
 
@@ -101,6 +108,27 @@ $(PROG_FILENAME): $(OBJECTS)
 libnano2.a: $(LIBOBJECTS) nanosoft/config.h
 	$(AR) rc libnano2.a $(LIBOBJECTS)
 	$(RANLIB) libnano2.a
+
+obj/asyncagent.o: nanosoft/asyncagent.cpp nanosoft/asyncagent.h
+	$(CXX) -c nanosoft/asyncagent.cpp -o obj/asyncagent.o
+
+obj/asyncdns.o: nanosoft/asyncdns.cpp nanosoft/asyncdns.h
+	$(CXX) -c nanosoft/asyncdns.cpp -o obj/asyncdns.o
+
+obj/asyncobject.o: nanosoft/asyncobject.cpp nanosoft/asyncobject.h
+	$(CXX) -c nanosoft/asyncobject.cpp -o obj/asyncobject.o
+
+obj/asyncserver.o: nanosoft/asyncserver.cpp nanosoft/asyncserver.h
+	$(CXX) -c nanosoft/asyncserver.cpp -o obj/asyncserver.o
+
+obj/asyncstream.o: nanosoft/asyncstream.cpp nanosoft/asyncstream.h nanosoft/config.h
+	$(CXX) -c nanosoft/asyncstream.cpp -o obj/asyncstream.o
+
+obj/asyncudpserver.o: nanosoft/asyncudpserver.cpp nanosoft/asyncudpserver.h
+	$(CXX) -c nanosoft/asyncudpserver.cpp -o obj/asyncudpserver.o
+
+obj/asyncxmlstream.o: nanosoft/asyncxmlstream.cpp nanosoft/asyncxmlstream.h
+	$(CXX) -c nanosoft/asyncxmlstream.cpp -o obj/asyncxmlstream.o
 
 obj/object.o: nanosoft/object.cpp nanosoft/object.h
 	$(CXX) -c nanosoft/object.cpp -o obj/object.o

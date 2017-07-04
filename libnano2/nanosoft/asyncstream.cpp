@@ -1,6 +1,6 @@
-#include <maycloud/asyncstream.h>
-#include <maycloud/netdaemon.h>
-#include <maycloud/debug.h>
+#include <nanosoft/asyncstream.h>
+#include <nanosoft/netdaemon.h>
+#include <nanosoft/debug.h>
 
 #include <stdio.h>
 #include <stdlib.h>

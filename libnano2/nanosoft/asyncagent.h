@@ -1,10 +1,10 @@
 #ifndef NANOSOFT_ASYNCAGENT_H
 #define NANOSOFT_ASYNCAGENT_H
 
-#include <maycloud/netdaemon.h>
-#include <maycloud/asyncstream.h>
-#include <maycloud/asyncdns.h>
-#include <maycloud/logger.h>
+#include <nanosoft/netdaemon.h>
+#include <nanosoft/asyncstream.h>
+#include <nanosoft/asyncdns.h>
+#include <nanosoft/logger.h>
 
 class AsyncAgent: public AsyncStream
 {

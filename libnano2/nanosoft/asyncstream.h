@@ -1,9 +1,9 @@
 #ifndef NANOSOFT_ASYNCSTREAM_H
 #define NANOSOFT_ASYNCSTREAM_H
 
-#include <maycloud/asyncobject.h>
-#include <maycloud/config.h>
-#include <maycloud/error.h>
+#include <nanosoft/asyncobject.h>
+#include <nanosoft/config.h>
+#include <nanosoft/error.h>
 
 #include <stdio.h>
 #include <string.h>

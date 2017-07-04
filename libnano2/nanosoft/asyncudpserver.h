@@ -5,7 +5,7 @@
 #include <netinet/in.h>
 #include <string.h>
 
-#include <maycloud/asyncobject.h>
+#include <nanosoft/asyncobject.h>
 
 /**
 * Базовый класс для асинхронных серверов UDP

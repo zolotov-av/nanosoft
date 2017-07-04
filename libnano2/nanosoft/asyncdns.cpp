@@ -1,4 +1,4 @@
-#include <maycloud/asyncdns.h>
+#include <nanosoft/asyncdns.h>
 
 /**
  * Глобальная переменная-ссылка на резолвер днс

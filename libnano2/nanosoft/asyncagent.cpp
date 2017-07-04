@@ -1,4 +1,4 @@
-#include <maycloud/asyncagent.h>
+#include <nanosoft/asyncagent.h>
 
 /**
  * Конструктор агента
