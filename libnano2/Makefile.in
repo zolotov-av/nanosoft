@@ -1,0 +1,128 @@
+
+############################ AUTOCONF VARS ###################################
+
+# архитектура на которой будет происходить компиляция
+BUILD_SYSTEM:=@build@
+BUILD_CPU:=@build_cpu@
+BUILD_VENDOR:=@build_vendor@
+BUILD_OS:=@build_os@
+
+# архитектура на которой будут запускаться скомпилированные программы
+HOST_SYSTEM:=@host@
+HOST_CPU:=@host_cpu@
+HOST_VENDOR:=@host_vendor@
+HOST_OS:=@host_os@
+
+# целевая архитектура компилируемого компилятора
+#
+# Пояснение: это нужно для компиляции компиляторов, в частности самого gcc,
+#   задает архитектуру, для которой будущий (компилируемый) компилятор
+#   будет компилировать программы. В большинстве проектов не требуется.
+TARGET_SYSTEM:=@target@
+TARGET_CPU:=@target_cpu@
+TARGET_VENDOR:=@target_vendor@
+TARGET_OS:=@target_os@
+
+# архитектура для которой будет собираться deb-пакет.
+# сборщик пакетов и компилятор имеют разную терминлогию,
+# в скрипте configure мы транслируем HOST_CPU в имя архитектуры которую
+# ожидает менеджер пакетов
+DEB_ARCH:=@DEB_ARCH@
+
+# configure может снабдить нас дополнительными опциями компилятора
+# так же мы можем передавать свои опции компилятора в configure
+# через одноименную переменную окружения и они появятся здесь
+CXXFLAGS=@CXXFLAGS@
+
+# берем имя компилятора, которое дает нам configure и доплняем его опциями
+CXX:=@CXX@ $(CXXFLAGS) -ffunction-sections -I.
+
+LD=@CXX@ -Wl,--gc-sections
+
+LIBS=-lstdc++
+
+# можно сделать по аналогии с $(CXX)
+AR:=ar
+RANLIB:=ranlib
+
+############################### VARS #########################################
+
+# имя нашей программы/библиотеки
+PROG_FILENAME=main
+
+# Имя файла deb-пакета
+DEB_FILENAME=libnano2-$(DEB_ARCH).deb
+
+# объектные модули которые пойдут в нашу программу/библиотеку
+# просто описываем здесь в крассивом виде, чтобы правила были более понятные
+OBJECTS+=obj/main.o
+
+LIBOBJECTS+=obj/object.o
+
+############################# GENERIC RULES ##################################
+
+# .PHONY указывает цели которые не создают файлов.
+.PHONY: all install deb clean distclean
+
+# первая цель - главная, она будет запускаться когда цель явно не указана
+all: libnano2.a $(PROG_FILENAME) demo
+
+.PHONY: demo
+demo:
+
+.PHONY: test
+test:
+
+# установка файлов
+# примечение: будем отходить от этой практике, рекомендуется создавать пакет
+# и устанавливать через менеджер пакетов.
+install: $(PROG_FILENAME)
+	# TODO...
+
+# сборка deb-пакетов, просто короткая цель чтобы не вспоминать имя пакета
+deb: $(DEB_FILENAME)
+
+# сборка пакета
+$(DEB_FILENAME): deb_clean deb_install
+	fakeroot dpkg-deb --build deb $(DEB_FILENAME)
+
+.PHONY: deb_install
+deb_install: $(PROG_FILENAME)
+	mkdir -p deb/usr/lib
+	install libnano2.a deb/usr/lib
+	mkdir -p deb/usr/share/libnano2
+	install README deb/usr/share/libnano2/
+
+$(PROG_FILENAME): $(OBJECTS)
+	$(LD) $(OBJECTS) -o $(PROG_FILENAME)
+
+########################## BUILD RULES #######################################
+
+libnano2.a: $(LIBOBJECTS) nanosoft/config.h
+	$(AR) rc libnano2.a $(LIBOBJECTS)
+	$(RANLIB) libnano2.a
+
+obj/object.o: nanosoft/object.cpp nanosoft/object.h
+	$(CXX) -c nanosoft/object.cpp -o obj/object.o
+
+obj/main.o: main.cpp
+	$(CXX) -c main.cpp -o obj/main.o
+
+########################### CLEAN RULES ######################################
+
+# полная очистка
+distclean: clean deb_clean
+	rm -f Makefile $(DEB_FILENAME) $(PROG_FILENAME) deb/DEBIAN/control
+	rm -f config.log config.status
+	rm -f nanosoft/config.h
+	rm -rf autom4te.cache
+	rm -rf libnano2.a main
+
+# простая очистка, промежуточные файлы, но оставляет целевые
+clean:
+	rm -f obj/*.o
+
+# зачистка в каталоге deb-пакета
+.PHONY: deb_clean
+deb_clean:
+	rm -rf deb/usr
