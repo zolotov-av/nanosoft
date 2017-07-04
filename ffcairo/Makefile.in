@@ -66,7 +66,10 @@ LIBOBJECTS+=obj/ffcstream.o
 .PHONY: all install deb clean distclean
 
 # первая цель - главная, она будет запускаться когда цель явно не указана
-all: libffcairo.a $(PROG_FILENAME)
+all: libffcairo.a $(PROG_FILENAME) demo
+
+.PHONY: demo
+demo: demo1-text
 
 .PHONY: test
 test: test5
@@ -99,6 +102,9 @@ $(PROG_FILENAME): $(OBJECTS)
 test5: test5-ffc.cpp libffcairo.a
 	$(CXX) -o test5 test5-ffc.cpp -L. -lffcairo $(LIBS)
 
+demo1-text: demo1-text.cpp libffcairo.a
+	$(CXX) -o demo1-text demo1-text.cpp -L. -lffcairo $(LIBS)
+
 libffcairo.a: $(LIBOBJECTS) ffcairo/config.h
 	$(AR) rc libffcairo.a $(LIBOBJECTS)
 	$(RANLIB) libffcairo.a
@@ -121,6 +127,7 @@ distclean: clean deb_clean
 	rm -f ffcairo/config.h
 	rm -rf autom4te.cache
 	rm -rf libffcairo.a main test5
+	rm -rf demo1-text
 
 # простая очистка, промежуточные файлы, но оставляет целевые
 clean:
