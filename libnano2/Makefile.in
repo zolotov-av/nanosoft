@@ -79,6 +79,8 @@ LIBOBJECTS+=obj/taghelper.o
 LIBOBJECTS+=obj/tempstring.o
 LIBOBJECTS+=obj/xml_tag.o
 LIBOBJECTS+=obj/xml_types.o
+LIBOBJECTS+=obj/xmlparser.o
+LIBOBJECTS+=obj/xmlwriter.o
 LIBOBJECTS+=obj/attagparser.o
 
 ############################# GENERIC RULES ##################################
@@ -110,10 +112,12 @@ $(DEB_FILENAME): deb_clean deb_install
 
 .PHONY: deb_install
 deb_install: $(PROG_FILENAME)
+	mkdir -p deb/usr/include/nanosoft/
+	install -m 0644 nanosoft/*.h deb/usr/include/nanosoft/
 	mkdir -p deb/usr/lib
-	install libnano2.a deb/usr/lib
+	install -m 0644 libnano2.a deb/usr/lib
 	mkdir -p deb/usr/share/libnano2
-	install README deb/usr/share/libnano2/
+	install -m 0644 README deb/usr/share/libnano2/
 
 $(PROG_FILENAME): $(OBJECTS)
 	$(LD) $(OBJECTS) -o $(PROG_FILENAME)
@@ -198,7 +202,6 @@ obj/xmlparser.o: nanosoft/xmlparser.cpp nanosoft/xmlparser.h
 
 obj/xmlwriter.o: nanosoft/xmlwriter.cpp nanosoft/xmlwriter.h
 	$(CXX) -c nanosoft/xmlwriter.cpp -o obj/xmlwriter.o
-
 
 
 
