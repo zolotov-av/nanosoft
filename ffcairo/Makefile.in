@@ -61,7 +61,7 @@ OBJECTS+=obj/main.o
 .PHONY: all install deb clean distclean
 
 # первая цель - главная, она будет запускаться когда цель явно не указана
-all: $(PROG_FILENAME)
+all: libffcairo.a $(PROG_FILENAME)
 
 # установка файлов
 # примечение: будем отходить от этой практике, рекомендуется создавать пакет
@@ -78,6 +78,8 @@ $(DEB_FILENAME): deb_clean deb_install
 
 .PHONY: deb_install
 deb_install: $(PROG_FILENAME)
+	mkdir -p deb/usr/lib
+	install libffcairo.a deb/usr/lib
 	mkdir -p deb/usr/share/ffcairo
 	install README deb/usr/share/ffcairo/
 
@@ -85,6 +87,13 @@ $(PROG_FILENAME): $(OBJECTS)
 	$(LD) $(OBJECTS) -o $(PROG_FILENAME)
 
 ########################## BUILD RULES #######################################
+
+libffcairo.a: obj/ffcimage.o
+	$(AR) rc libffcairo.a obj/ffcimage.o
+	$(RANLIB) libffcairo.a
+
+obj/ffcimage.o: src/ffcimage.cpp src/ffcimage.h src/config.h
+	$(CXX) -c src/ffcimage.cpp -o obj/ffcimage.o
 
 obj/main.o: src/main.cpp
 	$(CXX) -c src/main.cpp -o obj/main.o
@@ -105,4 +114,4 @@ clean:
 # зачистка в каталоге deb-пакета
 .PHONY: deb_clean
 deb_clean:
-	rm -rf deb/usr
+	rm -rf deb/usr libffcairo.a main

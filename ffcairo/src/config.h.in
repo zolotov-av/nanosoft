@@ -1,0 +1,27 @@
+#ifndef FFC_CONFIG
+#define FFC_CONFIG
+
+#include <cairo/cairo.h>
+
+#define IS_LIBAV
+
+extern "C" {
+
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+
+#ifndef IS_LIBAV
+#include <ffmpeg/swscale.h>
+#else
+#include <libswscale/swscale.h>
+
+//if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
+#define av_frame_alloc avcodec_alloc_frame
+#define av_frame_free avcodec_free_frame
+
+
+#endif
+
+}
+
+#endif // FFC_CONFIG
