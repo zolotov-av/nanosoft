@@ -1,0 +1,7 @@
+Package: libffcairo
+Version: 0.1-1
+Section: misc
+Architecture: @DEB_ARCH@
+Maintainer: Alex V. Zolotov <zolotov-alex@shamangrad.net>
+Priority: extra
+Description: static library for video processing with ffmpeg and Cairo
