@@ -581,7 +581,7 @@ PACKAGE_STRING='ffcairo 0.1'
 PACKAGE_BUGREPORT=''
 PACKAGE_URL=''
 
-ac_unique_file="src/main.cpp"
+ac_unique_file="ffcairo/config.h.in"
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 DEB_ARCH
@@ -1790,7 +1790,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # Файл генерируется на основе шаблона, если он не указан в команде, то
 # к имени файла прибавляется .in - было config.h, станет config.h.in,
 # так что после этого править надо *.in файл
-ac_config_headers="$ac_config_headers src/config.h"
+ac_config_headers="$ac_config_headers ffcairo/config.h"
 
 
 # опредяляем архитектуры, где компилируем, на чем компилируем
@@ -3133,7 +3133,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "src/config.h") CONFIG_HEADERS="$CONFIG_HEADERS src/config.h" ;;
+    "ffcairo/config.h") CONFIG_HEADERS="$CONFIG_HEADERS ffcairo/config.h" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "deb/DEBIAN/control") CONFIG_FILES="$CONFIG_FILES deb/DEBIAN/control:deb_control.in" ;;
 

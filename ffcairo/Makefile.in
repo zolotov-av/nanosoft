@@ -35,7 +35,7 @@ DEB_ARCH:=@DEB_ARCH@
 CXXFLAGS=@CXXFLAGS@
 
 # берем имя компилятора, которое дает нам configure и доплняем его опциями
-CXX:=@CXX@ $(CXXFLAGS)
+CXX:=@CXX@ $(CXXFLAGS) -ffunction-sections -I.
 
 LD=@CXX@ -Wl,--gc-sections
 
@@ -95,14 +95,14 @@ libffcairo.a: $(LIBOBJECTS)
 	$(AR) rc libffcairo.a $(LIBOBJECTS)
 	$(RANLIB) libffcairo.a
 
-obj/ffcimage.o: src/ffcimage.cpp src/ffcimage.h src/config.h
-	$(CXX) -c src/ffcimage.cpp -o obj/ffcimage.o
+obj/ffcimage.o: ffcairo/ffcimage.cpp ffcairo/ffcimage.h ffcairo/config.h
+	$(CXX) -c ffcairo/ffcimage.cpp -o obj/ffcimage.o
 
-obj/ffcstream.o: src/ffcstream.cpp src/ffcstream.h src/config.h
-	$(CXX) -c src/ffcstream.cpp -o obj/ffcstream.o
+obj/ffcstream.o: ffcairo/ffcstream.cpp ffcairo/ffcstream.h ffcairo/config.h
+	$(CXX) -c ffcairo/ffcstream.cpp -o obj/ffcstream.o
 
-obj/main.o: src/main.cpp
-	$(CXX) -c src/main.cpp -o obj/main.o
+obj/main.o: ffcairo/main.cpp
+	$(CXX) -c ffcairo/main.cpp -o obj/main.o
 	
 ########################### CLEAN RULES ######################################
 
@@ -110,7 +110,7 @@ obj/main.o: src/main.cpp
 distclean: clean deb_clean
 	rm -f Makefile $(DEB_FILENAME) $(PROG_FILENAME) deb/DEBIAN/control
 	rm -f config.log config.status
-	rm -f src/config.h
+	rm -f ffcairo/config.h
 	rm -rf autom4te.cache
 	rm -rf libffcairo.a main
 

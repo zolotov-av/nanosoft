@@ -1,6 +1,5 @@
 
-#include "ffcimage.h"
-
+#include <ffcairo/ffcimage.h>
 
 #include <stdio.h>
 
