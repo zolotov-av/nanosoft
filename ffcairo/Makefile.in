@@ -78,8 +78,8 @@ $(DEB_FILENAME): deb_clean deb_install
 
 .PHONY: deb_install
 deb_install: $(PROG_FILENAME)
-	mkdir -p deb/usr/bin
-	install -s $(PROG_FILENAME) deb/usr/bin/
+	mkdir -p deb/usr/share/ffcairo
+	install README deb/usr/share/ffcairo/
 
 $(PROG_FILENAME): $(OBJECTS)
 	$(LD) $(OBJECTS) -o $(PROG_FILENAME)
