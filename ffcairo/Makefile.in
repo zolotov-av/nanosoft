@@ -35,7 +35,7 @@ DEB_ARCH:=@DEB_ARCH@
 CXXFLAGS=@CXXFLAGS@
 
 # берем имя компилятора, которое дает нам configure и доплняем его опциями
-CXX:=@CXX@ -O2
+CXX:=@CXX@ $(CXXFLAGS)
 
 LD=@CXX@ -Wl,--gc-sections
 
