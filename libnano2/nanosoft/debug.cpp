@@ -1,5 +1,5 @@
 
-#include <maycloud/debug.h>
+#include <nanosoft/debug.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

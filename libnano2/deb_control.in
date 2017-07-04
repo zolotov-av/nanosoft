@@ -4,4 +4,5 @@ Section: misc
 Architecture: @DEB_ARCH@
 Maintainer: Alex V. Zolotov <zolotov-alex@shamangrad.net>
 Priority: extra
+Depends: libudns-dev, libmysqlclient-dev, libexpat1-dev
 Description: static library and lightweight tools

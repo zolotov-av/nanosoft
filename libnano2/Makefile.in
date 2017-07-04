@@ -57,7 +57,6 @@ DEB_FILENAME=libnano2-$(DEB_ARCH).deb
 # просто описываем здесь в крассивом виде, чтобы правила были более понятные
 OBJECTS+=obj/main.o
 
-LIBOBJECTS+=obj/object.o
 LIBOBJECTS+=obj/asyncagent.o
 LIBOBJECTS+=obj/asyncdns.o
 LIBOBJECTS+=obj/asyncobject.o
@@ -65,6 +64,22 @@ LIBOBJECTS+=obj/asyncserver.o
 LIBOBJECTS+=obj/asyncstream.o
 LIBOBJECTS+=obj/asyncudpserver.o
 LIBOBJECTS+=obj/asyncxmlstream.o
+LIBOBJECTS+=obj/debug.o
+LIBOBJECTS+=obj/easylib.o
+LIBOBJECTS+=obj/easymysql.o
+LIBOBJECTS+=obj/easylist.o
+LIBOBJECTS+=obj/easyresultset.o
+LIBOBJECTS+=obj/easyrow.o
+LIBOBJECTS+=obj/easyvector.o
+LIBOBJECTS+=obj/error.o
+LIBOBJECTS+=obj/logger.o
+LIBOBJECTS+=obj/object.o
+LIBOBJECTS+=obj/tagbuilder.o
+LIBOBJECTS+=obj/taghelper.o
+LIBOBJECTS+=obj/tempstring.o
+LIBOBJECTS+=obj/xml_tag.o
+LIBOBJECTS+=obj/xml_types.o
+LIBOBJECTS+=obj/attagparser.o
 
 ############################# GENERIC RULES ##################################
 
@@ -130,8 +145,62 @@ obj/asyncudpserver.o: nanosoft/asyncudpserver.cpp nanosoft/asyncudpserver.h
 obj/asyncxmlstream.o: nanosoft/asyncxmlstream.cpp nanosoft/asyncxmlstream.h
 	$(CXX) -c nanosoft/asyncxmlstream.cpp -o obj/asyncxmlstream.o
 
+obj/attagparser.o: nanosoft/attagparser.cpp nanosoft/attagparser.h nanosoft/xml_types.h
+	$(CXX) -c nanosoft/attagparser.cpp -o obj/attagparser.o
+
+obj/debug.o: nanosoft/debug.cpp nanosoft/debug.h
+	$(CXX) -c nanosoft/debug.cpp -o obj/debug.o
+
+obj/easylib.o: nanosoft/easylib.cpp nanosoft/easylib.h
+	$(CXX) -c nanosoft/easylib.cpp -o obj/easylib.o
+
+obj/easymysql.o: nanosoft/easymysql.cpp nanosoft/easymysql.h nanosoft/easyrow.h nanosoft/easyresultset.h
+	$(CXX) -c nanosoft/easymysql.cpp -o obj/easymysql.o
+
+obj/easylist.o: nanosoft/easylist.cpp nanosoft/easylist.h
+	$(CXX) -c nanosoft/easylist.cpp -o obj/easylist.o
+
+obj/easyresultset.o: nanosoft/easyresultset.cpp nanosoft/easyrow.h nanosoft/easyresultset.h
+	$(CXX) -c nanosoft/easyresultset.cpp -o obj/easyresultset.o
+	
+obj/easyrow.o: nanosoft/easyrow.cpp nanosoft/easyrow.h
+	$(CXX) -c nanosoft/easyrow.cpp -o obj/easyrow.o
+
+obj/easyvector.o: nanosoft/easyvector.cpp nanosoft/easyvector.h
+	$(CXX) -c nanosoft/easyvector.cpp -o obj/easyvector.o
+
+obj/error.o: nanosoft/error.cpp nanosoft/error.h
+	$(CXX) -c nanosoft/error.cpp -o obj/error.o
+
+obj/logger.o: nanosoft/logger.cpp nanosoft/logger.h
+	$(CXX) -c nanosoft/logger.cpp -o obj/logger.o
+
 obj/object.o: nanosoft/object.cpp nanosoft/object.h
 	$(CXX) -c nanosoft/object.cpp -o obj/object.o
+
+obj/tagbuilder.o: nanosoft/tagbuilder.cpp nanosoft/tagbuilder.h nanosoft/xml_types.h
+	$(CXX) -c nanosoft/tagbuilder.cpp -o obj/tagbuilder.o
+
+obj/taghelper.o: nanosoft/taghelper.cpp nanosoft/taghelper.h nanosoft/xml_types.h
+	$(CXX) -c nanosoft/taghelper.cpp -o obj/taghelper.o
+
+obj/tempstring.o: nanosoft/tempstring.cpp nanosoft/tempstring.h
+	$(CXX) -c nanosoft/tempstring.cpp -o obj/tempstring.o
+
+obj/xml_tag.o: nanosoft/xml_tag.cpp nanosoft/xml_tag.h nanosoft/xml_types.h
+	$(CXX) -c nanosoft/xml_tag.cpp -o obj/xml_tag.o
+
+obj/xml_types.o: nanosoft/xml_types.cpp nanosoft/xml_types.h
+	$(CXX) -c nanosoft/xml_types.cpp -o obj/xml_types.o
+
+obj/xmlparser.o: nanosoft/xmlparser.cpp nanosoft/xmlparser.h
+	$(CXX) -c nanosoft/xmlparser.cpp -o obj/xmlparser.o
+
+obj/xmlwriter.o: nanosoft/xmlwriter.cpp nanosoft/xmlwriter.h
+	$(CXX) -c nanosoft/xmlwriter.cpp -o obj/xmlwriter.o
+
+
+
 
 obj/main.o: main.cpp
 	$(CXX) -c main.cpp -o obj/main.o
