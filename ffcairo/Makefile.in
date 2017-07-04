@@ -39,6 +39,8 @@ CXX:=@CXX@ $(CXXFLAGS) -ffunction-sections -I.
 
 LD=@CXX@ -Wl,--gc-sections
 
+LIBS=-lswscale -lavutil -lavformat -lavcodec -lcairo -lstdc++
+
 # можно сделать по аналогии с $(CXX)
 AR:=ar
 RANLIB:=ranlib
@@ -66,6 +68,9 @@ LIBOBJECTS+=obj/ffcstream.o
 # первая цель - главная, она будет запускаться когда цель явно не указана
 all: libffcairo.a $(PROG_FILENAME)
 
+.PHONY: test
+test: test5
+
 # установка файлов
 # примечение: будем отходить от этой практике, рекомендуется создавать пакет
 # и устанавливать через менеджер пакетов.
@@ -91,7 +96,10 @@ $(PROG_FILENAME): $(OBJECTS)
 
 ########################## BUILD RULES #######################################
 
-libffcairo.a: $(LIBOBJECTS)
+test5: test5-ffc.cpp libffcairo.a
+	$(CXX) -o test5 test5-ffc.cpp -L. -lffcairo $(LIBS)
+
+libffcairo.a: $(LIBOBJECTS) ffcairo/config.h
 	$(AR) rc libffcairo.a $(LIBOBJECTS)
 	$(RANLIB) libffcairo.a
 
@@ -103,7 +111,7 @@ obj/ffcstream.o: ffcairo/ffcstream.cpp ffcairo/ffcstream.h ffcairo/config.h
 
 obj/main.o: ffcairo/main.cpp
 	$(CXX) -c ffcairo/main.cpp -o obj/main.o
-	
+
 ########################### CLEAN RULES ######################################
 
 # полная очистка
@@ -112,7 +120,7 @@ distclean: clean deb_clean
 	rm -f config.log config.status
 	rm -f ffcairo/config.h
 	rm -rf autom4te.cache
-	rm -rf libffcairo.a main
+	rm -rf libffcairo.a main test5
 
 # простая очистка, промежуточные файлы, но оставляет целевые
 clean:
