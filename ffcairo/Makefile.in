@@ -55,6 +55,9 @@ DEB_FILENAME=libffcairo-$(DEB_ARCH).deb
 # просто описываем здесь в крассивом виде, чтобы правила были более понятные
 OBJECTS+=obj/main.o
 
+LIBOBJECTS+=obj/ffcimage.o
+LIBOBJECTS+=obj/ffcstream.o
+
 ############################# GENERIC RULES ##################################
 
 # .PHONY указывает цели которые не создают файлов.
@@ -88,12 +91,15 @@ $(PROG_FILENAME): $(OBJECTS)
 
 ########################## BUILD RULES #######################################
 
-libffcairo.a: obj/ffcimage.o
-	$(AR) rc libffcairo.a obj/ffcimage.o
+libffcairo.a: $(LIBOBJECTS)
+	$(AR) rc libffcairo.a $(LIBOBJECTS)
 	$(RANLIB) libffcairo.a
 
 obj/ffcimage.o: src/ffcimage.cpp src/ffcimage.h src/config.h
 	$(CXX) -c src/ffcimage.cpp -o obj/ffcimage.o
+
+obj/ffcstream.o: src/ffcstream.cpp src/ffcstream.h src/config.h
+	$(CXX) -c src/ffcstream.cpp -o obj/ffcstream.o
 
 obj/main.o: src/main.cpp
 	$(CXX) -c src/main.cpp -o obj/main.o
@@ -106,6 +112,7 @@ distclean: clean deb_clean
 	rm -f config.log config.status
 	rm -f src/config.h
 	rm -rf autom4te.cache
+	rm -rf libffcairo.a main
 
 # простая очистка, промежуточные файлы, но оставляет целевые
 clean:
@@ -114,4 +121,4 @@ clean:
 # зачистка в каталоге deb-пакета
 .PHONY: deb_clean
 deb_clean:
-	rm -rf deb/usr libffcairo.a main
+	rm -rf deb/usr
