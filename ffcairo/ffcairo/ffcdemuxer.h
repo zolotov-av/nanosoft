@@ -1,5 +1,5 @@
-#ifndef FFC_STREAM
-#define FFC_STREAM
+#ifndef FFC_DEMUXER_H
+#define FFC_DEMUXER_H
 
 #include <ffcairo/config.h>
 #include <nanosoft/object.h>
@@ -11,7 +11,7 @@
  */
 class FFCInputStream: public Object
 {
-friend class FFCInput;
+friend class FFCDemuxer;
 protected:
 	/**
 	 * Обработчик пакета
@@ -56,14 +56,16 @@ protected:
 };
 
 /**
- * Класс представляющий входящий видеопоток
+ * Демультиплексор
+ *
+ * Позволяет читать и декодировать медиа
  *
  * @note Для упрощения класс не использует приватные члены и не обеспечивает
  *   безопасность. Пользователь может свободно читать и использовать любые поля,
  *   но не должен пытаться перераспределить буфер или менять какие-либо из его
  *   параметров.
  */
-class FFCInput
+class FFCDemuxer: public Object
 {
 private:
 	/**
@@ -96,12 +98,12 @@ public:
 	/**
 	 * Конструктор
 	 */
-	FFCInput();
+	FFCDemuxer();
 	
 	/**
 	 * Деструктор
 	 */
-	~FFCInput();
+	~FFCDemuxer();
 	
 protected:
 	/**
@@ -128,4 +130,4 @@ public:
 	bool processFrame();
 };
 
-#endif // FFC_STREAM
+#endif // FFC_DEMUXER_H

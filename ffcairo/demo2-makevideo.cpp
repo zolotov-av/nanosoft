@@ -8,7 +8,6 @@
 
 #include <ffcairo/config.h>
 #include <ffcairo/ffcimage.h>
-#include <ffcairo/ffcstream.h>
 #include <ffcairo/ffcmuxer.h>
 
 int main(int argc, char *argv[])

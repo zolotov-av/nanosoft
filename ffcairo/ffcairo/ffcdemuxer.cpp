@@ -1,19 +1,19 @@
 
-#include <ffcairo/ffcstream.h>
+#include <ffcairo/ffcdemuxer.h>
 
 #include <stdio.h>
 
 /**
 * Конструктор
 */
-FFCInput::FFCInput(): avFormatCtx(NULL), videoStream(-1), videoCodecCtx(NULL), audioStream(-1), stream_count(0), streams(NULL)
+FFCDemuxer::FFCDemuxer(): avFormatCtx(NULL), videoStream(-1), videoCodecCtx(NULL), audioStream(-1), stream_count(0), streams(NULL)
 {
 }
 
 /**
 * Деструктор
 */
-FFCInput::~FFCInput()
+FFCDemuxer::~FFCDemuxer()
 {
 	if ( streams ) delete [] streams;
 }
@@ -21,7 +21,7 @@ FFCInput::~FFCInput()
 /**
 * Найти видео-поток
 */
-void FFCInput::findVideoStream()
+void FFCDemuxer::findVideoStream()
 {
 	videoStream = -1;
 	int count = avFormatCtx->nb_streams;
@@ -80,7 +80,7 @@ void FFCInput::findVideoStream()
 *
 * Это может быть файл или URL, любой поддеживаемый FFMPEG-ом ресурс
 */
-bool FFCInput::open(const char *uri)
+bool FFCDemuxer::open(const char *uri)
 {
 	/*
 	 * TODO something...
@@ -120,7 +120,7 @@ bool FFCInput::open(const char *uri)
 /**
 * Присоединить приемник потока
 */
-void FFCInput::bindStream(int i, FFCInputStream *s)
+void FFCDemuxer::bindStream(int i, FFCInputStream *s)
 {
 	if ( i >= 0 && i < stream_count )
 	{
@@ -131,7 +131,7 @@ void FFCInput::bindStream(int i, FFCInputStream *s)
 /**
 * Обработать фрейм
 */
-bool FFCInput::processFrame()
+bool FFCDemuxer::processFrame()
 {
 	AVPacket packet;
 	

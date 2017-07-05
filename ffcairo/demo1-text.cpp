@@ -8,7 +8,7 @@
 
 #include <ffcairo/config.h>
 #include <ffcairo/ffcimage.h>
-#include <ffcairo/ffcstream.h>
+#include <ffcairo/ffcdemuxer.h>
 
 class MyInputStream: public FFCDecodedInput
 {
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 	
 	const char *fname = argv[1];
 	
-	FFCInput *vin = new FFCInput();
+	ptr<FFCDemuxer> vin = new FFCDemuxer();
 	if ( ! vin->open(fname) ) return -1;
 	
 	printf("video stream #%d\n", vin->videoStream);
