@@ -1,10 +1,11 @@
-#ifndef FFC_IMAGE
-#define FFC_IMAGE
+#ifndef FFC_IMAGE_H
+#define FFC_IMAGE_H
 
 #include <stdint.h>
 #include <cstddef>
 
 #include "config.h"
+#include <nanosoft/object.h>
 
 /**
  * Класс представляющий картинку/холст
@@ -20,7 +21,7 @@
  *   но не должен пытаться перераспределить буфер или менять какие-либо из его
  *   параметров.
  */
-class FFCImage
+class FFCImage: public Object
 {
 public:
 	/**
@@ -79,4 +80,4 @@ public:
 	bool savePNG(const char *fname) const;
 };
 
-#endif // FFC_IMAGE
+#endif // FFC_IMAGE_H

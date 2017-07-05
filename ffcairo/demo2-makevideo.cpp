@@ -9,16 +9,79 @@
 #include <ffcairo/config.h>
 #include <ffcairo/ffcimage.h>
 #include <ffcairo/ffcmuxer.h>
+#include <math.h>
+
+void DrawPic(ptr<FFCImage> pic, int iFrame)
+{
+	// создаем контекст рисования Cairo
+	cairo_t *cr = cairo_create(pic->surface);
+	
+	int width = pic->width;
+	int height = pic->height;
+	
+	int cx = width / 2;
+	int cy = height / 2;
+	
+	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+	cairo_rectangle (cr, 0, 0, width, height);
+	cairo_fill (cr);
+	
+	double r0 = (width > height ? height : width) / 2.0;
+	double r1 = r0 * 0.75;
+	double r2 = r0 * 0.65;
+	
+	cairo_set_line_width(cr, r0 * 0.04);
+	
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	cairo_arc(cr, cx, cy, r1, 0, 2 * M_PI);
+	cairo_stroke (cr);
+	
+	double x, y;
+	const double k = M_PI * (2.0 / 250);
+	const double f = - M_PI / 2.0;
+	x = r2 * cos(iFrame * k + f) + cx;
+	y = r2 * sin(iFrame * k + f) + cy;
+	cairo_move_to(cr, cx, cy);
+	cairo_line_to(cr, x, y);
+	cairo_stroke (cr);
+	
+	char sFrameId[48];
+	int t = iFrame / 25;
+	int sec = t % 60;
+	int min = t / 60;
+	sprintf(sFrameId, "Time: %02d:%02d", min, sec);
+	
+	double hbox = pic->height * 0.1;
+	double shift = pic->height * 0.05;
+	
+	cairo_set_source_rgba (cr, 0x5a /255.0, 0xe8/255.0, 0xf9/255.0, 96/255.0);
+	cairo_rectangle (cr, shift, pic->height - hbox - shift, pic->width - 2*shift, hbox);
+	cairo_fill (cr);
+	
+	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
+	cairo_set_font_size(cr, hbox * 0.8);
+	cairo_set_source_rgb (cr, 0.0, 0.0, 0.0);
+	
+	cairo_move_to (cr, shift*1.5, pic->height - shift*1.5);
+	cairo_show_text (cr, sFrameId);
+	
+	// Освобождаем контекст рисования Cairo
+	cairo_destroy(cr);
+}
 
 int main(int argc, char *argv[])
 {
 	const char *fname = argc > 1 ? argv[1] : "out.avi";
 	printf("output filename = %s\n", fname);
+	
+	const int width = 1280;
+	const int height = 720;
 		
 	// INIT
 	av_register_all();
 	
 	ptr<FFCMuxer> muxer = new FFCMuxer();
+	ptr<FFCImage> pic = new FFCImage(width, height);
 	
 	if ( ! muxer->createFile(fname) )
 	{
@@ -49,8 +112,8 @@ int main(int argc, char *argv[])
 	AVCodecContext *avCodecCtx = avStream->codec;
 	avCodecCtx->codec_id = oformat->video_codec;
 	avCodecCtx->bit_rate = 2000000;
-	avCodecCtx->width    = 1280;
-	avCodecCtx->height   = 720;
+	avCodecCtx->width    = width;
+	avCodecCtx->height   = height;
 	/* timebase: This is the fundamental unit of time (in seconds) in terms
 	 * of which frame timestamps are represented. For fixed-fps content,
 	 * timebase should be 1/framerate and timestamp increments should be
@@ -101,6 +164,10 @@ int main(int argc, char *argv[])
 	
 	av_dump_format(avFormatCtx, 0, fname, 1);
 	
+	SwsContext *sws_ctx = sws_getContext(width, height, PIX_FMT_BGRA,
+		width, height, avCodecCtx->pix_fmt, SWS_BILINEAR,
+		NULL, NULL, NULL);
+	
 	if ( ! muxer->openFile(fname) )
 	{
 		printf("fail to openFile(%s)\n", fname);
@@ -111,11 +178,18 @@ int main(int argc, char *argv[])
 	while ( 1 )
 	{
 		frameNo++;
-		if ( frameNo > 250 ) break;
+		if ( frameNo > (25 * 30) ) break;
 		
 		AVPacket pkt = { 0 };
 		int got_packet = 0;
 		av_init_packet(&pkt);
+		
+		DrawPic(pic, frameNo);
+		
+		sws_scale(sws_ctx,
+			pic->avFrame->data, pic->avFrame->linesize,
+			0, height,
+			avFrame->data, avFrame->linesize);
 		
 		/* encode the image */
 		ret = avcodec_encode_video2(avCodecCtx, &pkt, avFrame, &got_packet);
