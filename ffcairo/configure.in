@@ -48,6 +48,9 @@ armv6l)
 	DEB_ARCH=$host_cpu
 esac
 
+# проверяем у нас битый libav или нормальный ffmpeg
+AC_CHECK_LIB(avcodec, av_packet_rescale_ts, [  ], [ AC_DEFINE(IS_LIBAV, 1) ], [ ])
+
 # передаем переменную окружения DEB_ARCH в препроцессор мейк-файла
 AC_SUBST(DEB_ARCH)
 

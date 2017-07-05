@@ -59,6 +59,7 @@ OBJECTS+=obj/main.o
 
 LIBOBJECTS+=obj/ffcimage.o
 LIBOBJECTS+=obj/ffcstream.o
+LIBOBJECTS+=obj/ffclibav.o
 
 ############################# GENERIC RULES ##################################
 
@@ -119,6 +120,9 @@ obj/ffcimage.o: ffcairo/ffcimage.cpp ffcairo/ffcimage.h ffcairo/config.h
 
 obj/ffcstream.o: ffcairo/ffcstream.cpp ffcairo/ffcstream.h ffcairo/config.h
 	$(CXX) -c ffcairo/ffcstream.cpp -o obj/ffcstream.o
+
+obj/ffclibav.o: ffcairo/ffclibav.cpp ffcairo/ffclibav.h ffcairo/config.h
+	$(CXX) -c ffcairo/ffclibav.cpp -o obj/ffclibav.o
 
 obj/main.o: ffcairo/main.cpp
 	$(CXX) -c ffcairo/main.cpp -o obj/main.o

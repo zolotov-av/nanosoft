@@ -10,25 +10,6 @@
 #include <ffcairo/ffcimage.h>
 #include <ffcairo/ffcstream.h>
 
-/**
- * libav почемуто потерял эту функцию...
- */
-static void av_packet_rescale_ts(AVPacket *pkt, AVRational src_tb, AVRational dst_tb)
-{
-    if (pkt->pts != AV_NOPTS_VALUE)
-        pkt->pts = av_rescale_q(pkt->pts, src_tb, dst_tb);
-    if (pkt->dts != AV_NOPTS_VALUE)
-        pkt->dts = av_rescale_q(pkt->dts, src_tb, dst_tb);
-    if (pkt->duration > 0)
-        pkt->duration = av_rescale_q(pkt->duration, src_tb, dst_tb);
-#if FF_API_CONVERGENCE_DURATION
-FF_DISABLE_DEPRECATION_WARNINGS
-    if (pkt->convergence_duration > 0)
-        pkt->convergence_duration = av_rescale_q(pkt->convergence_duration, src_tb, dst_tb);
-FF_ENABLE_DEPRECATION_WARNINGS
-#endif
-}
-
 int main(int argc, char *argv[])
 {
 	const char *fname = argc > 1 ? argv[1] : "out.avi";
@@ -37,40 +18,16 @@ int main(int argc, char *argv[])
 	// INIT
 	av_register_all();
 	
-	AVFormatContext *avFormatCtx = avformat_alloc_context();
+	AVFormatContext *avFormatCtx = NULL;
 	
+	avformat_alloc_output_context2(&avFormatCtx, NULL, NULL, fname);
 	if ( !avFormatCtx )
 	{
-		printf("avformat_alloc_context() failed\n");
+		printf("avformat_alloc_output_context2() failed\n");
 		return -1;
 	}
 	
-	AVOutputFormat *oformat = av_guess_format(NULL, fname, NULL);
-	if ( !oformat )
-	{
-		printf("av_guess_format() failed\n");
-		return -1;
-	}
-	
-	avFormatCtx->oformat = oformat;
-	printf("oformat->priv_data_size=%d\n", oformat->priv_data_size);
-	
-	if (avFormatCtx->oformat->priv_data_size > 0)
-	{
-		avFormatCtx->priv_data = av_mallocz(avFormatCtx->oformat->priv_data_size);
-		if (!avFormatCtx->priv_data) {
-			printf("no memory\n");
-			return -1;
-		}
-		if ( avFormatCtx->oformat->priv_class )
-		{
-			*(const AVClass**)avFormatCtx->priv_data = avFormatCtx->oformat->priv_class;
-			//av_opt_set_defaults(avFormatCtx->priv_data);
-		}
-	} else avFormatCtx->priv_data = NULL;	
-	
-	av_strlcpy(avFormatCtx->filename, fname, sizeof(avFormatCtx->filename));
-	
+	AVOutputFormat *oformat = avFormatCtx->oformat;
 	
 	// add video stream
 	

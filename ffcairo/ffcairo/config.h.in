@@ -3,7 +3,7 @@
 
 #include <cairo/cairo.h>
 
-#define IS_LIBAV
+#undef IS_LIBAV
 
 extern "C" {
 
@@ -11,17 +11,13 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavutil/avstring.h>
 #include <libavutil/mathematics.h>
+#include <libavutil/opt.h>
 
-#ifndef IS_LIBAV
-#include <ffmpeg/swscale.h>
-#else
+#ifdef IS_LIBAV
 #include <libswscale/swscale.h>
-
-//if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
-#define av_frame_alloc avcodec_alloc_frame
-#define av_frame_free avcodec_free_frame
-
-
+#include <ffcairo/ffclibav.h>
+#else
+#include <ffmpeg/swscale.h>
 #endif
 
 }
