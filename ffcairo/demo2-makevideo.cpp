@@ -9,6 +9,7 @@
 #include <ffcairo/config.h>
 #include <ffcairo/ffcimage.h>
 #include <ffcairo/ffcstream.h>
+#include <ffcairo/ffcmuxer.h>
 
 int main(int argc, char *argv[])
 {
@@ -18,41 +19,33 @@ int main(int argc, char *argv[])
 	// INIT
 	av_register_all();
 	
-	AVFormatContext *avFormatCtx = NULL;
+	ptr<FFCMuxer> muxer = new FFCMuxer();
 	
-	avformat_alloc_output_context2(&avFormatCtx, NULL, NULL, fname);
-	if ( !avFormatCtx )
+	if ( ! muxer->createFile(fname) )
 	{
-		printf("avformat_alloc_output_context2() failed\n");
+		printf("failed to createFile(%s)\n", fname);
 		return -1;
 	}
 	
+	AVFormatContext *avFormatCtx = muxer->avFormat;
 	AVOutputFormat *oformat = avFormatCtx->oformat;
+	printf("oformat->name: %s\n", oformat->name);
+	printf("oformat->long_name: %s\n", oformat->long_name);
 	
 	// add video stream
-	
-	if ( oformat->video_codec == AV_CODEC_ID_NONE)
+	AVCodecID video_codec = muxer->defaultVideoCodec();
+	if ( video_codec == AV_CODEC_ID_NONE)
 	{
 		printf("video_codec = NONE\n");
 		return -1;
 	}
 	
-	AVCodec *codec = avcodec_find_encoder( oformat->video_codec );
-	if ( !codec )
+	AVStream *avStream = muxer->createStream(video_codec);
+	if ( !avStream < 0 )
 	{
-		printf("encoder not found\n");
+		printf("fail to create video stream\n");
 		return -1;
 	}
-	
-	AVStream *avStream = avformat_new_stream(avFormatCtx, codec);
-	if ( ! avStream )
-	{
-		printf("avformat_new_stream() failed\n");
-		return -1;
-	}
-	
-	int stream_id = avFormatCtx->nb_streams - 1;
-	printf("stream[%d] created\n", stream_id);
 	
 	AVCodecContext *avCodecCtx = avStream->codec;
 	avCodecCtx->codec_id = oformat->video_codec;
@@ -82,7 +75,7 @@ int main(int argc, char *argv[])
 	
 	// open video stream
 	
-	int ret = avcodec_open2(avCodecCtx, codec, NULL);
+	int ret = avcodec_open2(avCodecCtx, NULL, NULL);
 	if ( ret < 0 )
 	{
 		printf("avcodec_open2() failed\n");
@@ -109,21 +102,9 @@ int main(int argc, char *argv[])
 	
 	av_dump_format(avFormatCtx, 0, fname, 1);
 	
-	/* open the output file, if needed */
-	if (!(oformat->flags & AVFMT_NOFILE))
+	if ( ! muxer->openFile(fname) )
 	{
-		ret = avio_open(&avFormatCtx->pb, fname, AVIO_FLAG_WRITE);
-		if (ret < 0)
-		{
-			fprintf(stderr, "Could not open '%s'\n", fname);
-			return -1;
-		}
-	}
-  
-	ret = avformat_write_header(avFormatCtx, NULL);
-	if ( ret < 0 )
-	{
-		printf("avformat_write_header() failed\n");
+		printf("fail to openFile(%s)\n", fname);
 		return -1;
 	}
 	
@@ -161,13 +142,8 @@ int main(int argc, char *argv[])
 			ret = 0;
 		}
 	}
-	/* Write the trailer, if any. The trailer must be written before you
-	 * close the CodecContexts open when you wrote the header; otherwise
-	 * av_write_trailer() may try to use memory that was freed on
-	 * av_codec_close(). */
-	av_write_trailer(avFormatCtx);
 	
-	avformat_free_context(avFormatCtx);
+	muxer->closeFile();
 	
 	return 0;
 }

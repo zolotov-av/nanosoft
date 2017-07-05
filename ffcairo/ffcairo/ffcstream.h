@@ -21,18 +21,6 @@ protected:
 
 typedef FFCInputStream *ffc_input_stream_p;
 
-/**
- * Асбтрактный класс выходного потка
- *
- * Это может быть и видео и аудио и субтитры и что угодно
- */
-class FFCOutputStream: public Object
-{
-	// TODO
-};
-
-typedef FFCOutputStream *ffc_output_stream_p;
-
 class FFCDecodedInput: public FFCInputStream
 {
 public:

@@ -58,6 +58,7 @@ DEB_FILENAME=libffcairo-$(DEB_ARCH).deb
 OBJECTS+=obj/main.o
 
 LIBOBJECTS+=obj/ffcimage.o
+LIBOBJECTS+=obj/ffcmuxer.o
 LIBOBJECTS+=obj/ffcstream.o
 LIBOBJECTS+=obj/ffclibav.o
 
@@ -108,7 +109,7 @@ test5: test5-ffc.cpp libffcairo.a
 demo1-text: demo1-text.cpp libffcairo.a ffcairo/config.h
 	$(CXX) -o demo1-text demo1-text.cpp -L. -lffcairo $(LIBS)
 
-demo2-makevideo: demo2-makevideo.cpp libffcairo.a ffcairo/config.h
+demo2-makevideo: demo2-makevideo.cpp libffcairo.a ffcairo/config.h ffcairo/ffcmuxer.h
 	$(CXX) -o demo2-makevideo demo2-makevideo.cpp -L. -lffcairo $(LIBS)
 
 libffcairo.a: $(LIBOBJECTS) ffcairo/config.h
@@ -117,6 +118,9 @@ libffcairo.a: $(LIBOBJECTS) ffcairo/config.h
 
 obj/ffcimage.o: ffcairo/ffcimage.cpp ffcairo/ffcimage.h ffcairo/config.h
 	$(CXX) -c ffcairo/ffcimage.cpp -o obj/ffcimage.o
+
+obj/ffcmuxer.o: ffcairo/ffcmuxer.cpp ffcairo/ffcmuxer.h ffcairo/config.h
+	$(CXX) -c ffcairo/ffcmuxer.cpp -o obj/ffcmuxer.o
 
 obj/ffcstream.o: ffcairo/ffcstream.cpp ffcairo/ffcstream.h ffcairo/config.h
 	$(CXX) -c ffcairo/ffcstream.cpp -o obj/ffcstream.o
