@@ -6,6 +6,100 @@
 /**
 * Конструктор
 */
+FFCOutputStream::FFCOutputStream(AVStream *st): avStream(st), avCodecCtx(NULL)
+{
+	if ( st ) avCodecCtx = st->codec;
+}
+
+/**
+* Деструктор
+*/
+FFCOutputStream::~FFCOutputStream()
+{
+}
+
+/**
+* Конструктор
+*/
+FFCVideoOutput::FFCVideoOutput(AVStream *st): FFCOutputStream(st)
+{
+}
+
+/**
+* Деструктор
+*/
+FFCVideoOutput::~FFCVideoOutput()
+{
+}
+
+/**
+* Установить параметры картинки
+*/
+void FFCVideoOutput::setImageOptions(int width, int height,  AVPixelFormat fmt)
+{
+	avCodecCtx->width    = width;
+	avCodecCtx->height   = height;
+	avCodecCtx->pix_fmt  = fmt;
+}
+
+/**
+* Установить параметры видео
+*/
+void FFCVideoOutput::setVideoOptions(int64_t bit_rate, AVRational time_base, int gop_size)
+{
+	avCodecCtx->bit_rate = bit_rate;
+	/* timebase: This is the fundamental unit of time (in seconds) in terms
+	 * of which frame timestamps are represented. For fixed-fps content,
+	 * timebase should be 1/framerate and timestamp increments should be
+	 * identical to 1. */
+	avStream->time_base = time_base;
+	avCodecCtx->time_base = avStream->time_base;
+	avCodecCtx->gop_size = gop_size;
+	
+	if ( avCodecCtx->codec_id == AV_CODEC_ID_MPEG2VIDEO )
+	{
+		/* just for testing, we also add B frames */
+		avCodecCtx->max_b_frames = 2;
+	}
+	if ( avCodecCtx->codec_id == AV_CODEC_ID_MPEG1VIDEO )
+	{
+		/* Needed to avoid using macroblocks in which some coeffs overflow.
+		 * This does not happen with normal video, it just happens here as
+		 * the motion of the chroma plane does not match the luma plane. */
+		avCodecCtx->mb_decision = 2;
+	}
+}
+
+/**
+* Выделить фрейм
+*/
+bool FFCVideoOutput::allocFrame()
+{
+	avFrame = av_frame_alloc();
+	if ( !avFrame )
+	{
+		printf("av_frame_alloc() failed\n");
+		return false;
+	}
+	avFrame->format = avCodecCtx->pix_fmt;
+	avFrame->width = avCodecCtx->width;
+	avFrame->height = avCodecCtx->height;
+	
+	/* allocate the buffers for the frame data */
+	// TODO разобраться в форматом пикселей, почему два типа и как их конвертировать!!!
+	int ret = avpicture_alloc((AVPicture *)avFrame, avCodecCtx->pix_fmt, avFrame->width, avFrame->height);
+	if ( ret < 0 )
+	{
+		printf("avpicture_alloc() failed\n");
+		return false;
+	}
+	
+	return true;
+}
+
+/**
+* Конструктор
+*/
 FFCMuxer::FFCMuxer()
 {
 }
@@ -114,6 +208,15 @@ bool FFCMuxer::openFile(const char *fname)
 	}
 	
 	return true;
+}
+
+/**
+* Записать пакет
+*/
+bool FFCMuxer::writeFrame(AVPacket *pkt)
+{
+	int ret = av_interleaved_write_frame(avFormat, pkt);
+	return ret == 0;
 }
 
 /**

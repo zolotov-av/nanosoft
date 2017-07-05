@@ -11,6 +11,60 @@
  */
 class FFCOutputStream: public Object
 {
+public:
+	/**
+	 * Ссылка на поток
+	 */
+	AVStream *avStream;
+	
+	/**
+	 * Ссылка на контекст кодека
+	 */
+	AVCodecContext *avCodecCtx;
+	
+	/**
+	 * Конструктор
+	 */
+	FFCOutputStream(AVStream *st);
+	
+	/**
+	 * Деструктор
+	 */
+	~FFCOutputStream();
+};
+
+class FFCVideoOutput: public FFCOutputStream
+{
+public:
+	/**
+	 * Фрейм в который надо помещать кадр чтобы записать его в поток
+	 */
+	AVFrame *avFrame;
+	
+	/**
+	 * Конструктор
+	 */
+	FFCVideoOutput(AVStream *st);
+	
+	/**
+	 * Деструктор
+	 */
+	~FFCVideoOutput();
+	
+	/**
+	 * Установить параметры картинки
+	 */
+	void setImageOptions(int width, int height,  AVPixelFormat fmt);
+	
+	/**
+	 * Установить параметры видео
+	 */
+	void setVideoOptions(int64_t bit_rate, AVRational time_base, int gop_size = 12);
+	
+	/**
+	 * Выделить фрейм
+	 */
+	bool allocFrame();
 };
 
 /**
@@ -100,6 +154,11 @@ public:
 	 * быть создан контекст, потоки, настроены кодеки.
 	 */
 	bool openFile(const char *fname);
+	
+	/**
+	 * Записать пакет
+	 */
+	bool writeFrame(AVPacket *pkt);
 	
 	/**
 	 * Закрыть файл

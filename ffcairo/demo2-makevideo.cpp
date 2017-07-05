@@ -80,19 +80,15 @@ int main(int argc, char *argv[])
 	// INIT
 	av_register_all();
 	
-	ptr<FFCMuxer> muxer = new FFCMuxer();
 	ptr<FFCImage> pic = new FFCImage(width, height);
+	
+	ptr<FFCMuxer> muxer = new FFCMuxer();
 	
 	if ( ! muxer->createFile(fname) )
 	{
 		printf("failed to createFile(%s)\n", fname);
 		return -1;
 	}
-	
-	AVFormatContext *avFormatCtx = muxer->avFormat;
-	AVOutputFormat *oformat = avFormatCtx->oformat;
-	printf("oformat->name: %s\n", oformat->name);
-	printf("oformat->long_name: %s\n", oformat->long_name);
 	
 	// add video stream
 	AVCodecID video_codec = muxer->defaultVideoCodec();
@@ -109,31 +105,13 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	
+	ptr<FFCVideoOutput> vo = new FFCVideoOutput(avStream);
+	
 	AVCodecContext *avCodecCtx = avStream->codec;
-	avCodecCtx->codec_id = oformat->video_codec;
-	avCodecCtx->bit_rate = 2000000;
-	avCodecCtx->width    = width;
-	avCodecCtx->height   = height;
-	/* timebase: This is the fundamental unit of time (in seconds) in terms
-	 * of which frame timestamps are represented. For fixed-fps content,
-	 * timebase should be 1/framerate and timestamp increments should be
-	 * identical to 1. */
-	avStream->time_base = (AVRational){ 1, 25 };
-	avCodecCtx->time_base       = avStream->time_base;
-	avCodecCtx->gop_size = 12; /* emit one intra frame every twelve frames at most */
-	avCodecCtx->pix_fmt = PIX_FMT_YUV420P;
-	if ( avCodecCtx->codec_id == AV_CODEC_ID_MPEG2VIDEO )
-	{
-		/* just for testing, we also add B frames */
-		avCodecCtx->max_b_frames = 2;
-	}
-	if ( avCodecCtx->codec_id == AV_CODEC_ID_MPEG1VIDEO )
-	{
-		/* Needed to avoid using macroblocks in which some coeffs overflow.
-		 * This does not happen with normal video, it just happens here as
-		 * the motion of the chroma plane does not match the luma plane. */
-		avCodecCtx->mb_decision = 2;
-	}
+	avCodecCtx->codec_id = video_codec;
+	
+	vo->setImageOptions(width, height, PIX_FMT_YUV420P);
+	vo->setVideoOptions(2000000, (AVRational){ 1, 25 }, 12);
 	
 	// open video stream
 	
@@ -144,25 +122,12 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	
-	AVFrame *avFrame = av_frame_alloc();
-	if ( !avFrame )
+	if ( ! vo->allocFrame() )
 	{
-		printf("av_frame_alloc() failed\n");
-		return -1;
-	}
-	avFrame->format = avCodecCtx->pix_fmt;
-	avFrame->width = avCodecCtx->width;
-	avFrame->height = avCodecCtx->height;
-	
-	/* allocate the buffers for the frame data */
-	ret = avpicture_alloc((AVPicture *)avFrame, AV_PIX_FMT_YUV420P, avFrame->width, avFrame->height);
-	if ( ret < 0 )
-	{
-		printf("avpicture_alloc() failed\n");
 		return -1;
 	}
 	
-	av_dump_format(avFormatCtx, 0, fname, 1);
+	av_dump_format(muxer->avFormat, 0, fname, 1);
 	
 	SwsContext *sws_ctx = sws_getContext(width, height, PIX_FMT_BGRA,
 		width, height, avCodecCtx->pix_fmt, SWS_BILINEAR,
@@ -189,10 +154,10 @@ int main(int argc, char *argv[])
 		sws_scale(sws_ctx,
 			pic->avFrame->data, pic->avFrame->linesize,
 			0, height,
-			avFrame->data, avFrame->linesize);
+			vo->avFrame->data, vo->avFrame->linesize);
 		
 		/* encode the image */
-		ret = avcodec_encode_video2(avCodecCtx, &pkt, avFrame, &got_packet);
+		ret = avcodec_encode_video2(avCodecCtx, &pkt, vo->avFrame, &got_packet);
 		if ( ret < 0 )
 		{
 			printf("frame[%d] avcodec_encode_video2() failed\n", frameNo);
@@ -208,11 +173,9 @@ int main(int argc, char *argv[])
 			pkt.stream_index = avStream->index;
 			
 			/* Write the compressed frame to the media file. */
-			//log_packet(avFormatCtx, &pkt);
+			//log_packet(muxer->avFormat, &pkt);
 			
-			ret = av_interleaved_write_frame(avFormatCtx, &pkt);
-		} else {
-			ret = 0;
+			muxer->writeFrame(&pkt);
 		}
 	}
 	
