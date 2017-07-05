@@ -69,7 +69,7 @@ LIBOBJECTS+=obj/ffcstream.o
 all: libffcairo.a $(PROG_FILENAME) demo
 
 .PHONY: demo
-demo: demo1-text
+demo: demo1-text demo2-makevideo
 
 .PHONY: test
 test: test5
@@ -104,8 +104,11 @@ $(PROG_FILENAME): $(OBJECTS)
 test5: test5-ffc.cpp libffcairo.a
 	$(CXX) -o test5 test5-ffc.cpp -L. -lffcairo $(LIBS)
 
-demo1-text: demo1-text.cpp libffcairo.a
+demo1-text: demo1-text.cpp libffcairo.a ffcairo/config.h
 	$(CXX) -o demo1-text demo1-text.cpp -L. -lffcairo $(LIBS)
+
+demo2-makevideo: demo2-makevideo.cpp libffcairo.a ffcairo/config.h
+	$(CXX) -o demo2-makevideo demo2-makevideo.cpp -L. -lffcairo $(LIBS)
 
 libffcairo.a: $(LIBOBJECTS) ffcairo/config.h
 	$(AR) rc libffcairo.a $(LIBOBJECTS)
@@ -129,7 +132,7 @@ distclean: clean deb_clean
 	rm -f ffcairo/config.h
 	rm -rf autom4te.cache
 	rm -rf libffcairo.a main test5
-	rm -rf demo1-text
+	rm -rf demo1-text demo2-makevideo
 
 # простая очистка, промежуточные файлы, но оставляет целевые
 clean:
