@@ -21,7 +21,7 @@ FFCOutputStream::~FFCOutputStream()
 /**
 * Конструктор
 */
-FFCVideoOutput::FFCVideoOutput(AVStream *st): FFCOutputStream(st)
+FFCVideoOutput::FFCVideoOutput(AVStream *st): FFCOutputStream(st), scaleCtx(NULL)
 {
 }
 
@@ -71,6 +71,21 @@ void FFCVideoOutput::setVideoOptions(int64_t bit_rate, AVRational time_base, int
 }
 
 /**
+* Открыть кодек
+*/
+bool FFCVideoOutput::openCodec()
+{
+	int ret = avcodec_open2(avCodecCtx, NULL, NULL);
+	if ( ret < 0 )
+	{
+		printf("avcodec_open2() failed\n");
+		return false;
+	}
+	
+	return true;
+}
+
+/**
 * Выделить фрейм
 */
 bool FFCVideoOutput::allocFrame()
@@ -95,6 +110,68 @@ bool FFCVideoOutput::allocFrame()
 	}
 	
 	return true;
+}
+
+/**
+* Инициализация маштабирования
+*/
+bool FFCVideoOutput::initScale(int srcWidth, int srcHeight, AVPixelFormat srcFmt)
+{
+	scaleCtx = sws_getContext(srcWidth, srcHeight, srcFmt,
+		avFrame->width, avFrame->height, avCodecCtx->pix_fmt, SWS_BILINEAR,
+		NULL, NULL, NULL);
+	
+	return scaleCtx != 0;
+}
+
+/**
+* Инициализация маштабирования
+*/
+bool FFCVideoOutput::initScale(ptr<FFCImage> pic)
+{
+	return initScale(pic->width, pic->height, PIX_FMT_BGRA);
+}
+
+/**
+* Маштабировать картику
+*/
+void FFCVideoOutput::scale(AVFrame *pFrame)
+{
+	sws_scale(scaleCtx, pFrame->data, pFrame->linesize,
+		0, avFrame->height, avFrame->data, avFrame->linesize);
+}
+
+/**
+* Маштабировать картинку
+*/
+void FFCVideoOutput::scale(ptr<FFCImage> pic)
+{
+	sws_scale(scaleCtx, pic->avFrame->data, pic->avFrame->linesize,
+		0, avFrame->height, avFrame->data, avFrame->linesize);
+}
+
+/**
+* Кодировать кадр
+*/
+bool FFCVideoOutput::encode(AVPacket *avpkt, int *got_packet_ptr)
+{
+	int ret = avcodec_encode_video2(avCodecCtx, avpkt, avFrame, got_packet_ptr);
+	if ( ret < 0 )
+	{
+		printf("avcodec_encode_video2() failed\n");
+		return false;
+	}
+	
+	return true;
+}
+
+/**
+* Кодировать кадр с маштабированием
+*/
+bool FFCVideoOutput::encode(ptr<FFCImage> pic, AVPacket *avpkt, int *got_packet_ptr)
+{
+	scale(pic);
+	return encode(avpkt, got_packet_ptr);
 }
 
 /**

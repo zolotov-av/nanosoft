@@ -1,8 +1,9 @@
 #ifndef FFC_MUXER_H
 #define FFC_MUXER_H
 
-#include <ffcairo/config.h>
 #include <nanosoft/object.h>
+#include <ffcairo/config.h>
+#include <ffcairo/ffcimage.h>
 
 /**
  * Абстрактный класс исходящего потока
@@ -33,6 +34,9 @@ public:
 	~FFCOutputStream();
 };
 
+/**
+ * Класс исходящего видео потока
+ */
 class FFCVideoOutput: public FFCOutputStream
 {
 public:
@@ -40,6 +44,11 @@ public:
 	 * Фрейм в который надо помещать кадр чтобы записать его в поток
 	 */
 	AVFrame *avFrame;
+	
+	/**
+	 * Контекст маштабирования и конвертации кадра
+	 */
+	SwsContext *scaleCtx;
 	
 	/**
 	 * Конструктор
@@ -62,9 +71,44 @@ public:
 	void setVideoOptions(int64_t bit_rate, AVRational time_base, int gop_size = 12);
 	
 	/**
+	 * Открыть кодек
+	 */
+	bool openCodec();
+	
+	/**
 	 * Выделить фрейм
 	 */
 	bool allocFrame();
+	
+	/**
+	 * Инициализация маштабирования
+	 */
+	bool initScale(int srcWidth, int srcHeight, AVPixelFormat srcFmt);
+	
+	/**
+	 * Инициализация маштабирования
+	 */
+	bool initScale(ptr<FFCImage> pic);
+	
+	/**
+	 * Маштабировать картику
+	 */
+	void scale(AVFrame *pFrame);
+	
+	/**
+	 * Маштабировать картинку
+	 */
+	void scale(ptr<FFCImage> pic);
+	
+	/**
+	 * Кодировать кадр
+	 */
+	bool encode(AVPacket *avpkt, int *got_packet_ptr);
+	
+	/**
+	 * Кодировать кадр с маштабированием
+	 */
+	bool encode(ptr<FFCImage> pic, AVPacket *avpkt, int *got_packet_ptr);
 };
 
 /**

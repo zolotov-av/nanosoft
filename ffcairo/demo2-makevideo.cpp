@@ -112,13 +112,8 @@ int main(int argc, char *argv[])
 	
 	vo->setImageOptions(width, height, PIX_FMT_YUV420P);
 	vo->setVideoOptions(2000000, (AVRational){ 1, 25 }, 12);
-	
-	// open video stream
-	
-	int ret = avcodec_open2(avCodecCtx, NULL, NULL);
-	if ( ret < 0 )
+	if ( ! vo->openCodec() )
 	{
-		printf("avcodec_open2() failed\n");
 		return -1;
 	}
 	
@@ -129,9 +124,7 @@ int main(int argc, char *argv[])
 	
 	av_dump_format(muxer->avFormat, 0, fname, 1);
 	
-	SwsContext *sws_ctx = sws_getContext(width, height, PIX_FMT_BGRA,
-		width, height, avCodecCtx->pix_fmt, SWS_BILINEAR,
-		NULL, NULL, NULL);
+	vo->initScale(pic);
 	
 	if ( ! muxer->openFile(fname) )
 	{
@@ -151,16 +144,9 @@ int main(int argc, char *argv[])
 		
 		DrawPic(pic, frameNo);
 		
-		sws_scale(sws_ctx,
-			pic->avFrame->data, pic->avFrame->linesize,
-			0, height,
-			vo->avFrame->data, vo->avFrame->linesize);
-		
-		/* encode the image */
-		ret = avcodec_encode_video2(avCodecCtx, &pkt, vo->avFrame, &got_packet);
-		if ( ret < 0 )
+		if ( ! vo->encode(pic, &pkt, &got_packet) )
 		{
-			printf("frame[%d] avcodec_encode_video2() failed\n", frameNo);
+			printf("frame[%d] encode failed\n", frameNo);
 			break;
 		}
 		
