@@ -67,21 +67,6 @@ public:
 	~FFCVideoOutput();
 	
 	/**
-	 * Установить параметры картинки
-	 */
-	void setImageOptions(int width, int height,  AVPixelFormat fmt);
-	
-	/**
-	 * Установить параметры видео
-	 */
-	void setVideoOptions(int64_t bit_rate, AVRational time_base, int gop_size = 12);
-	
-	/**
-	 * Открыть кодек
-	 */
-	bool openCodec();
-	
-	/**
 	 * Открыть кодек
 	 */
 	bool openCodec(const FFCVideoOptions *opts);
@@ -133,16 +118,6 @@ public:
  */
 class FFCMuxer: public Object
 {
-private:
-	/**
-	 * Число потоков
-	 */
-	int stream_count;
-	
-	/**
-	 * Потоки
-	 */
-	ptr<FFCOutputStream> *streams;
 public:
 	/**
 	 * Контест avFormat
@@ -153,8 +128,6 @@ public:
 	 * Номер потока с видео
 	 */
 	int videoStream;
-	
-	AVCodecContext *videoCodecCtx;
 	
 	/**
 	 * Номер потока с аудио

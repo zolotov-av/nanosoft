@@ -43,59 +43,6 @@ FFCVideoOutput::~FFCVideoOutput()
 }
 
 /**
-* Установить параметры картинки
-*/
-void FFCVideoOutput::setImageOptions(int width, int height,  AVPixelFormat fmt)
-{
-	avCodecCtx->width    = width;
-	avCodecCtx->height   = height;
-	avCodecCtx->pix_fmt  = fmt;
-}
-
-/**
-* Установить параметры видео
-*/
-void FFCVideoOutput::setVideoOptions(int64_t bit_rate, AVRational time_base, int gop_size)
-{
-	avCodecCtx->bit_rate = bit_rate;
-	/* timebase: This is the fundamental unit of time (in seconds) in terms
-	 * of which frame timestamps are represented. For fixed-fps content,
-	 * timebase should be 1/framerate and timestamp increments should be
-	 * identical to 1. */
-	avStream->time_base = time_base;
-	avCodecCtx->time_base = avStream->time_base;
-	avCodecCtx->gop_size = gop_size;
-	
-	if ( avCodecCtx->codec_id == AV_CODEC_ID_MPEG2VIDEO )
-	{
-		/* just for testing, we also add B frames */
-		avCodecCtx->max_b_frames = 2;
-	}
-	if ( avCodecCtx->codec_id == AV_CODEC_ID_MPEG1VIDEO )
-	{
-		/* Needed to avoid using macroblocks in which some coeffs overflow.
-		 * This does not happen with normal video, it just happens here as
-		 * the motion of the chroma plane does not match the luma plane. */
-		avCodecCtx->mb_decision = 2;
-	}
-}
-
-/**
-* Открыть кодек
-*/
-bool FFCVideoOutput::openCodec()
-{
-	int ret = avcodec_open2(avCodecCtx, NULL, NULL);
-	if ( ret < 0 )
-	{
-		printf("avcodec_open2() failed\n");
-		return false;
-	}
-	
-	return true;
-}
-
-/**
 * Открыть кодек
 */
 bool FFCVideoOutput::openCodec(const FFCVideoOptions *opts)
@@ -131,6 +78,26 @@ bool FFCVideoOutput::openCodec(const FFCVideoOptions *opts)
 		return false;
 	}
 	
+	avFrame = av_frame_alloc();
+	if ( !avFrame )
+	{
+		printf("av_frame_alloc() failed\n");
+		return false;
+	}
+	
+	avFrame->width  = opts->width;
+	avFrame->height = opts->height;
+	avFrame->format = opts->pix_fmt;
+	
+	/* allocate the buffers for the frame data */
+	// TODO разобраться в форматом пикселей, почему два типа и как их конвертировать!!!
+	ret = avpicture_alloc((AVPicture *)avFrame, opts->pix_fmt, opts->width, opts->height);
+	if ( ret < 0 )
+	{
+		printf("avpicture_alloc() failed\n");
+		return false;
+	}
+	
 	return true;
 }
 
@@ -139,26 +106,6 @@ bool FFCVideoOutput::openCodec(const FFCVideoOptions *opts)
 */
 bool FFCVideoOutput::allocFrame()
 {
-	avFrame = av_frame_alloc();
-	if ( !avFrame )
-	{
-		printf("av_frame_alloc() failed\n");
-		return false;
-	}
-	avFrame->format = avCodecCtx->pix_fmt;
-	avFrame->width = avCodecCtx->width;
-	avFrame->height = avCodecCtx->height;
-	
-	/* allocate the buffers for the frame data */
-	// TODO разобраться в форматом пикселей, почему два типа и как их конвертировать!!!
-	int ret = avpicture_alloc((AVPicture *)avFrame, avCodecCtx->pix_fmt, avFrame->width, avFrame->height);
-	if ( ret < 0 )
-	{
-		printf("avpicture_alloc() failed\n");
-		return false;
-	}
-	
-	return true;
 }
 
 /**
