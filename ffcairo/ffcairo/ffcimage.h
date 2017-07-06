@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <cstddef>
 
-#include "config.h"
+#include <ffcairo/ffctypes.h>
 #include <nanosoft/object.h>
 
 /**

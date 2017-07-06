@@ -19,6 +19,16 @@ FFCOutputStream::~FFCOutputStream()
 }
 
 /**
+* Convert valid timing fields (timestamps / durations) in a packet from
+* one timebase to another. 
+*/
+void FFCOutputStream::rescale_ts(AVPacket *pkt)
+{
+	av_packet_rescale_ts(pkt, avCodecCtx->time_base, avStream->time_base);
+	pkt->stream_index = avStream->index;
+}
+
+/**
 * Конструктор
 */
 FFCVideoOutput::FFCVideoOutput(AVStream *st): FFCOutputStream(st), scaleCtx(NULL)
@@ -75,6 +85,45 @@ void FFCVideoOutput::setVideoOptions(int64_t bit_rate, AVRational time_base, int
 */
 bool FFCVideoOutput::openCodec()
 {
+	int ret = avcodec_open2(avCodecCtx, NULL, NULL);
+	if ( ret < 0 )
+	{
+		printf("avcodec_open2() failed\n");
+		return false;
+	}
+	
+	return true;
+}
+
+/**
+* Открыть кодек
+*/
+bool FFCVideoOutput::openCodec(const FFCVideoOptions *opts)
+{
+	avCodecCtx = avStream->codec;
+	avCodecCtx->codec_id  = opts->codec_id;
+	avCodecCtx->width     = opts->width;
+	avCodecCtx->height    = opts->height;
+	avCodecCtx->pix_fmt   = opts->pix_fmt;
+	avCodecCtx->bit_rate  = opts->bit_rate;
+	avStream->time_base   = opts->time_base;
+	avCodecCtx->time_base = avStream->time_base;
+	avCodecCtx->gop_size  = opts->gop_size;
+	
+	if ( avCodecCtx->codec_id == AV_CODEC_ID_MPEG2VIDEO )
+	{
+		/* just for testing, we also add B frames */
+		avCodecCtx->max_b_frames = 2;
+	}
+	
+	if ( avCodecCtx->codec_id == AV_CODEC_ID_MPEG1VIDEO )
+	{
+		/* Needed to avoid using macroblocks in which some coeffs overflow.
+		 * This does not happen with normal video, it just happens here as
+		 * the motion of the chroma plane does not match the luma plane. */
+		avCodecCtx->mb_decision = 2;
+	}
+	
 	int ret = avcodec_open2(avCodecCtx, NULL, NULL);
 	if ( ret < 0 )
 	{
@@ -254,6 +303,23 @@ AVStream* FFCMuxer::createStream(AVCodecID codec_id)
 	
 	printf("stream[%d] created\n", avStream->index);
 	return avStream;
+}
+
+/**
+* Создать видео-поток
+*/
+FFCVideoOutput* FFCMuxer::createVideoStream(const FFCVideoOptions *opts)
+{
+	AVStream *avStream = createStream(opts->codec_id);
+	if ( !avStream )
+	{
+		printf("fail to create video stream\n");
+		return NULL;
+	}
+	
+	FFCVideoOutput *vo = new FFCVideoOutput(avStream);
+	
+	return vo;
 }
 
 /**

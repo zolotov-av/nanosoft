@@ -2,7 +2,7 @@
 #define FFC_MUXER_H
 
 #include <nanosoft/object.h>
-#include <ffcairo/config.h>
+#include <ffcairo/ffctypes.h>
 #include <ffcairo/ffcimage.h>
 
 /**
@@ -32,6 +32,12 @@ public:
 	 * Деструктор
 	 */
 	~FFCOutputStream();
+	
+	/**
+	 * Convert valid timing fields (timestamps / durations) in a packet from
+	 * one timebase to another. 
+	 */
+	void rescale_ts(AVPacket *pkt);
 };
 
 /**
@@ -74,6 +80,11 @@ public:
 	 * Открыть кодек
 	 */
 	bool openCodec();
+	
+	/**
+	 * Открыть кодек
+	 */
+	bool openCodec(const FFCVideoOptions *opts);
 	
 	/**
 	 * Выделить фрейм
@@ -190,6 +201,11 @@ public:
 	 * Создать поток
 	 */
 	AVStream* createStream(AVCodecID codec_id);
+	
+	/**
+	 * Создать видео-поток
+	 */
+	FFCVideoOutput* createVideoStream(const FFCVideoOptions *opts);
 	
 	/**
 	 * Открыть файл

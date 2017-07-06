@@ -80,6 +80,14 @@ int main(int argc, char *argv[])
 	// INIT
 	av_register_all();
 	
+	FFCVideoOptions opts;
+	opts.width = width;
+	opts.height = height;
+	opts.pix_fmt = PIX_FMT_YUV420P;
+	opts.bit_rate = 2000000;
+	opts.time_base = (AVRational){ 1, 25 };
+	opts.gop_size = 12;
+	
 	ptr<FFCImage> pic = new FFCImage(width, height);
 	
 	ptr<FFCMuxer> muxer = new FFCMuxer();
@@ -98,21 +106,11 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	
-	AVStream *avStream = muxer->createStream(video_codec);
-	if ( !avStream < 0 )
-	{
-		printf("fail to create video stream\n");
-		return -1;
-	}
+	opts.codec_id = video_codec;
 	
-	ptr<FFCVideoOutput> vo = new FFCVideoOutput(avStream);
+	ptr<FFCVideoOutput> vo = muxer->createVideoStream(&opts);
 	
-	AVCodecContext *avCodecCtx = avStream->codec;
-	avCodecCtx->codec_id = video_codec;
-	
-	vo->setImageOptions(width, height, PIX_FMT_YUV420P);
-	vo->setVideoOptions(2000000, (AVRational){ 1, 25 }, 12);
-	if ( ! vo->openCodec() )
+	if ( ! vo->openCodec(&opts) )
 	{
 		return -1;
 	}
@@ -139,8 +137,8 @@ int main(int argc, char *argv[])
 		if ( frameNo > (25 * 30) ) break;
 		
 		AVPacket pkt = { 0 };
-		int got_packet = 0;
 		av_init_packet(&pkt);
+		int got_packet = 0;
 		
 		DrawPic(pic, frameNo);
 		
@@ -152,11 +150,7 @@ int main(int argc, char *argv[])
 		
 		if ( got_packet )
 		{
-			// write frame
-			
-			/* rescale output packet timestamp values from codec to stream timebase */
-			av_packet_rescale_ts(&pkt, avCodecCtx->time_base, avStream->time_base);
-			pkt.stream_index = avStream->index;
+			vo->rescale_ts(&pkt);
 			
 			/* Write the compressed frame to the media file. */
 			//log_packet(muxer->avFormat, &pkt);

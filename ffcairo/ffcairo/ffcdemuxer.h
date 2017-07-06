@@ -1,7 +1,7 @@
 #ifndef FFC_DEMUXER_H
 #define FFC_DEMUXER_H
 
-#include <ffcairo/config.h>
+#include <ffcairo/ffctypes.h>
 #include <nanosoft/object.h>
 
 /**
