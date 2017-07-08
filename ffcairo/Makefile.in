@@ -61,6 +61,7 @@ LIBOBJECTS+=obj/ffcimage.o
 LIBOBJECTS+=obj/ffcmuxer.o
 LIBOBJECTS+=obj/ffcdemuxer.o
 LIBOBJECTS+=obj/ffclibav.o
+LIBOBJECTS+=obj/ffcmisc.o
 
 ############################# GENERIC RULES ##################################
 
@@ -129,6 +130,9 @@ obj/ffcdemuxer.o: ffcairo/ffcdemuxer.cpp ffcairo/ffcdemuxer.h ffcairo/ffctypes.h
 
 obj/ffclibav.o: ffcairo/ffclibav.cpp ffcairo/ffclibav.h ffcairo/config.h
 	$(CXX) -c ffcairo/ffclibav.cpp -o obj/ffclibav.o
+
+obj/ffcmisc.o: ffcairo/ffcmisc.cpp ffcairo/ffcmisc.h ffcairo/ffctypes.h
+	$(CXX) -c ffcairo/ffcmisc.cpp -o obj/ffcmisc.o
 
 obj/main.o: ffcairo/main.cpp
 	$(CXX) -c ffcairo/main.cpp -o obj/main.o
