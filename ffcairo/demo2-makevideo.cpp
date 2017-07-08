@@ -110,12 +110,7 @@ int main(int argc, char *argv[])
 	
 	ptr<FFCVideoOutput> vo = muxer->createVideoStream(&opts);
 	
-	if ( ! vo->openCodec(&opts) )
-	{
-		return -1;
-	}
-	
-	if ( ! vo->allocFrame() )
+	if ( ! vo->openEncoder(&opts) )
 	{
 		return -1;
 	}

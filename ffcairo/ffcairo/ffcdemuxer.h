@@ -2,6 +2,7 @@
 #define FFC_DEMUXER_H
 
 #include <ffcairo/ffctypes.h>
+#include <ffcairo/ffcimage.h>
 #include <nanosoft/object.h>
 
 /**
@@ -12,37 +13,100 @@
 class FFCInputStream: public Object
 {
 friend class FFCDemuxer;
-protected:
-	/**
-	 * Обработчик пакета
-	 */
-	virtual void handlePacket(AVPacket *packet) = 0;
-};
-
-typedef FFCInputStream *ffc_input_stream_p;
-
-class FFCDecodedInput: public FFCInputStream
-{
 public:
+	/**
+	 * Ссылка на поток
+	 */
+	AVStream *avStream;
+	
 	/**
 	 * Контекст кодека
 	 */
 	AVCodecContext *avCodecCtx;
 	
 	/**
+	 * Конструктор
+	 */
+	FFCInputStream();
+	
+	/**
+	 * Деструктор
+	 */
+	~FFCInputStream();
+	
+protected:
+	/**
+	 * Обработчик присоединения
+	 *
+	 * Автоматически вызывается когда поток присоединяется к демультиплексору
+	 */
+	virtual void handleAttach(AVStream *st);
+	
+	/**
+	 * Обработчик отсоединения
+	 *
+	 * Автоматически вызывается когда поток отсоединяется от демультиплексора
+	 */
+	virtual void handleDetach();
+	
+	/**
+	 * Обработчик пакета
+	 */
+	virtual void handlePacket(AVPacket *packet) = 0;
+};
+
+/**
+ * Класс входящего видео потока
+ *
+ * Данный класс позволяет декодировать поток и получать отдельные кадры
+ */
+class FFCVideoInput: public FFCInputStream
+{
+public:
+	/**
 	 * Фрейм (кадр)
 	 */
 	AVFrame *avFrame;
 	
 	/**
+	 * Контекст маштабирования и конвертации кадра
+	 */
+	SwsContext *scaleCtx;
+	
+	/**
 	 * Конструктор
 	 */
-	FFCDecodedInput();
+	FFCVideoInput();
 	
 	/**
 	 * Деструктор
 	 */
-	~FFCDecodedInput();
+	~FFCVideoInput();
+	
+	/**
+	 * Открыть кодек
+	 */
+	bool openDecoder();
+	
+	/**
+	 * Инициализация маштабирования
+	 */
+	bool initScale(int dstWidth, int dstHeight, AVPixelFormat dstFmt);
+	
+	/**
+	 * Инициализация маштабирования
+	 */
+	bool initScale(ptr<FFCImage> pic);
+	
+	/**
+	 * Маштабировать картику
+	 */
+	void scale(AVFrame *pFrame);
+	
+	/**
+	 * Маштабировать картинку
+	 */
+	void scale(ptr<FFCImage> pic);
 protected:
 	/**
 	 * Обработчик пакета
@@ -84,18 +148,6 @@ public:
 	AVFormatContext *avFormatCtx;
 	
 	/**
-	 * Номер потока с видео
-	 */
-	int videoStream;
-	
-	AVCodecContext *videoCodecCtx;
-	
-	/**
-	 * Номер потока с аудио
-	 */
-	int audioStream;
-	
-	/**
 	 * Конструктор
 	 */
 	FFCDemuxer();
@@ -104,12 +156,6 @@ public:
 	 * Деструктор
 	 */
 	~FFCDemuxer();
-	
-protected:
-	/**
-	 * Найти видео-поток
-	 */
-	void findVideoStream();
 	
 public:
 	/**
@@ -120,14 +166,21 @@ public:
 	bool open(const char *uri);
 	
 	/**
+	 * Найти видео-поток
+	 *
+	 * Возвращает ID потока или -1 если не найден
+	 */
+	int findVideoStream();
+	
+	/**
 	 * Присоединить приемник потока
 	 */
-	void bindStream(int i, FFCInputStream *s);
+	void bindStream(int i, ptr<FFCInputStream> st);
 	
 	/**
 	 * Обработать фрейм
 	 */
-	bool processFrame();
+	bool readFrame();
 };
 
 #endif // FFC_DEMUXER_H

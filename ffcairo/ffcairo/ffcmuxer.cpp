@@ -45,7 +45,7 @@ FFCVideoOutput::~FFCVideoOutput()
 /**
 * Открыть кодек
 */
-bool FFCVideoOutput::openCodec(const FFCVideoOptions *opts)
+bool FFCVideoOutput::openEncoder(const FFCVideoOptions *opts)
 {
 	avCodecCtx = avStream->codec;
 	avCodecCtx->codec_id  = opts->codec_id;
@@ -99,13 +99,6 @@ bool FFCVideoOutput::openCodec(const FFCVideoOptions *opts)
 	}
 	
 	return true;
-}
-
-/**
-* Выделить фрейм
-*/
-bool FFCVideoOutput::allocFrame()
-{
 }
 
 /**

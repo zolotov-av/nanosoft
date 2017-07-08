@@ -2,7 +2,7 @@
 
 Демо-программа №1
 
-Демонстрирует возможности модификации изображения при перекодирования
+Демонстрирует возможности модификации изображения при перекодировании
 
 ****************************************************************************/
 
@@ -10,13 +10,11 @@
 #include <ffcairo/ffcimage.h>
 #include <ffcairo/ffcdemuxer.h>
 
-class MyInputStream: public FFCDecodedInput
+class MyInputStream: public FFCVideoInput
 {
 public:
 	int frameNo;
-	FFCImage *pic;
-	
-	struct SwsContext *sws_ctx;
+	ptr<FFCImage> pic;
 	
 	/**
 	 * Обработчик фрейма
@@ -34,12 +32,9 @@ void MyInputStream::handleFrame()
 	if( frameNo < 10 )
 	{
 		printf("handleFrame #%d\n", frameNo);
+		scale(pic);
 		
-		sws_scale(sws_ctx, (uint8_t const * const *)avFrame->data,
-			avFrame->linesize, 0, pic->height,
-			pic->avFrame->data, pic->avFrame->linesize);
-		
-		ModifyFrame(pic, frameNo);
+		ModifyFrame(pic.getObject(), frameNo);
 		
 		// сохраняем фрейм в файл
 		char szFilename[48];
@@ -78,39 +73,54 @@ void MyInputStream::ModifyFrame(FFCImage *pic, int iFrame)
 
 int main(int argc, char *argv[])
 {
+	const char *fname = argc > 1 ? argv[1] : "test.avi";
+	printf("input filename = %s\n", fname);
+	
 	// INIT
 	av_register_all();
 	avformat_network_init();
 	
-	const char *fname = argv[1];
+	ptr<FFCDemuxer> demux = new FFCDemuxer();
 	
-	ptr<FFCDemuxer> vin = new FFCDemuxer();
-	if ( ! vin->open(fname) ) return -1;
+	// открыть файл
+	if ( ! demux->open(fname) )
+	{
+		printf("fail to open file\n");
+		return -1;
+	}
 	
-	printf("video stream #%d\n", vin->videoStream);
+	// найти видео-поток
+	int video_stream = demux->findVideoStream();
+	if ( video_stream < 0 )
+	{
+		printf("fail to find video stream\n");
+		return -1;
+	}
+	printf("video stream #%d\n", video_stream);
 	
-	// Allocate video frame
-	AVFrame *pFrame = av_frame_alloc();
+	// присоединить обработчик потока
+	ptr<MyInputStream> videoStream = new MyInputStream;
+	demux->bindStream(video_stream, videoStream);
 	
-	AVCodecContext *pCodecCtx = vin->videoCodecCtx;
-	if ( pCodecCtx == NULL ) return -1;
+	AVCodecContext *pCodecCtx = videoStream->avCodecCtx;
 	
-	printf("video size: %dx%d\n", pCodecCtx->width, pCodecCtx->height);
+	int width = pCodecCtx->width;
+	int height = pCodecCtx->height;
+	printf("video size: %dx%d\n", width, height);
+	
+	// открыть декодер видео
+	if ( ! videoStream->openDecoder() )
+	{
+		printf("stream[%d] openDecoder() failed\n", video_stream);
+		return -1;
+	}
 	
 	
-	
-	MyInputStream *videoStream = new MyInputStream;
-	videoStream->avCodecCtx = vin->videoCodecCtx;
-	// initialize SWS context for software scaling
-	videoStream->sws_ctx = sws_getContext(pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt,
-		pCodecCtx->width, pCodecCtx->height, PIX_FMT_BGRA, SWS_BILINEAR,
-		NULL, NULL, NULL);
-	
-	videoStream->pic = new FFCImage(pCodecCtx->width, pCodecCtx->height);
+	videoStream->pic = new FFCImage(width, height);
+	videoStream->initScale(videoStream->pic);
 	videoStream->frameNo = 0;
-	vin->bindStream(vin->videoStream, videoStream);
 	
-	while ( vin->processFrame() ) ;
+	while ( demux->readFrame() ) ;
 	
 	return 0;
 }

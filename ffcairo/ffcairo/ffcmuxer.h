@@ -69,12 +69,7 @@ public:
 	/**
 	 * Открыть кодек
 	 */
-	bool openCodec(const FFCVideoOptions *opts);
-	
-	/**
-	 * Выделить фрейм
-	 */
-	bool allocFrame();
+	bool openEncoder(const FFCVideoOptions *opts);
 	
 	/**
 	 * Инициализация маштабирования
