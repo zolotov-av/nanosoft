@@ -102,10 +102,8 @@ int main(int argc, char *argv[])
 	ptr<MyInputStream> videoStream = new MyInputStream;
 	demux->bindStream(video_stream, videoStream);
 	
-	AVCodecContext *pCodecCtx = videoStream->avCodecCtx;
-	
-	int width = pCodecCtx->width;
-	int height = pCodecCtx->height;
+	int width = videoStream->avStream->codecpar->width;
+	int height = videoStream->avStream->codecpar->height;
 	printf("video size: %dx%d\n", width, height);
 	
 	// открыть декодер видео
@@ -114,7 +112,6 @@ int main(int argc, char *argv[])
 		printf("stream[%d] openDecoder() failed\n", video_stream);
 		return -1;
 	}
-	
 	
 	videoStream->pic = FFCImage::createImage(width, height);
 	if ( videoStream->pic.getObject() == NULL )

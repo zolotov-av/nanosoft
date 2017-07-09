@@ -6,7 +6,7 @@
 /**
 * Конструктор
 */
-FFCInputStream::FFCInputStream(): avStream(NULL), avCodecCtx(NULL)
+FFCInputStream::FFCInputStream(): avStream(NULL), avDecoder(NULL)
 {
 }
 
@@ -26,7 +26,6 @@ void FFCInputStream::handleAttach(AVStream *st)
 {
 	printf("handleAttach()\n");
 	avStream = st;
-	avCodecCtx = st->codec;
 }
 
 /**
@@ -38,7 +37,8 @@ void FFCInputStream::handleDetach()
 {
 	printf("handleDetach()\n");
 	avStream = NULL;
-	avCodecCtx = NULL;
+	// TODO close/free?
+	avDecoder = NULL;
 }
 
 /**
@@ -63,27 +63,29 @@ FFCVideoInput::~FFCVideoInput()
 bool FFCVideoInput::openDecoder()
 {
 	// Find the decoder for the video stream
-	AVCodec *pCodec = avcodec_find_decoder(avCodecCtx->codec_id);
-	if( pCodec == NULL ) {
+	AVCodec *codec = avcodec_find_decoder(avStream->codecpar->codec_id);
+	if( codec == NULL ) {
 		printf("Unsupported codec!\n");
 		return false; // Codec not found
 	}
 	
-	/*
-	// Copy context
-	AVCodecContext *videoCodecCtx = avcodec_alloc_context3(pCodec);
-	if( avcodec_copy_context(videoCodecCtx, avCodecCtx) != 0 )
-	{
-		printf("Couldn't copy codec context");
-		return false; // Error copying codec context
+	avDecoder = avcodec_alloc_context3(codec);
+	if ( !avDecoder ) {
+		printf("Failed to allocate the decoder context for stream\n");
+		return false;
+	}
+	
+	int ret = avcodec_parameters_to_context(avDecoder, avStream->codecpar);
+	if (ret < 0) {
+		printf("Failed to copy decoder parameters to input decoder context\n");
+		return false;
 	}
 	
 	//AVDictionary *opts = NULL;
 	//av_dict_set(&opts, "refcounted_frames", "1", 0);
-	*/
 	
 	// Open codec
-	int ret = avcodec_open2(avCodecCtx, pCodec, 0);
+	ret = avcodec_open2(avDecoder, codec, 0);
 	if( ret < 0 ) {
 		printf("Could not open codec\n");
 		return false; // Could not open codec
@@ -96,18 +98,20 @@ bool FFCVideoInput::openDecoder()
 		return false;
 	}
 	
-	avFrame->width  = avCodecCtx->width;
-	avFrame->height = avCodecCtx->height;
-	avFrame->format = avCodecCtx->pix_fmt;
+	avFrame->width  = avDecoder->width;
+	avFrame->height = avDecoder->height;
+	avFrame->format = avDecoder->pix_fmt;
 	
 	/* allocate the buffers for the frame data */
 	// TODO выделять буфен не обязательно, но надо разобраться что эффективнее
+	/*
 	ret = avpicture_alloc((AVPicture *)avFrame, avCodecCtx->pix_fmt, avCodecCtx->width, avCodecCtx->height);
 	if ( ret < 0 )
 	{
 		printf("avpicture_alloc() failed\n");
 		return false;
 	}
+	*/
 	
 	return true;
 }
@@ -117,7 +121,7 @@ bool FFCVideoInput::openDecoder()
 */
 bool FFCVideoInput::initScale(int dstWidth, int dstHeight, AVPixelFormat dstFmt)
 {
-	scaleCtx = sws_getContext(avFrame->width, avFrame->height, avCodecCtx->pix_fmt,
+	scaleCtx = sws_getContext(avFrame->width, avFrame->height, avDecoder->pix_fmt,
 		dstWidth, dstHeight, dstFmt,
 		SWS_BILINEAR, NULL, NULL, NULL);
 	
@@ -165,7 +169,7 @@ void FFCVideoInput::handlePacket(AVPacket *packet)
 {
 	// Decode video frame
 	int frameFinished = 0;
-	avcodec_decode_video2(avCodecCtx, avFrame, &frameFinished, packet);
+	avcodec_decode_video2(avDecoder, avFrame, &frameFinished, packet);
 	
 	// Did we get a video frame?
 	if(frameFinished)
@@ -200,7 +204,7 @@ int FFCDemuxer::findVideoStream()
 	printf("stream's count: %d\n", stream_count);
 	for(int i=0; i<stream_count; i++)
 	{
-		if( avFormatCtx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO )
+		if( avFormatCtx->streams[i]->codecpar->codec_type==AVMEDIA_TYPE_VIDEO )
 		{
 			videoStream = i;
 			break;
@@ -301,7 +305,7 @@ bool FFCDemuxer::readFrame()
 	}
 	
 	// Free the packet that was allocated by av_read_frame
-	av_free_packet(&packet);
+	av_packet_unref(&packet);
 	
 	return true;
 }
