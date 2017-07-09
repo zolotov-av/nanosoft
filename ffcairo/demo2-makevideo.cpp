@@ -88,7 +88,12 @@ int main(int argc, char *argv[])
 	opts.time_base = (AVRational){ 1, 25 };
 	opts.gop_size = 12;
 	
-	ptr<FFCImage> pic = new FFCImage(width, height);
+	ptr<FFCImage> pic = FFCImage::createImage(width, height);
+	if ( pic.getObject() == NULL )
+	{
+		printf("fail to create FFCImage\n");
+		return -1;
+	}
 	
 	ptr<FFCMuxer> muxer = new FFCMuxer();
 	

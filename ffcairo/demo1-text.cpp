@@ -116,7 +116,12 @@ int main(int argc, char *argv[])
 	}
 	
 	
-	videoStream->pic = new FFCImage(width, height);
+	videoStream->pic = FFCImage::createImage(width, height);
+	if ( videoStream->pic.getObject() == NULL )
+	{
+		printf("fail to create FFCImage\n");
+		return -1;
+	}
 	videoStream->initScale(videoStream->pic);
 	videoStream->frameNo = 0;
 	
