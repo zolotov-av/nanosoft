@@ -1,6 +1,10 @@
 
 #include <ffcairo/ffcimage.h>
 
+extern "C" {
+#include <libavutil/imgutils.h>
+}
+
 #include <stdio.h>
 
 /**
@@ -11,16 +15,19 @@
 */
 FFCImage::FFCImage(int w, int h)
 {
+	// TODO сделать фанатичную проверку ошибок
 	width = w;
 	height = h;
 	stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, width);
 	int size = stride * height;
 	
-	int av_size = avpicture_get_size(AV_PIX_FMT_BGRA, width, height);
-	printf("cairo size=%d, ffmpeg size=%d\n", size, av_size);
+	int av_size = av_image_get_buffer_size(AV_PIX_FMT_BGRA, width, height, 1);
+	if ( size != av_size )
+	{
+		printf("cairo size=%d, ffmpeg size=%d\n", size, av_size);
+	}
 	if ( av_size > size ) size = av_size;
-	printf("actual size: %d\n", size);
-
+	
 	data = (uint8_t *)av_malloc( size * sizeof(uint8_t) );
 	
 	surface = cairo_image_surface_create_for_data(data, CAIRO_FORMAT_ARGB32, width, height, stride);
@@ -34,13 +41,12 @@ FFCImage::FFCImage(int w, int h)
 	if( avFrame == NULL )
 	{
 		printf("avFrame alloc failed\n");
-		
 	}
-	
-	// Assign appropriate parts of buffer to image planes in pFrameRGB
-	// Note that pFrameRGB is an AVFrame, but AVFrame is a superset
-	// of AVPicture
-	avpicture_fill((AVPicture *)avFrame, data, AV_PIX_FMT_BGRA, width, height);
+	else
+	{
+		// magic...
+		av_image_fill_arrays(avFrame->data, avFrame->linesize, data, AV_PIX_FMT_BGRA, width, height, 1);
+	}
 }
 
 /**
@@ -50,6 +56,7 @@ FFCImage::FFCImage(int w, int h)
 */
 FFCImage::~FFCImage()
 {
+	av_frame_free(&avFrame);
 	av_free(data);
 }
 
