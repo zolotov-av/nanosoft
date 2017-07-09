@@ -15,6 +15,9 @@ FFCInputStream::FFCInputStream(): avStream(NULL), avDecoder(NULL)
 */
 FFCInputStream::~FFCInputStream()
 {
+	// Free the codec context and everything associated with it and write NULL
+	// to the provided pointer. 
+	avcodec_free_context(&avDecoder);
 }
 
 /**
@@ -37,8 +40,9 @@ void FFCInputStream::handleDetach()
 {
 	printf("handleDetach()\n");
 	avStream = NULL;
-	// TODO close/free?
-	avDecoder = NULL;
+	// Free the codec context and everything associated with it and write NULL
+	// to the provided pointer. 
+	avcodec_free_context(&avDecoder);
 }
 
 /**
@@ -46,7 +50,6 @@ void FFCInputStream::handleDetach()
 */
 FFCVideoInput::FFCVideoInput(): scaleCtx(NULL)
 {
-	//avFrame = av_frame_alloc();
 }
 
 /**
@@ -81,10 +84,6 @@ bool FFCVideoInput::openDecoder()
 		return false;
 	}
 	
-	//AVDictionary *opts = NULL;
-	//av_dict_set(&opts, "refcounted_frames", "1", 0);
-	
-	// Open codec
 	ret = avcodec_open2(avDecoder, codec, 0);
 	if( ret < 0 ) {
 		printf("Could not open codec\n");
@@ -101,17 +100,6 @@ bool FFCVideoInput::openDecoder()
 	avFrame->width  = avDecoder->width;
 	avFrame->height = avDecoder->height;
 	avFrame->format = avDecoder->pix_fmt;
-	
-	/* allocate the buffers for the frame data */
-	// TODO выделять буфен не обязательно, но надо разобраться что эффективнее
-	/*
-	ret = avpicture_alloc((AVPicture *)avFrame, avCodecCtx->pix_fmt, avCodecCtx->width, avCodecCtx->height);
-	if ( ret < 0 )
-	{
-		printf("avpicture_alloc() failed\n");
-		return false;
-	}
-	*/
 	
 	return true;
 }

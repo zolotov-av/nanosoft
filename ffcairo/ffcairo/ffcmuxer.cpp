@@ -39,6 +39,7 @@ FFCVideoOutput::FFCVideoOutput(AVStream *st): FFCOutputStream(st), scaleCtx(NULL
 */
 FFCVideoOutput::~FFCVideoOutput()
 {
+	av_frame_free(&avFrame);
 }
 
 /**
@@ -102,9 +103,6 @@ bool FFCVideoOutput::openEncoder(const FFCVideoOptions *opts)
 	
 	/* allocate the buffers for the frame data */
 	ret = av_frame_get_buffer(avFrame, 1);
-	/*
-	ret = avpicture_alloc((AVPicture *)avFrame, opts->pix_fmt, opts->width, opts->height);
-	*/
 	if ( ret < 0 )
 	{
 		printf("av_frame_get_buffer() failed\n");
@@ -243,7 +241,6 @@ AVStream* FFCMuxer::createStream()
 	if ( ! avStream )
 	{
 		printf("avformat_new_stream() failed\n");
-		// TODO нужно ли как-то освободжать AVCodec* и как это делать?
 		return NULL;
 	}
 	
@@ -267,7 +264,6 @@ AVStream* FFCMuxer::createStream(AVCodecID codec_id)
 	if ( ! avStream )
 	{
 		printf("avformat_new_stream() failed\n");
-		// TODO нужно ли как-то освободжать AVCodec* и как это делать?
 		return NULL;
 	}
 	
