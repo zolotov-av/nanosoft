@@ -39,7 +39,7 @@ LDFLAGS=@LDFLAGS@
 CXXFLAGS=@CXXFLAGS@
 
 # берем имя компилятора, которое дает нам configure и доплняем его опциями
-CXX:=@CXX@ $(CPPFLAGS) $(CXXFLAGS) -Wno-deprecated-declarations -ffunction-sections -I.
+CXX:=@CXX@ $(CPPFLAGS) $(CXXFLAGS) -ffunction-sections -I.
 
 LD=@CXX@ -Wl,--gc-sections
 
@@ -129,10 +129,10 @@ obj/ffcimage.o: ffcairo/ffcimage.cpp ffcairo/ffcimage.h ffcairo/ffctypes.h
 	$(CXX) -c ffcairo/ffcimage.cpp -o obj/ffcimage.o
 
 obj/ffcmuxer.o: ffcairo/ffcmuxer.cpp ffcairo/ffcmuxer.h ffcairo/ffctypes.h
-	$(CXX) -c ffcairo/ffcmuxer.cpp -o obj/ffcmuxer.o
+	$(CXX) -Wno-deprecated-declarations -c ffcairo/ffcmuxer.cpp -o obj/ffcmuxer.o
 
 obj/ffcdemuxer.o: ffcairo/ffcdemuxer.cpp ffcairo/ffcdemuxer.h ffcairo/ffctypes.h
-	$(CXX) -c ffcairo/ffcdemuxer.cpp -o obj/ffcdemuxer.o
+	$(CXX) -Wno-deprecated-declarations -c ffcairo/ffcdemuxer.cpp -o obj/ffcdemuxer.o
 
 obj/ffcmisc.o: ffcairo/ffcmisc.cpp ffcairo/ffcmisc.h ffcairo/ffctypes.h
 	$(CXX) -c ffcairo/ffcmisc.cpp -o obj/ffcmisc.o

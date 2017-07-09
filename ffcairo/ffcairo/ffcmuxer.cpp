@@ -6,9 +6,8 @@
 /**
 * Конструктор
 */
-FFCOutputStream::FFCOutputStream(AVStream *st): avStream(st), avCodecCtx(NULL)
+FFCOutputStream::FFCOutputStream(AVStream *st): avStream(st), avEncoder(NULL)
 {
-	if ( st ) avCodecCtx = st->codec;
 }
 
 /**
@@ -24,7 +23,7 @@ FFCOutputStream::~FFCOutputStream()
 */
 void FFCOutputStream::rescale_ts(AVPacket *pkt)
 {
-	av_packet_rescale_ts(pkt, avCodecCtx->time_base, avStream->time_base);
+	av_packet_rescale_ts(pkt, avEncoder->time_base, avStream->time_base);
 	pkt->stream_index = avStream->index;
 }
 
@@ -47,35 +46,47 @@ FFCVideoOutput::~FFCVideoOutput()
 */
 bool FFCVideoOutput::openEncoder(const FFCVideoOptions *opts)
 {
-	avCodecCtx = avStream->codec;
-	avCodecCtx->codec_id  = opts->codec_id;
-	avCodecCtx->width     = opts->width;
-	avCodecCtx->height    = opts->height;
-	avCodecCtx->pix_fmt   = opts->pix_fmt;
-	avCodecCtx->bit_rate  = opts->bit_rate;
-	avStream->time_base   = opts->time_base;
-	avCodecCtx->time_base = avStream->time_base;
-	avCodecCtx->gop_size  = opts->gop_size;
-	
-	if ( avCodecCtx->codec_id == AV_CODEC_ID_MPEG2VIDEO )
+	AVCodec *codec = avcodec_find_encoder(opts->codec_id);
+	if ( ! codec )
 	{
-		/* just for testing, we also add B frames */
-		avCodecCtx->max_b_frames = 2;
+		printf("encoder not found\n");
+		return false;
 	}
 	
-	if ( avCodecCtx->codec_id == AV_CODEC_ID_MPEG1VIDEO )
+	avEncoder = avcodec_alloc_context3(codec);
+	avEncoder->width     = opts->width;
+	avEncoder->height    = opts->height;
+	avEncoder->pix_fmt   = opts->pix_fmt;
+	avEncoder->bit_rate  = opts->bit_rate;
+	avStream->time_base   = opts->time_base;
+	avEncoder->time_base = avStream->time_base;
+	avEncoder->gop_size  = opts->gop_size;
+	
+	if ( avEncoder->codec_id == AV_CODEC_ID_MPEG2VIDEO )
+	{
+		/* just for testing, we also add B frames */
+		avEncoder->max_b_frames = 2;
+	}
+	
+	if ( avEncoder->codec_id == AV_CODEC_ID_MPEG1VIDEO )
 	{
 		/* Needed to avoid using macroblocks in which some coeffs overflow.
 		 * This does not happen with normal video, it just happens here as
 		 * the motion of the chroma plane does not match the luma plane. */
-		avCodecCtx->mb_decision = 2;
+		avEncoder->mb_decision = 2;
 	}
 	
-	int ret = avcodec_open2(avCodecCtx, NULL, NULL);
+	int ret = avcodec_open2(avEncoder, codec, NULL);
 	if ( ret < 0 )
 	{
 		printf("avcodec_open2() failed\n");
 		return false;
+	}
+	
+	ret = avcodec_parameters_from_context(avStream->codecpar, avEncoder);
+	if (ret < 0) {
+		printf("Failed to copy encoder parameters to output stream\n");
+		return ret;
 	}
 	
 	avFrame = av_frame_alloc();
@@ -90,11 +101,13 @@ bool FFCVideoOutput::openEncoder(const FFCVideoOptions *opts)
 	avFrame->format = opts->pix_fmt;
 	
 	/* allocate the buffers for the frame data */
-	// TODO разобраться в форматом пикселей, почему два типа и как их конвертировать!!!
+	ret = av_frame_get_buffer(avFrame, 1);
+	/*
 	ret = avpicture_alloc((AVPicture *)avFrame, opts->pix_fmt, opts->width, opts->height);
+	*/
 	if ( ret < 0 )
 	{
-		printf("avpicture_alloc() failed\n");
+		printf("av_frame_get_buffer() failed\n");
 		return false;
 	}
 	
@@ -107,7 +120,7 @@ bool FFCVideoOutput::openEncoder(const FFCVideoOptions *opts)
 bool FFCVideoOutput::initScale(int srcWidth, int srcHeight, AVPixelFormat srcFmt)
 {
 	scaleCtx = sws_getContext(srcWidth, srcHeight, srcFmt,
-		avFrame->width, avFrame->height, avCodecCtx->pix_fmt, SWS_BILINEAR,
+		avFrame->width, avFrame->height, avEncoder->pix_fmt, SWS_BILINEAR,
 		NULL, NULL, NULL);
 	
 	return scaleCtx != 0;
@@ -144,7 +157,7 @@ void FFCVideoOutput::scale(ptr<FFCImage> pic)
 */
 bool FFCVideoOutput::encode(AVPacket *avpkt, int *got_packet_ptr)
 {
-	int ret = avcodec_encode_video2(avCodecCtx, avpkt, avFrame, got_packet_ptr);
+	int ret = avcodec_encode_video2(avEncoder, avpkt, avFrame, got_packet_ptr);
 	if ( ret < 0 )
 	{
 		printf("avcodec_encode_video2() failed\n");

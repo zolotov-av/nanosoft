@@ -21,7 +21,7 @@ public:
 	/**
 	 * Ссылка на контекст кодека
 	 */
-	AVCodecContext *avCodecCtx;
+	AVCodecContext *avEncoder;
 	
 	/**
 	 * Конструктор
