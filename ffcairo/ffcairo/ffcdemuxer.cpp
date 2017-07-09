@@ -135,7 +135,7 @@ bool FFCVideoInput::initScale(int dstWidth, int dstHeight, AVPixelFormat dstFmt)
 */
 bool FFCVideoInput::initScale(ptr<FFCImage> pic)
 {
-	return initScale(pic->width, pic->height, PIX_FMT_BGRA);
+	return initScale(pic->width, pic->height, AV_PIX_FMT_BGRA);
 }
 
 /**

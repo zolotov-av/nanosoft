@@ -9,5 +9,44 @@
  ****************************************************************************/
 
 #include <ffcairo/ffctypes.h>
+#include <ffcairo/ffcmuxer.h>
+#include <ffcairo/ffcdemuxer.h>
+
+/**
+ * Класс копирующий поток как есть без декодирования из одного файла в другой
+ */
+class FFCStreamCopy: public FFCInputStream
+{
+public:
+	/**
+	 * Выходной поток
+	 */
+	ptr<FFCOutputStream> oStream;
+	
+	/**
+	 * Мультиплексор
+	 */
+	ptr<FFCMuxer> muxer;
+	
+	/**
+	 * Конструктор
+	 */
+	FFCStreamCopy();
+	
+	/**
+	 * Деструктор
+	 */
+	~FFCStreamCopy();
+protected:
+	/**
+	 * Обработчик пакета
+	 */
+	virtual void handlePacket(AVPacket *packet);
+public:
+	/**
+	 * Создать выходной поток в мультиплексоре и настроить его для копирования
+	 */
+	AVStream* createStreamCopy();
+};
 
 #endif // FFC_MISC_H

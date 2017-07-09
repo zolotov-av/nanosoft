@@ -118,7 +118,7 @@ bool FFCVideoOutput::initScale(int srcWidth, int srcHeight, AVPixelFormat srcFmt
 */
 bool FFCVideoOutput::initScale(ptr<FFCImage> pic)
 {
-	return initScale(pic->width, pic->height, PIX_FMT_BGRA);
+	return initScale(pic->width, pic->height, AV_PIX_FMT_BGRA);
 }
 
 /**
@@ -219,6 +219,23 @@ AVCodecID FFCMuxer::defaultVideoCodec()
 AVCodecID FFCMuxer::defaultSubtitleCodec()
 {
 	return avFormat->oformat->subtitle_codec;
+}
+
+/**
+* Создать поток
+*/
+AVStream* FFCMuxer::createStream()
+{
+	AVStream *avStream = avformat_new_stream(avFormat, NULL);
+	if ( ! avStream )
+	{
+		printf("avformat_new_stream() failed\n");
+		// TODO нужно ли как-то освободжать AVCodec* и как это делать?
+		return NULL;
+	}
+	
+	printf("stream[%d] created\n", avStream->index);
+	return avStream;
 }
 
 /**

@@ -29,13 +29,17 @@ TARGET_OS:=@target_os@
 # ожидает менеджер пакетов
 DEB_ARCH:=@DEB_ARCH@
 
+CPPFLAGS=@CPPFLAGS@
+
+LDFLAGS=@LDFLAGS@
+
 # configure может снабдить нас дополнительными опциями компилятора
 # так же мы можем передавать свои опции компилятора в configure
 # через одноименную переменную окружения и они появятся здесь
 CXXFLAGS=@CXXFLAGS@
 
 # берем имя компилятора, которое дает нам configure и доплняем его опциями
-CXX:=@CXX@ $(CXXFLAGS) -ffunction-sections -I.
+CXX:=@CXX@ $(CPPFLAGS) $(CXXFLAGS) -Wno-deprecated-declarations -ffunction-sections -I.
 
 LD=@CXX@ -Wl,--gc-sections
 
@@ -60,7 +64,6 @@ OBJECTS+=obj/main.o
 LIBOBJECTS+=obj/ffcimage.o
 LIBOBJECTS+=obj/ffcmuxer.o
 LIBOBJECTS+=obj/ffcdemuxer.o
-LIBOBJECTS+=obj/ffclibav.o
 LIBOBJECTS+=obj/ffcmisc.o
 
 ############################# GENERIC RULES ##################################
@@ -72,7 +75,7 @@ LIBOBJECTS+=obj/ffcmisc.o
 all: libffcairo.a $(PROG_FILENAME) demo
 
 .PHONY: demo
-demo: demo1-text demo2-makevideo
+demo: demo1-text demo2-makevideo demo3-remux
 
 .PHONY: test
 test: test5
@@ -105,13 +108,16 @@ $(PROG_FILENAME): $(OBJECTS)
 ########################## BUILD RULES #######################################
 
 test5: test5-ffc.cpp libffcairo.a
-	$(CXX) -o test5 test5-ffc.cpp -L. -lffcairo $(LIBS)
+	$(CXX) $(LDFLAGS) -o test5 test5-ffc.cpp -L. -lffcairo $(LIBS)
 
 demo1-text: demo1-text.cpp libffcairo.a ffcairo/config.h
-	$(CXX) -o demo1-text demo1-text.cpp -L. -lffcairo $(LIBS)
+	$(CXX) $(LDFLAGS) -o demo1-text demo1-text.cpp -L. -lffcairo $(LIBS)
 
 demo2-makevideo: demo2-makevideo.cpp libffcairo.a ffcairo/config.h
-	$(CXX) -o demo2-makevideo demo2-makevideo.cpp -L. -lffcairo $(LIBS)
+	$(CXX) $(LDFLAGS) -o demo2-makevideo demo2-makevideo.cpp -L. -lffcairo $(LIBS)
+
+demo3-remux: demo3-remux.cpp libffcairo.a
+	$(CXX) $(LDFLAGS) -o demo3-remux demo3-remux.cpp -L. -lffcairo $(LIBS)
 
 libffcairo.a: $(LIBOBJECTS) ffcairo/config.h
 	$(AR) rc libffcairo.a $(LIBOBJECTS)
@@ -128,9 +134,6 @@ obj/ffcmuxer.o: ffcairo/ffcmuxer.cpp ffcairo/ffcmuxer.h ffcairo/ffctypes.h
 obj/ffcdemuxer.o: ffcairo/ffcdemuxer.cpp ffcairo/ffcdemuxer.h ffcairo/ffctypes.h
 	$(CXX) -c ffcairo/ffcdemuxer.cpp -o obj/ffcdemuxer.o
 
-obj/ffclibav.o: ffcairo/ffclibav.cpp ffcairo/ffclibav.h ffcairo/config.h
-	$(CXX) -c ffcairo/ffclibav.cpp -o obj/ffclibav.o
-
 obj/ffcmisc.o: ffcairo/ffcmisc.cpp ffcairo/ffcmisc.h ffcairo/ffctypes.h
 	$(CXX) -c ffcairo/ffcmisc.cpp -o obj/ffcmisc.o
 
@@ -146,7 +149,7 @@ distclean: clean deb_clean
 	rm -f ffcairo/config.h
 	rm -rf autom4te.cache
 	rm -rf libffcairo.a main test5
-	rm -rf demo1-text demo2-makevideo
+	rm -rf demo1-text demo2-makevideo demo3-remux
 
 # простая очистка, промежуточные файлы, но оставляет целевые
 clean:

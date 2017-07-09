@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
 	FFCVideoOptions opts;
 	opts.width = width;
 	opts.height = height;
-	opts.pix_fmt = PIX_FMT_YUV420P;
+	opts.pix_fmt = AV_PIX_FMT_YUV420P;
 	opts.bit_rate = 2000000;
 	opts.time_base = (AVRational){ 1, 25 };
 	opts.gop_size = 12;

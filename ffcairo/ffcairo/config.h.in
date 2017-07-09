@@ -3,8 +3,6 @@
 
 #include <cairo/cairo.h>
 
-#undef IS_LIBAV
-
 extern "C" {
 
 #include <libavcodec/avcodec.h>
@@ -12,13 +10,7 @@ extern "C" {
 #include <libavutil/avstring.h>
 #include <libavutil/mathematics.h>
 #include <libavutil/opt.h>
-
-#ifdef IS_LIBAV
 #include <libswscale/swscale.h>
-#include <ffcairo/ffclibav.h>
-#else
-#include <ffmpeg/swscale.h>
-#endif
 
 }
 

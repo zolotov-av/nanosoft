@@ -16,7 +16,7 @@ FFCImage::FFCImage(int w, int h)
 	stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, width);
 	int size = stride * height;
 	
-	int av_size = avpicture_get_size(PIX_FMT_BGRA, width, height);
+	int av_size = avpicture_get_size(AV_PIX_FMT_BGRA, width, height);
 	printf("cairo size=%d, ffmpeg size=%d\n", size, av_size);
 	if ( av_size > size ) size = av_size;
 	printf("actual size: %d\n", size);
@@ -40,7 +40,7 @@ FFCImage::FFCImage(int w, int h)
 	// Assign appropriate parts of buffer to image planes in pFrameRGB
 	// Note that pFrameRGB is an AVFrame, but AVFrame is a superset
 	// of AVPicture
-	avpicture_fill((AVPicture *)avFrame, data, PIX_FMT_BGRA, width, height);
+	avpicture_fill((AVPicture *)avFrame, data, AV_PIX_FMT_BGRA, width, height);
 }
 
 /**

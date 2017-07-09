@@ -168,6 +168,11 @@ public:
 	/**
 	 * Создать поток
 	 */
+	AVStream* createStream();
+	
+	/**
+	 * Создать поток
+	 */
 	AVStream* createStream(AVCodecID codec_id);
 	
 	/**
