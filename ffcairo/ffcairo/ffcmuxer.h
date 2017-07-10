@@ -3,7 +3,6 @@
 
 #include <nanosoft/object.h>
 #include <ffcairo/ffctypes.h>
-#include <ffcairo/ffcimage.h>
 
 /**
  * Класс исходящего видео потока
@@ -27,11 +26,6 @@ public:
 	AVFrame *avFrame;
 	
 	/**
-	 * Контекст маштабирования и конвертации кадра
-	 */
-	SwsContext *scaleCtx;
-	
-	/**
 	 * Конструктор
 	 */
 	FFCVideoOutput(AVStream *st);
@@ -52,45 +46,14 @@ public:
 	void closeEncoder();
 	
 	/**
-	 * Инициализация маштабирования
-	 *
-	 * При необходимости сменить настройки маштабирования, openScale()
-	 * можно вывызывать без предварительного закрытия через closeScale()
+	 * Кодировать кадр
 	 */
-	bool openScale(int srcWidth, int srcHeight, AVPixelFormat srcFmt);
-	
-	/**
-	 * Инициализация маштабирования
-	 *
-	 * При необходимости сменить настройки маштабирования, openScale()
-	 * можно вывызывать без предварительного закрытия через closeScale()
-	 */
-	bool openScale(ptr<FFCImage> pic);
-	
-	/**
-	 * Маштабировать картику
-	 */
-	void scale(AVFrame *pFrame);
-	
-	/**
-	 * Маштабировать картинку
-	 */
-	void scale(ptr<FFCImage> pic);
-	
-	/**
-	 * Финализация маштабирования
-	 */
-	void closeScale();
+	bool encode();
 	
 	/**
 	 * Кодировать кадр
 	 */
 	bool encode(AVFrame *frame);
-	
-	/**
-	 * Кодировать кадр с маштабированием
-	 */
-	bool encode(ptr<FFCImage> pic);
 	
 	/**
 	 * Получить пакет
@@ -114,16 +77,6 @@ public:
 	 * Контест avFormat
 	 */
 	AVFormatContext *avFormat;
-	
-	/**
-	 * Номер потока с видео
-	 */
-	int videoStream;
-	
-	/**
-	 * Номер потока с аудио
-	 */
-	int audioStream;
 	
 	/**
 	 * Конструктор

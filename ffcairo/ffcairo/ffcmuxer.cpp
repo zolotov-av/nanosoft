@@ -6,7 +6,7 @@
 /**
 * Конструктор
 */
-FFCVideoOutput::FFCVideoOutput(AVStream *st): avStream(st), avEncoder(NULL), scaleCtx(NULL)
+FFCVideoOutput::FFCVideoOutput(AVStream *st): avStream(st), avEncoder(NULL), avFrame(NULL)
 {
 }
 
@@ -15,7 +15,6 @@ FFCVideoOutput::FFCVideoOutput(AVStream *st): avStream(st), avEncoder(NULL), sca
 */
 FFCVideoOutput::~FFCVideoOutput()
 {
-	closeScale();
 	closeEncoder();
 }
 
@@ -102,59 +101,11 @@ void FFCVideoOutput::closeEncoder()
 }
 
 /**
-* Инициализация маштабирования
-*
-* При необходимости сменить настройки маштабирования, openScale()
-* можно вывызывать без предварительного закрытия через closeScale()
+* Кодировать кадр с маштабированием
 */
-bool FFCVideoOutput::openScale(int srcWidth, int srcHeight, AVPixelFormat srcFmt)
+bool FFCVideoOutput::encode()
 {
-	scaleCtx = sws_getCachedContext(scaleCtx, srcWidth, srcHeight, srcFmt,
-		avFrame->width, avFrame->height, avEncoder->pix_fmt, SWS_BILINEAR,
-		NULL, NULL, NULL);
-	
-	return scaleCtx != 0;
-}
-
-/**
-* Инициализация маштабирования
-*
-* При необходимости сменить настройки маштабирования, openScale()
-* можно вывызывать без предварительного закрытия через closeScale()
-*/
-bool FFCVideoOutput::openScale(ptr<FFCImage> pic)
-{
-	return openScale(pic->width, pic->height, AV_PIX_FMT_BGRA);
-}
-
-/**
-* Маштабировать картику
-*/
-void FFCVideoOutput::scale(AVFrame *pFrame)
-{
-	sws_scale(scaleCtx, pFrame->data, pFrame->linesize,
-		0, avFrame->height, avFrame->data, avFrame->linesize);
-}
-
-/**
-* Маштабировать картинку
-*/
-void FFCVideoOutput::scale(ptr<FFCImage> pic)
-{
-	sws_scale(scaleCtx, pic->avFrame->data, pic->avFrame->linesize,
-		0, avFrame->height, avFrame->data, avFrame->linesize);
-}
-
-/**
-* Финализация маштабирования
-*/
-void FFCVideoOutput::closeScale()
-{
-	if ( scaleCtx )
-	{
-		sws_freeContext(scaleCtx);
-		scaleCtx = NULL;
-	}
+	return encode(avFrame);
 }
 
 /**
@@ -176,15 +127,6 @@ bool FFCVideoOutput::encode(AVFrame *frame)
 	}
 	
 	return true;
-}
-
-/**
-* Кодировать кадр с маштабированием
-*/
-bool FFCVideoOutput::encode(ptr<FFCImage> pic)
-{
-	scale(pic);
-	return encode(avFrame);
 }
 
 /**

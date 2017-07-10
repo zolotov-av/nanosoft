@@ -9,6 +9,7 @@
 #include <ffcairo/config.h>
 #include <ffcairo/ffcimage.h>
 #include <ffcairo/ffcmuxer.h>
+#include <ffcairo/scale.h>
 #include <math.h>
 
 void DrawPic(ptr<FFCImage> pic, int iFrame)
@@ -122,7 +123,8 @@ int main(int argc, char *argv[])
 	
 	av_dump_format(muxer->avFormat, 0, fname, 1);
 	
-	vo->openScale(pic);
+	ptr<FFCScale> scale = new FFCScale();
+	scale->init_scale(vo->avFrame, pic->avFrame);
 	
 	if ( ! muxer->openFile(fname) )
 	{
@@ -142,7 +144,9 @@ int main(int argc, char *argv[])
 		
 		DrawPic(pic, frameNo);
 		
-		if ( ! vo->encode(pic) )
+		scale->scale(vo->avFrame, pic->avFrame);
+		
+		if ( ! vo->encode() )
 		{
 			printf("frame[%d] encode failed\n", frameNo);
 			break;

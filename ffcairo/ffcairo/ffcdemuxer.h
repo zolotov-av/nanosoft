@@ -2,7 +2,6 @@
 #define FFC_DEMUXER_H
 
 #include <ffcairo/ffctypes.h>
-#include <ffcairo/ffcimage.h>
 #include <nanosoft/object.h>
 
 /**
@@ -59,11 +58,6 @@ public:
 	AVFrame *avFrame;
 	
 	/**
-	 * Контекст маштабирования и конвертации кадра
-	 */
-	SwsContext *scaleCtx;
-	
-	/**
 	 * Конструктор
 	 */
 	FFCVideoInput();
@@ -83,37 +77,8 @@ public:
 	 */
 	void closeDecoder();
 	
-	/**
-	 * Инициализация маштабирования
-	 *
-	 * При необходимости сменить настройки маштабирования, openScale()
-	 * можно вывызывать без предварительного закрытия через closeScale()
-	 */
-	bool openScale(int dstWidth, int dstHeight, AVPixelFormat dstFmt);
-	
-	/**
-	 * Инициализация маштабирования
-	 *
-	 * При необходимости сменить настройки маштабирования, openScale()
-	 * можно вывызывать без предварительного закрытия через closeScale()
-	 */
-	bool openScale(ptr<FFCImage> pic);
-	
-	/**
-	 * Маштабировать картику
-	 */
-	void scale(AVFrame *pFrame);
-	
-	/**
-	 * Финализация маштабирования
-	 */
-	void closeScale();
-	
-	/**
-	 * Маштабировать картинку
-	 */
-	void scale(ptr<FFCImage> pic);
 protected:
+	
 	/**
 	 * Обработчик присоединения
 	 *

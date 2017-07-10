@@ -71,6 +71,10 @@ FFCImage* FFCImage::createImage(int w, int h)
 	}
 	else
 	{
+		pic->avFrame->width = w;
+		pic->avFrame->height = h;
+		pic->avFrame->format = AV_PIX_FMT_BGRA;
+		
 		// magic...
 		int ret = av_image_fill_arrays(pic->avFrame->data, pic->avFrame->linesize, pic->data, AV_PIX_FMT_BGRA, w, h, 1);
 		if ( ret < 0 )

@@ -6,7 +6,7 @@
 /**
 * Конструктор
 */
-FFCVideoInput::FFCVideoInput(): avStream(NULL), avDecoder(NULL), scaleCtx(NULL)
+FFCVideoInput::FFCVideoInput(): avStream(NULL), avDecoder(NULL), avFrame(NULL)
 {
 }
 
@@ -15,7 +15,6 @@ FFCVideoInput::FFCVideoInput(): avStream(NULL), avDecoder(NULL), scaleCtx(NULL)
 */
 FFCVideoInput::~FFCVideoInput()
 {
-	closeScale();
 	closeDecoder();
 }
 
@@ -98,71 +97,6 @@ void FFCVideoInput::closeDecoder()
 	
 	// освободить кодек, указатель будет установлен в NULL
 	avcodec_free_context(&avDecoder);
-}
-
-/**
-* Инициализация маштабирования
-*
-* При необходимости сменить настройки маштабирования, openScale()
-* можно вывызывать без предварительного закрытия через closeScale()
-*/
-bool FFCVideoInput::openScale(int dstWidth, int dstHeight, AVPixelFormat dstFmt)
-{
-	scaleCtx = sws_getCachedContext(scaleCtx,
-		avFrame->width, avFrame->height, avDecoder->pix_fmt,
-		dstWidth, dstHeight, dstFmt,
-		SWS_BILINEAR, NULL, NULL, NULL);
-	
-	if ( ! scaleCtx )
-	{
-		printf("sws_getContext(%d, %d) failed\n", dstWidth, dstHeight);
-		return true;
-	}
-	
-	return true;
-}
-
-/**
-* Инициализация маштабирования
-*
-* При необходимости сменить настройки маштабирования, openScale()
-* можно вывызывать без предварительного закрытия через closeScale()
-*/
-bool FFCVideoInput::openScale(ptr<FFCImage> pic)
-{
-	return openScale(pic->width, pic->height, AV_PIX_FMT_BGRA);
-}
-
-/**
-* Маштабировать картику
-*/
-void FFCVideoInput::scale(AVFrame *pFrame)
-{
-	// TODO check params
-	sws_scale(scaleCtx, avFrame->data, avFrame->linesize,
-		0, avFrame->height, pFrame->data, pFrame->linesize);
-}
-
-/**
-* Маштабировать картинку
-*/
-void FFCVideoInput::scale(ptr<FFCImage> pic)
-{
-	// TODO check params
-	sws_scale(scaleCtx, avFrame->data, avFrame->linesize,
-		0, avFrame->height, pic->avFrame->data, pic->avFrame->linesize);
-}
-
-/**
-* Финализация маштабирования
-*/
-void FFCVideoInput::closeScale()
-{
-	if ( scaleCtx )
-	{
-		sws_freeContext(scaleCtx);
-		scaleCtx = NULL;
-	}
 }
 
 /**

@@ -9,12 +9,14 @@
 #include <ffcairo/config.h>
 #include <ffcairo/ffcimage.h>
 #include <ffcairo/ffcdemuxer.h>
+#include <ffcairo/scale.h>
 
 class MyInputStream: public FFCVideoInput
 {
 public:
 	int frameNo;
 	ptr<FFCImage> pic;
+	ptr<FFCScale> scale;
 	
 	/**
 	 * Обработчик фрейма
@@ -32,7 +34,8 @@ void MyInputStream::handleFrame()
 	if( frameNo < 10 )
 	{
 		printf("handleFrame #%d\n", frameNo);
-		scale(pic);
+		scale->scale(pic->avFrame, avFrame);
+		//FFCVideoInput::scale(pic);
 		
 		ModifyFrame(pic.getObject(), frameNo);
 		
@@ -119,7 +122,8 @@ int main(int argc, char *argv[])
 		printf("fail to create FFCImage\n");
 		return -1;
 	}
-	videoStream->openScale(videoStream->pic);
+	videoStream->scale = new FFCScale();
+	videoStream->scale->init_scale(videoStream->pic->avFrame, videoStream->avFrame);
 	videoStream->frameNo = 0;
 	
 	while ( demux->readFrame() ) ;
