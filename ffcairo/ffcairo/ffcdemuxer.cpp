@@ -155,14 +155,34 @@ void FFCVideoInput::scale(ptr<FFCImage> pic)
 */
 void FFCVideoInput::handlePacket(AVPacket *packet)
 {
-	// Decode video frame
-	int frameFinished = 0;
-	avcodec_decode_video2(avDecoder, avFrame, &frameFinished, packet);
-	
-	// Did we get a video frame?
-	if(frameFinished)
+	int ret = avcodec_send_packet(avDecoder, packet);
+	if ( ret == AVERROR(EAGAIN) )
 	{
+		printf("avcodec_send_packet() == EAGAIN\n");
+		return;
+	}
+	if ( ret < 0 )
+	{
+		printf("avcodec_send_packet() failed\n");
+		return;
+	}
+	
+	while ( 1 )
+	{
+		ret = avcodec_receive_frame(avDecoder, avFrame);
+		if ( ret < 0 ) break;
+		
 		handleFrame();
+	}
+	
+	if ( ret == AVERROR(EAGAIN) )
+	{
+		return;
+	}
+	else
+	{
+		printf("avcodec_receive_frame() failed\n");
+		return;
 	}
 }
 
