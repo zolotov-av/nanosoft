@@ -94,12 +94,17 @@ public:
 	/**
 	 * Кодировать кадр
 	 */
-	bool encode(AVPacket *avpkt, int *got_packet_ptr);
+	bool encode(AVFrame *frame);
 	
 	/**
 	 * Кодировать кадр с маштабированием
 	 */
-	bool encode(ptr<FFCImage> pic, AVPacket *avpkt, int *got_packet_ptr);
+	bool encode(ptr<FFCImage> pic);
+	
+	/**
+	 * Получить пакет
+	 */
+	bool recv_packet(AVPacket *pkt, int &got_packet);
 };
 
 /**

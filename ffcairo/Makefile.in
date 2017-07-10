@@ -129,7 +129,7 @@ obj/ffcimage.o: ffcairo/ffcimage.cpp ffcairo/ffcimage.h ffcairo/ffctypes.h
 	$(CXX) -c ffcairo/ffcimage.cpp -o obj/ffcimage.o
 
 obj/ffcmuxer.o: ffcairo/ffcmuxer.cpp ffcairo/ffcmuxer.h ffcairo/ffctypes.h
-	$(CXX) -Wno-deprecated-declarations -c ffcairo/ffcmuxer.cpp -o obj/ffcmuxer.o
+	$(CXX) -c ffcairo/ffcmuxer.cpp -o obj/ffcmuxer.o
 
 obj/ffcdemuxer.o: ffcairo/ffcdemuxer.cpp ffcairo/ffcdemuxer.h ffcairo/ffctypes.h
 	$(CXX) -c ffcairo/ffcdemuxer.cpp -o obj/ffcdemuxer.o

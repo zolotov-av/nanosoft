@@ -142,20 +142,32 @@ int main(int argc, char *argv[])
 		
 		DrawPic(pic, frameNo);
 		
-		if ( ! vo->encode(pic, &pkt, &got_packet) )
+		if ( ! vo->encode(pic) )
 		{
 			printf("frame[%d] encode failed\n", frameNo);
 			break;
 		}
 		
-		if ( got_packet )
+		while ( 1 )
 		{
-			vo->rescale_ts(&pkt);
+			if ( ! vo->recv_packet(&pkt, got_packet) )
+			{
+				printf("recv_packet() failed\n");
+				return -1;
+			}
 			
-			/* Write the compressed frame to the media file. */
-			//log_packet(muxer->avFormat, &pkt);
-			
-			muxer->writeFrame(&pkt);
+			if ( got_packet )
+			{
+				//vo->rescale_ts(&pkt);
+				
+				/* Write the compressed frame to the media file. */
+				//log_packet(muxer->avFormat, &pkt);
+				muxer->writeFrame(&pkt);
+			}
+			else
+			{
+				break;
+			}
 		}
 	}
 	

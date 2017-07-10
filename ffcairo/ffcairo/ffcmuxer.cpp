@@ -153,12 +153,18 @@ void FFCVideoOutput::scale(ptr<FFCImage> pic)
 /**
 * Кодировать кадр
 */
-bool FFCVideoOutput::encode(AVPacket *avpkt, int *got_packet_ptr)
+bool FFCVideoOutput::encode(AVFrame *frame)
 {
-	int ret = avcodec_encode_video2(avEncoder, avpkt, avFrame, got_packet_ptr);
+	int ret = avcodec_send_frame(avEncoder, frame);
+	if ( ret == AVERROR(EAGAIN) )
+	{
+		printf("avcodec_send_frame() == EAGAIN\n");
+		return false;
+	}
+	
 	if ( ret < 0 )
 	{
-		printf("avcodec_encode_video2() failed\n");
+		printf("avcodec_send_frame() failed\n");
 		return false;
 	}
 	
@@ -168,10 +174,34 @@ bool FFCVideoOutput::encode(AVPacket *avpkt, int *got_packet_ptr)
 /**
 * Кодировать кадр с маштабированием
 */
-bool FFCVideoOutput::encode(ptr<FFCImage> pic, AVPacket *avpkt, int *got_packet_ptr)
+bool FFCVideoOutput::encode(ptr<FFCImage> pic)
 {
 	scale(pic);
-	return encode(avpkt, got_packet_ptr);
+	return encode(avFrame);
+}
+
+/**
+* Получить пакет
+*/
+bool FFCVideoOutput::recv_packet(AVPacket *pkt, int &got_packet)
+{
+	int ret = avcodec_receive_packet(avEncoder, pkt);
+	if ( ret == 0 )
+	{
+		got_packet = 1;
+		return true;
+	}
+	
+	got_packet = 0;
+	
+	if ( ret == AVERROR(EAGAIN) )
+	{
+		//printf("avcodec_receive_packet() == EAGAIN\n");
+		return true;
+	}
+	
+	printf("avcodec_receive_packet() failed\n");
+	return false;
 }
 
 /**
