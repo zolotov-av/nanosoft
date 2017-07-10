@@ -6,31 +6,7 @@
 /**
 * Конструктор
 */
-FFCOutputStream::FFCOutputStream(AVStream *st): avStream(st), avEncoder(NULL)
-{
-}
-
-/**
-* Деструктор
-*/
-FFCOutputStream::~FFCOutputStream()
-{
-}
-
-/**
-* Convert valid timing fields (timestamps / durations) in a packet from
-* one timebase to another. 
-*/
-void FFCOutputStream::rescale_ts(AVPacket *pkt)
-{
-	av_packet_rescale_ts(pkt, avEncoder->time_base, avStream->time_base);
-	pkt->stream_index = avStream->index;
-}
-
-/**
-* Конструктор
-*/
-FFCVideoOutput::FFCVideoOutput(AVStream *st): FFCOutputStream(st), scaleCtx(NULL)
+FFCVideoOutput::FFCVideoOutput(AVStream *st): avStream(st), avEncoder(NULL), scaleCtx(NULL)
 {
 }
 
@@ -39,7 +15,8 @@ FFCVideoOutput::FFCVideoOutput(AVStream *st): FFCOutputStream(st), scaleCtx(NULL
 */
 FFCVideoOutput::~FFCVideoOutput()
 {
-	av_frame_free(&avFrame);
+	closeScale();
+	closeEncoder();
 }
 
 /**
@@ -113,11 +90,26 @@ bool FFCVideoOutput::openEncoder(const FFCVideoOptions *opts)
 }
 
 /**
-* Инициализация маштабирования
+* Закрыть кодек
 */
-bool FFCVideoOutput::initScale(int srcWidth, int srcHeight, AVPixelFormat srcFmt)
+void FFCVideoOutput::closeEncoder()
 {
-	scaleCtx = sws_getContext(srcWidth, srcHeight, srcFmt,
+	// освободить фрейм, указатель будет установлен в NULL
+	av_frame_free(&avFrame);
+	
+	// освободить кодек, указатель будет установлен в NULL
+	avcodec_free_context(&avEncoder);
+}
+
+/**
+* Инициализация маштабирования
+*
+* При необходимости сменить настройки маштабирования, openScale()
+* можно вывызывать без предварительного закрытия через closeScale()
+*/
+bool FFCVideoOutput::openScale(int srcWidth, int srcHeight, AVPixelFormat srcFmt)
+{
+	scaleCtx = sws_getCachedContext(scaleCtx, srcWidth, srcHeight, srcFmt,
 		avFrame->width, avFrame->height, avEncoder->pix_fmt, SWS_BILINEAR,
 		NULL, NULL, NULL);
 	
@@ -126,10 +118,13 @@ bool FFCVideoOutput::initScale(int srcWidth, int srcHeight, AVPixelFormat srcFmt
 
 /**
 * Инициализация маштабирования
+*
+* При необходимости сменить настройки маштабирования, openScale()
+* можно вывызывать без предварительного закрытия через closeScale()
 */
-bool FFCVideoOutput::initScale(ptr<FFCImage> pic)
+bool FFCVideoOutput::openScale(ptr<FFCImage> pic)
 {
-	return initScale(pic->width, pic->height, AV_PIX_FMT_BGRA);
+	return openScale(pic->width, pic->height, AV_PIX_FMT_BGRA);
 }
 
 /**
@@ -148,6 +143,18 @@ void FFCVideoOutput::scale(ptr<FFCImage> pic)
 {
 	sws_scale(scaleCtx, pic->avFrame->data, pic->avFrame->linesize,
 		0, avFrame->height, avFrame->data, avFrame->linesize);
+}
+
+/**
+* Финализация маштабирования
+*/
+void FFCVideoOutput::closeScale()
+{
+	if ( scaleCtx )
+	{
+		sws_freeContext(scaleCtx);
+		scaleCtx = NULL;
+	}
 }
 
 /**

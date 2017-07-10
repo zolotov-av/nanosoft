@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 	
 	av_dump_format(muxer->avFormat, 0, fname, 1);
 	
-	vo->initScale(pic);
+	vo->openScale(pic);
 	
 	if ( ! muxer->openFile(fname) )
 	{

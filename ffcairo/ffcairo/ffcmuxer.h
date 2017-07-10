@@ -6,11 +6,9 @@
 #include <ffcairo/ffcimage.h>
 
 /**
- * Абстрактный класс исходящего потока
- *
- * Это может быть и видео и аудио и субтитры и что угодно
+ * Класс исходящего видео потока
  */
-class FFCOutputStream: public Object
+class FFCVideoOutput: public Object
 {
 public:
 	/**
@@ -23,29 +21,6 @@ public:
 	 */
 	AVCodecContext *avEncoder;
 	
-	/**
-	 * Конструктор
-	 */
-	FFCOutputStream(AVStream *st);
-	
-	/**
-	 * Деструктор
-	 */
-	~FFCOutputStream();
-	
-	/**
-	 * Convert valid timing fields (timestamps / durations) in a packet from
-	 * one timebase to another. 
-	 */
-	void rescale_ts(AVPacket *pkt);
-};
-
-/**
- * Класс исходящего видео потока
- */
-class FFCVideoOutput: public FFCOutputStream
-{
-public:
 	/**
 	 * Фрейм в который надо помещать кадр чтобы записать его в поток
 	 */
@@ -72,14 +47,25 @@ public:
 	bool openEncoder(const FFCVideoOptions *opts);
 	
 	/**
-	 * Инициализация маштабирования
+	 * Закрыть кодек
 	 */
-	bool initScale(int srcWidth, int srcHeight, AVPixelFormat srcFmt);
+	void closeEncoder();
 	
 	/**
 	 * Инициализация маштабирования
+	 *
+	 * При необходимости сменить настройки маштабирования, openScale()
+	 * можно вывызывать без предварительного закрытия через closeScale()
 	 */
-	bool initScale(ptr<FFCImage> pic);
+	bool openScale(int srcWidth, int srcHeight, AVPixelFormat srcFmt);
+	
+	/**
+	 * Инициализация маштабирования
+	 *
+	 * При необходимости сменить настройки маштабирования, openScale()
+	 * можно вывызывать без предварительного закрытия через closeScale()
+	 */
+	bool openScale(ptr<FFCImage> pic);
 	
 	/**
 	 * Маштабировать картику
@@ -90,6 +76,11 @@ public:
 	 * Маштабировать картинку
 	 */
 	void scale(ptr<FFCImage> pic);
+	
+	/**
+	 * Финализация маштабирования
+	 */
+	void closeScale();
 	
 	/**
 	 * Кодировать кадр

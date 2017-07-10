@@ -21,7 +21,7 @@ public:
 	/**
 	 * Выходной поток
 	 */
-	ptr<FFCOutputStream> oStream;
+	//ptr<FFCOutputStream> oStream;
 	
 	/**
 	 * Мультиплексор

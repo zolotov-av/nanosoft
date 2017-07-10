@@ -8,7 +8,6 @@
 */
 FFCStreamCopy::FFCStreamCopy()
 {
-	printf("oStream: %p\n", oStream.getObject());
 }
 
 /**
