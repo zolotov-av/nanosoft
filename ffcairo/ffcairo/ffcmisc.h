@@ -39,6 +39,20 @@ public:
 	~FFCStreamCopy();
 protected:
 	/**
+	 * Обработчик присоединения
+	 *
+	 * Автоматически вызывается когда поток присоединяется к демультиплексору
+	 */
+	virtual void handleAttach(AVStream *st);
+	
+	/**
+	 * Обработчик отсоединения
+	 *
+	 * Автоматически вызывается когда поток отсоединяется от демультиплексора
+	 */
+	virtual void handleDetach();
+	
+	/**
 	 * Обработчик пакета
 	 */
 	virtual void handlePacket(AVPacket *packet);

@@ -6,18 +6,17 @@
 /**
 * Конструктор
 */
-FFCInputStream::FFCInputStream(): avStream(NULL), avDecoder(NULL)
+FFCVideoInput::FFCVideoInput(): avStream(NULL), avDecoder(NULL), scaleCtx(NULL)
 {
 }
 
 /**
 * Деструктор
 */
-FFCInputStream::~FFCInputStream()
+FFCVideoInput::~FFCVideoInput()
 {
-	// Free the codec context and everything associated with it and write NULL
-	// to the provided pointer. 
-	avcodec_free_context(&avDecoder);
+	closeScale();
+	closeDecoder();
 }
 
 /**
@@ -25,7 +24,7 @@ FFCInputStream::~FFCInputStream()
 *
 * Автоматически вызывается когда поток присоединяется к демультиплексору
 */
-void FFCInputStream::handleAttach(AVStream *st)
+void FFCVideoInput::handleAttach(AVStream *st)
 {
 	printf("handleAttach()\n");
 	avStream = st;
@@ -36,28 +35,13 @@ void FFCInputStream::handleAttach(AVStream *st)
 *
 * Автоматически вызывается когда поток отсоединяется от демультиплексора
 */
-void FFCInputStream::handleDetach()
+void FFCVideoInput::handleDetach()
 {
 	printf("handleDetach()\n");
+	
+	closeDecoder();
+	
 	avStream = NULL;
-	// Free the codec context and everything associated with it and write NULL
-	// to the provided pointer. 
-	avcodec_free_context(&avDecoder);
-}
-
-/**
-* Конструктор
-*/
-FFCVideoInput::FFCVideoInput(): scaleCtx(NULL)
-{
-}
-
-/**
-* Деструктор
-*/
-FFCVideoInput::~FFCVideoInput()
-{
-	av_frame_free(&avFrame);
 }
 
 /**
@@ -105,11 +89,27 @@ bool FFCVideoInput::openDecoder()
 }
 
 /**
-* Инициализация маштабирования
+* Закрыть кодек
 */
-bool FFCVideoInput::initScale(int dstWidth, int dstHeight, AVPixelFormat dstFmt)
+void FFCVideoInput::closeDecoder()
 {
-	scaleCtx = sws_getContext(avFrame->width, avFrame->height, avDecoder->pix_fmt,
+	// освободить фрейм, указатель будет установлен в NULL
+	av_frame_free(&avFrame);
+	
+	// освободить кодек, указатель будет установлен в NULL
+	avcodec_free_context(&avDecoder);
+}
+
+/**
+* Инициализация маштабирования
+*
+* При необходимости сменить настройки маштабирования, openScale()
+* можно вывызывать без предварительного закрытия через closeScale()
+*/
+bool FFCVideoInput::openScale(int dstWidth, int dstHeight, AVPixelFormat dstFmt)
+{
+	scaleCtx = sws_getCachedContext(scaleCtx,
+		avFrame->width, avFrame->height, avDecoder->pix_fmt,
 		dstWidth, dstHeight, dstFmt,
 		SWS_BILINEAR, NULL, NULL, NULL);
 	
@@ -124,10 +124,13 @@ bool FFCVideoInput::initScale(int dstWidth, int dstHeight, AVPixelFormat dstFmt)
 
 /**
 * Инициализация маштабирования
+*
+* При необходимости сменить настройки маштабирования, openScale()
+* можно вывызывать без предварительного закрытия через closeScale()
 */
-bool FFCVideoInput::initScale(ptr<FFCImage> pic)
+bool FFCVideoInput::openScale(ptr<FFCImage> pic)
 {
-	return initScale(pic->width, pic->height, AV_PIX_FMT_BGRA);
+	return openScale(pic->width, pic->height, AV_PIX_FMT_BGRA);
 }
 
 /**
@@ -148,6 +151,18 @@ void FFCVideoInput::scale(ptr<FFCImage> pic)
 	// TODO check params
 	sws_scale(scaleCtx, avFrame->data, avFrame->linesize,
 		0, avFrame->height, pic->avFrame->data, pic->avFrame->linesize);
+}
+
+/**
+* Финализация маштабирования
+*/
+void FFCVideoInput::closeScale()
+{
+	if ( scaleCtx )
+	{
+		sws_freeContext(scaleCtx);
+		scaleCtx = NULL;
+	}
 }
 
 /**

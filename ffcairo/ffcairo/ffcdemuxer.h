@@ -13,41 +13,21 @@
 class FFCInputStream: public Object
 {
 friend class FFCDemuxer;
-public:
-	/**
-	 * Ссылка на поток
-	 */
-	AVStream *avStream;
-	
-	/**
-	 * Контекст кодека
-	 */
-	AVCodecContext *avDecoder;
-	
-	/**
-	 * Конструктор
-	 */
-	FFCInputStream();
-	
-	/**
-	 * Деструктор
-	 */
-	~FFCInputStream();
-	
 protected:
+	
 	/**
 	 * Обработчик присоединения
 	 *
 	 * Автоматически вызывается когда поток присоединяется к демультиплексору
 	 */
-	virtual void handleAttach(AVStream *st);
+	virtual void handleAttach(AVStream *st) = 0;
 	
 	/**
 	 * Обработчик отсоединения
 	 *
 	 * Автоматически вызывается когда поток отсоединяется от демультиплексора
 	 */
-	virtual void handleDetach();
+	virtual void handleDetach() = 0;
 	
 	/**
 	 * Обработчик пакета
@@ -63,6 +43,16 @@ protected:
 class FFCVideoInput: public FFCInputStream
 {
 public:
+	/**
+	 * Ссылка на поток
+	 */
+	AVStream *avStream;
+	
+	/**
+	 * Контекст кодека
+	 */
+	AVCodecContext *avDecoder;
+	
 	/**
 	 * Фрейм (кадр)
 	 */
@@ -89,14 +79,25 @@ public:
 	bool openDecoder();
 	
 	/**
-	 * Инициализация маштабирования
+	 * Закрыть кодек
 	 */
-	bool initScale(int dstWidth, int dstHeight, AVPixelFormat dstFmt);
+	void closeDecoder();
 	
 	/**
 	 * Инициализация маштабирования
+	 *
+	 * При необходимости сменить настройки маштабирования, openScale()
+	 * можно вывызывать без предварительного закрытия через closeScale()
 	 */
-	bool initScale(ptr<FFCImage> pic);
+	bool openScale(int dstWidth, int dstHeight, AVPixelFormat dstFmt);
+	
+	/**
+	 * Инициализация маштабирования
+	 *
+	 * При необходимости сменить настройки маштабирования, openScale()
+	 * можно вывызывать без предварительного закрытия через closeScale()
+	 */
+	bool openScale(ptr<FFCImage> pic);
 	
 	/**
 	 * Маштабировать картику
@@ -104,10 +105,29 @@ public:
 	void scale(AVFrame *pFrame);
 	
 	/**
+	 * Финализация маштабирования
+	 */
+	void closeScale();
+	
+	/**
 	 * Маштабировать картинку
 	 */
 	void scale(ptr<FFCImage> pic);
 protected:
+	/**
+	 * Обработчик присоединения
+	 *
+	 * Автоматически вызывается когда поток присоединяется к демультиплексору
+	 */
+	virtual void handleAttach(AVStream *st);
+	
+	/**
+	 * Обработчик отсоединения
+	 *
+	 * Автоматически вызывается когда поток отсоединяется от демультиплексора
+	 */
+	virtual void handleDetach();
+	
 	/**
 	 * Обработчик пакета
 	 */

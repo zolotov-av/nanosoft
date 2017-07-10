@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 		printf("fail to create FFCImage\n");
 		return -1;
 	}
-	videoStream->initScale(videoStream->pic);
+	videoStream->openScale(videoStream->pic);
 	videoStream->frameNo = 0;
 	
 	while ( demux->readFrame() ) ;
