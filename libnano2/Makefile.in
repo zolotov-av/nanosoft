@@ -47,9 +47,6 @@ RANLIB:=ranlib
 
 ############################### VARS #########################################
 
-# имя нашей программы/библиотеки
-PROG_FILENAME=main
-
 # Имя файла deb-пакета
 DEB_FILENAME=libnano2-$(DEB_ARCH).deb
 
@@ -73,7 +70,9 @@ LIBOBJECTS+=obj/easyrow.o
 LIBOBJECTS+=obj/easyvector.o
 LIBOBJECTS+=obj/error.o
 LIBOBJECTS+=obj/logger.o
+LIBOBJECTS+=obj/netdaemon.o
 LIBOBJECTS+=obj/object.o
+LIBOBJECTS+=obj/processmanager.o
 LIBOBJECTS+=obj/tagbuilder.o
 LIBOBJECTS+=obj/taghelper.o
 LIBOBJECTS+=obj/tempstring.o
@@ -89,7 +88,7 @@ LIBOBJECTS+=obj/attagparser.o
 .PHONY: all install deb clean distclean
 
 # первая цель - главная, она будет запускаться когда цель явно не указана
-all: libnano2.a $(PROG_FILENAME) demo
+all: libnano2.a demo
 
 .PHONY: demo
 demo:
@@ -100,7 +99,8 @@ test:
 # установка файлов
 # примечение: будем отходить от этой практике, рекомендуется создавать пакет
 # и устанавливать через менеджер пакетов.
-install: $(PROG_FILENAME)
+.PHONY: install
+install:
 	# TODO...
 
 # сборка deb-пакетов, просто короткая цель чтобы не вспоминать имя пакета
@@ -111,16 +111,13 @@ $(DEB_FILENAME): deb_clean deb_install
 	fakeroot dpkg-deb --build deb $(DEB_FILENAME)
 
 .PHONY: deb_install
-deb_install: $(PROG_FILENAME)
+deb_install:
 	mkdir -p deb/usr/include/nanosoft/
 	install -m 0644 nanosoft/*.h deb/usr/include/nanosoft/
 	mkdir -p deb/usr/lib
 	install -m 0644 libnano2.a deb/usr/lib
 	mkdir -p deb/usr/share/libnano2
 	install -m 0644 README deb/usr/share/libnano2/
-
-$(PROG_FILENAME): $(OBJECTS)
-	$(LD) $(OBJECTS) -o $(PROG_FILENAME)
 
 ########################## BUILD RULES #######################################
 
@@ -179,8 +176,14 @@ obj/error.o: nanosoft/error.cpp nanosoft/error.h
 obj/logger.o: nanosoft/logger.cpp nanosoft/logger.h
 	$(CXX) -c nanosoft/logger.cpp -o obj/logger.o
 
+obj/netdaemon.o: nanosoft/netdaemon.cpp nanosoft/netdaemon.h nanosoft/config.h nanosoft/processmanager.h
+	$(CXX) -c nanosoft/netdaemon.cpp -o obj/netdaemon.o
+
 obj/object.o: nanosoft/object.cpp nanosoft/object.h
 	$(CXX) -c nanosoft/object.cpp -o obj/object.o
+
+obj/processmanager.o: nanosoft/processmanager.cpp nanosoft/processmanager.h
+	$(CXX) -c nanosoft/processmanager.cpp -o obj/processmanager.o
 
 obj/tagbuilder.o: nanosoft/tagbuilder.cpp nanosoft/tagbuilder.h nanosoft/xml_types.h
 	$(CXX) -c nanosoft/tagbuilder.cpp -o obj/tagbuilder.o
@@ -212,7 +215,7 @@ obj/main.o: main.cpp
 
 # полная очистка
 distclean: clean deb_clean
-	rm -f Makefile $(DEB_FILENAME) $(PROG_FILENAME) deb/DEBIAN/control
+	rm -f Makefile $(DEB_FILENAME) deb/DEBIAN/control
 	rm -f config.log config.status
 	rm -f nanosoft/config.h
 	rm -rf autom4te.cache
