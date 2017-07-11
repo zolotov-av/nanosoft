@@ -4,6 +4,9 @@
 #include <nanosoft/asyncstream.h>
 #include <nanosoft/easyrow.h>
 #include <ffcairo/avc_engine.h>
+#include <ffcairo/ffcimage.h>
+#include <ffcairo/scale.h>
+#include <ffcairo/ffcmuxer.h>
 
 /**
  * Протокол HTTP для AVCEngine
@@ -50,11 +53,47 @@ public:
 		/**
 		 * Чтение тела
 		 */
-		READ_BODY
+		READ_BODY,
+		
+		/**
+		 * Потоковое вещание
+		 */
+		STREAMING
 	} http_state;
 	
 	bool done;
 	
+	FFCVideoOptions opts;
+	
+	/**
+	 * Хост на котором будет рисоваться видео
+	 */
+	ptr<FFCImage> pic;
+	
+	/**
+	 * Контест маштабирования
+	 */
+	ptr<FFCScale> scale;
+	
+	/**
+	 * Мультиплексор
+	 */
+	ptr<FFCMuxer> muxer;
+	
+	/**
+	 * Видео-поток
+	 */
+	ptr<FFCVideoOutput> vo;
+	
+	/**
+	 * контекст AVIO
+	 */
+	AVIOContext *avio_ctx;
+	
+	/**
+	 * Номер фрейма
+	 */
+	int frameNo;
 	
 	/**
 	 * Конструктор
@@ -91,6 +130,31 @@ protected:
 public:
 	
 	void write(const std::string &s);
+	
+	/**
+	 * Инициализация стриминга
+	 */
+	void initStreaming();
+	
+	/**
+	 * Обработчик записи пакета в поток
+	 */
+	static int write_packet(void *opaque, uint8_t *buf, int buf_size);
+	
+	/**
+	 * Временный таймер
+	 */
+	void onTimer();
+	
+	/**
+	 * прервать передачу
+	 */
+	void endStreaming();
+	
+	/**
+	 * Отрисовать фрейм
+	 */
+	void DrawPic();
 };
 
 #endif // AVC_HTTP_H

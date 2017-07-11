@@ -188,6 +188,21 @@ bool FFCMuxer::createFile(const char *fname)
 }
 
 /**
+* Создать контекст
+*/
+bool FFCMuxer::createContext(const char *fmt)
+{
+	avformat_alloc_output_context2(&avFormat, NULL, fmt, NULL);
+	if ( !avFormat )
+	{
+		printf("avformat_alloc_output_context2() failed\n");
+		return false;
+	}
+	
+	return true;
+}
+
+/**
 * Вернуть кодек по умолчанию для аудио
 */
 AVCodecID FFCMuxer::defaultAudioCodec()
@@ -287,6 +302,39 @@ bool FFCMuxer::openFile(const char *fname)
 			return false;
 		}
 	}
+	
+	ret = avformat_write_header(avFormat, NULL);
+	if ( ret < 0 )
+	{
+		fprintf(stderr, "avformat_write_header() failed\n");
+		return false;
+	}
+	
+	return true;
+}
+
+/**
+* Открыть файл
+*
+* Открывает файл (через AVIO) и записывает заголовки, перед вызовом должен
+* быть создан контекст, потоки, настроены кодеки.
+*/
+bool FFCMuxer::openAVIO()
+{
+	int ret;
+	
+	/* open the output file, if needed */
+	/*
+	if (!(avFormat->oformat->flags & AVFMT_NOFILE))
+	{
+		ret = avio_open(&avFormat->pb, fname, AVIO_FLAG_WRITE);
+		if (ret < 0)
+		{
+			fprintf(stderr, "Could not open '%s'\n", fname);
+			return false;
+		}
+	}
+	*/
 	
 	ret = avformat_write_header(avFormat, NULL);
 	if ( ret < 0 )

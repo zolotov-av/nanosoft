@@ -3,6 +3,8 @@
 
 #include <nanosoft/netdaemon.h>
 
+class AVCHttp;
+
 class AVCEngine
 {
 public:
@@ -10,6 +12,11 @@ public:
 	 * Ссылка на движок NetDaemon
 	 */
 	NetDaemon *daemon;
+	
+	/**
+	 * временная ссылка на http-поток, по хорошему надо список
+	 */
+	ptr<AVCHttp> http;
 	
 	/**
 	 * Конструктор

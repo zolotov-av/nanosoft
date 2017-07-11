@@ -100,6 +100,11 @@ public:
 	bool createFile(const char *fname);
 	
 	/**
+	 * Создать контекст
+	 */
+	bool createContext(const char *fmt);
+	
+	/**
 	 * Вернуть кодек по умолчанию для аудио
 	 */
 	AVCodecID defaultAudioCodec();
@@ -136,6 +141,14 @@ public:
 	 * быть создан контекст, потоки, настроены кодеки.
 	 */
 	bool openFile(const char *fname);
+	
+	/**
+	 * Открыть файл
+	 *
+	 * Открывает файл (через AVIO) и записывает заголовки, перед вызовом должен
+	 * быть создан контекст, потоки, настроены кодеки.
+	 */
+	bool openAVIO();
 	
 	/**
 	 * Записать пакет

@@ -10,6 +10,8 @@
 #include <nanosoft/asyncdns.h>
 #include <ffcairo/avc_engine.h>
 #include <ffcairo/avc_listen.h>
+#include <ffcairo/ffctypes.h>
+#include <ffcairo/avc_http.h>
 
 #include <stdio.h>
 
@@ -69,6 +71,23 @@ void forkDaemon()
 	}
 }
 
+AVCEngine *en;
+
+void onTimer(const timeval &tv, NetDaemon* daemon)
+{
+	int ts = tv.tv_sec;
+	static int old_ts = 0;
+	if ( ts > old_ts )
+	{
+		old_ts = ts;
+		
+		logger.information("avc_server is working, uptime: %lu seconds", logger.uptime());
+		
+		AVCHttp *http = en->http.getObject();
+		if ( http ) http->onTimer();
+	}
+}
+
 int main(int argc, char** argv)
 {
 	logger.open("avc_server.log");
@@ -81,8 +100,12 @@ int main(int argc, char** argv)
 	
 	if ( opts.fork ) forkDaemon();
 	
+	// INIT
+	av_register_all();
+	
 	NetDaemon daemon(100, 1024);
 	AVCEngine avc_engine(&daemon);
+	en = &avc_engine;
 	ptr<AVCListen> avc_listen = new AVCListen(&avc_engine, AVC_HTTP);
 	avc_listen->bind(8000);
 	avc_listen->listen(10);
@@ -92,7 +115,7 @@ int main(int argc, char** argv)
 	daemon.addObject(adns);
 	daemon.addObject(avc_listen);
 	
-	//daemon.setGlobalTimer(onTimer, &daemon);
+	daemon.setGlobalTimer(onTimer, &daemon);
 	
 	daemon.run();
 	
