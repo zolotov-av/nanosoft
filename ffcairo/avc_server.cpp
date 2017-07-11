@@ -8,6 +8,8 @@
 #include <nanosoft/debug.h>
 #include <nanosoft/netdaemon.h>
 #include <nanosoft/asyncdns.h>
+#include <ffcairo/avc_engine.h>
+#include <ffcairo/avc_listen.h>
 
 #include <stdio.h>
 
@@ -77,10 +79,15 @@ int main(int argc, char** argv)
 	if ( opts.fork ) forkDaemon();
 	
 	NetDaemon daemon(100, 1024);
+	AVCEngine avc_engine;
+	ptr<AVCListen> avc_listen = new AVCListen(&avc_engine);
+	avc_listen->bind(8000);
+	avc_listen->listen(10);
 	
 	adns = new AsyncDNS(&daemon);
 	
 	daemon.addObject(adns);
+	daemon.addObject(avc_listen);
 	
 	//daemon.setGlobalTimer(onTimer, &daemon);
 	

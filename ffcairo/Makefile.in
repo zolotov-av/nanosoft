@@ -65,6 +65,10 @@ LIBOBJECTS+=obj/ffcmuxer.o
 LIBOBJECTS+=obj/ffcdemuxer.o
 LIBOBJECTS+=obj/scale.o
 LIBOBJECTS+=obj/ffcmisc.o
+#
+LIBOBJECTS+=obj/avc_engine.o
+LIBOBJECTS+=obj/avc_listen.o
+LIBOBJECTS+=obj/avc_channel.o
 
 ############################# GENERIC RULES ##################################
 
@@ -143,8 +147,14 @@ obj/scale.o: ffcairo/scale.cpp ffcairo/scale.h ffcairo/ffctypes.h
 obj/ffcmisc.o: ffcairo/ffcmisc.cpp ffcairo/ffcmisc.h ffcairo/ffctypes.h
 	$(CXX) -c ffcairo/ffcmisc.cpp -o obj/ffcmisc.o
 
-obj/main.o: ffcairo/main.cpp
-	$(CXX) -c ffcairo/main.cpp -o obj/main.o
+obj/avc_engine.o: ffcairo/avc_engine.cpp ffcairo/avc_engine.h
+	$(CXX) -c ffcairo/avc_engine.cpp -o obj/avc_engine.o
+
+obj/avc_listen.o: ffcairo/avc_listen.cpp ffcairo/avc_listen.h ffcairo/avc_engine.h
+	$(CXX) -c ffcairo/avc_listen.cpp -o obj/avc_listen.o
+
+obj/avc_channel.o: ffcairo/avc_channel.cpp ffcairo/avc_channel.h ffcairo/avc_engine.h
+	$(CXX) -c ffcairo/avc_channel.cpp -o obj/avc_channel.o
 
 ########################### CLEAN RULES ######################################
 
