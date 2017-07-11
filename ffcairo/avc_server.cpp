@@ -74,13 +74,16 @@ int main(int argc, char** argv)
 	logger.open("avc_server.log");
 	logger.information("avc_server start");
 	
+	// загружаем опции отладки из переменных окружения
+	DEBUG::load_from_env();
+	
 	parse_options(argc, argv);
 	
 	if ( opts.fork ) forkDaemon();
 	
 	NetDaemon daemon(100, 1024);
-	AVCEngine avc_engine;
-	ptr<AVCListen> avc_listen = new AVCListen(&avc_engine);
+	AVCEngine avc_engine(&daemon);
+	ptr<AVCListen> avc_listen = new AVCListen(&avc_engine, AVC_HTTP);
 	avc_listen->bind(8000);
 	avc_listen->listen(10);
 	

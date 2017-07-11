@@ -2,11 +2,12 @@
 #include <ffcairo/avc_listen.h>
 
 #include <ffcairo/avc_channel.h>
+#include <ffcairo/avc_http.h>
 
 /**
 * Конструктор
 */
-AVCListen::AVCListen(AVCEngine *e): engine(e)
+AVCListen::AVCListen(AVCEngine *e, AVCProtocol p): engine(e), proto(p)
 {
 }
 
@@ -32,6 +33,19 @@ void AVCListen::onAccept()
 	//logger.information("new connection from %s", ipstr);
 	printf("new connection from %s\n", ipstr);
 	
-	ptr<AVCChannel> ch = new AVCChannel(sock, engine);
-	ch->close();
+	if ( proto == AVC_CHANNEL )
+	{
+		ptr<AVCChannel> ch = new AVCChannel(sock, engine);
+		ch->close();
+		return;
+	}
+	
+	if ( proto == AVC_HTTP )
+	{
+		ptr<AVCHttp> ch = new AVCHttp(sock, engine);
+		engine->daemon->addObject(ch);
+		return;
+	}
+	
+	::close(sock);
 }

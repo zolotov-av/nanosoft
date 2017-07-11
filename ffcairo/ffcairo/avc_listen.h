@@ -4,6 +4,11 @@
 #include <nanosoft/asyncserver.h>
 #include <ffcairo/avc_engine.h>
 
+enum AVCProtocol {
+	AVC_CHANNEL,
+	AVC_HTTP
+};
+
 class AVCListen: public AsyncServer
 {
 public:
@@ -13,9 +18,14 @@ public:
 	AVCEngine *engine;
 	
 	/**
+	 * Протокол
+	 */
+	AVCProtocol proto;
+	
+	/**
 	 * Конструктор
 	 */
-	AVCListen(AVCEngine *e);
+	AVCListen(AVCEngine *e, AVCProtocol p = AVC_CHANNEL);
 	
 protected:
 	
