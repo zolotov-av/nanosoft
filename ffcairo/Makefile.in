@@ -51,16 +51,15 @@ RANLIB:=ranlib
 
 ############################### VARS #########################################
 
-# имя нашей программы/библиотеки
-PROG_FILENAME=main
+PROGS+=avc_server
 
 # Имя файла deb-пакета
 DEB_FILENAME=libffcairo-$(DEB_ARCH).deb
 
-# объектные модули которые пойдут в нашу программу/библиотеку
-# просто описываем здесь в крассивом виде, чтобы правила были более понятные
-OBJECTS+=obj/main.o
+# объектные модули которые пойдут в программу
+OBJECTS+=obj/avc_server.o
 
+# объектные модули которые пойдут в библиотеку
 LIBOBJECTS+=obj/ffcimage.o
 LIBOBJECTS+=obj/ffcmuxer.o
 LIBOBJECTS+=obj/ffcdemuxer.o
@@ -73,7 +72,10 @@ LIBOBJECTS+=obj/ffcmisc.o
 .PHONY: all install deb clean distclean
 
 # первая цель - главная, она будет запускаться когда цель явно не указана
-all: libffcairo.a $(PROG_FILENAME) demo
+all: libffcairo.a progs demo
+
+.PHONY: progs
+progs: $(PROGS)
 
 .PHONY: demo
 demo: demo1-text demo2-makevideo demo3-remux
@@ -84,7 +86,7 @@ test: test5
 # установка файлов
 # примечение: будем отходить от этой практике, рекомендуется создавать пакет
 # и устанавливать через менеджер пакетов.
-install: $(PROG_FILENAME)
+install: $(PROGS)
 	# TODO...
 
 # сборка deb-пакетов, просто короткая цель чтобы не вспоминать имя пакета
@@ -95,7 +97,7 @@ $(DEB_FILENAME): deb_clean deb_install
 	fakeroot dpkg-deb --build deb $(DEB_FILENAME)
 
 .PHONY: deb_install
-deb_install: $(PROG_FILENAME)
+deb_install:
 	mkdir -p deb/usr/include/
 	mkdir -p deb/usr/lib/
 	mkdir -p deb/usr/share/ffcairo/
@@ -103,10 +105,10 @@ deb_install: $(PROG_FILENAME)
 	install -m 0644 libffcairo.a deb/usr/lib/
 	install -m 0644 README deb/usr/share/ffcairo/
 
-$(PROG_FILENAME): $(OBJECTS)
-	$(LD) $(OBJECTS) -o $(PROG_FILENAME)
-
 ########################## BUILD RULES #######################################
+
+avc_server: avc_server.cpp libffcairo.a ffcairo/config.h
+	$(CXX) $(LDFLAGS) -o avc_server avc_server.cpp -L. -lffcairo $(LIBS) -ludns
 
 test5: test5-ffc.cpp libffcairo.a
 	$(CXX) $(LDFLAGS) -o test5 test5-ffc.cpp -L. -lffcairo $(LIBS)
@@ -148,11 +150,11 @@ obj/main.o: ffcairo/main.cpp
 
 # полная очистка
 distclean: clean deb_clean
-	rm -f Makefile $(DEB_FILENAME) $(PROG_FILENAME) deb/DEBIAN/control
+	rm -f Makefile $(DEB_FILENAME) deb/DEBIAN/control
 	rm -f config.log config.status
 	rm -f ffcairo/config.h
 	rm -rf autom4te.cache
-	rm -rf libffcairo.a main test5
+	rm -rf libffcairo.a avc_server test5
 	rm -rf demo1-text demo2-makevideo demo3-remux
 
 # простая очистка, промежуточные файлы, но оставляет целевые
