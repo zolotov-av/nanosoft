@@ -4,8 +4,9 @@
 /**
 * Конструктор
 */
-AVCChannel::AVCChannel(int afd, AVCEngine *e): AsyncStream(afd), engine(e)
+AVCChannel::AVCChannel(int afd, AVCEngine *e): AVCStream(afd), engine(e)
 {
+	printf("new AVCChannel\n");
 }
 
 /**
@@ -13,14 +14,7 @@ AVCChannel::AVCChannel(int afd, AVCEngine *e): AsyncStream(afd), engine(e)
 */
 AVCChannel::~AVCChannel()
 {
-}
-
-/**
-* Обработчик прочитанных данных
-*/
-void AVCChannel::onRead(const char *data, size_t len)
-{
-	// TODO
+	printf("AVCChannel destroyed\n");
 }
 
 /**
@@ -32,4 +26,17 @@ void AVCChannel::onRead(const char *data, size_t len)
 void AVCChannel::onPeerDown()
 {
 	// TODO
+	leaveDaemon();
+}
+
+/**
+* Обработчик пакета
+*/
+void AVCChannel::onPacket(const avc_packet_t *pkt)
+{
+	if ( pkt->type == AVC_SIMPLE && pkt->channel == 1 )
+	{
+		const avc_payload_t *p = (const avc_payload_t*)pkt;
+		printf("payload: %s\n", p->buf);
+	}
 }

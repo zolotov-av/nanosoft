@@ -1,6 +1,11 @@
 /****************************************************************************
 
-Сервер видеоконференций
+Клиент (фидер) для сервера видеоконференций
+
+Фидер это клиент который отправляет на сервер свой видеопоток для участия
+в видеоконференции, но при этом не является полноценным клиентом. Этот клиент
+нам нужен на раннем этапе для тестирования и отладки, т.к. полноценной
+инфраструктуры у нас пока нет.
 
 ****************************************************************************/
 
@@ -12,6 +17,7 @@
 #include <ffcairo/avc_listen.h>
 #include <ffcairo/ffctypes.h>
 #include <ffcairo/avc_http.h>
+#include <ffcairo/avc_agent.h>
 
 #include <stdio.h>
 
@@ -71,8 +77,6 @@ void forkDaemon()
 	}
 }
 
-AVCEngine *en;
-
 void onTimer(const timeval &tv, NetDaemon* daemon)
 {
 	int ts = tv.tv_sec;
@@ -82,16 +86,13 @@ void onTimer(const timeval &tv, NetDaemon* daemon)
 		old_ts = ts;
 		
 		logger.information("avc_server is working, uptime: %lu seconds", logger.uptime());
-		
-		AVCHttp *http = en->http.getObject();
-		if ( http ) http->onTimer();
 	}
 }
 
 int main(int argc, char** argv)
 {
-	logger.open("avc_server.log");
-	logger.information("avc_server start");
+	logger.open("avc_feeder.log");
+	logger.information("avc_feeder start");
 	
 	// загружаем опции отладки из переменных окружения
 	DEBUG::load_from_env();
@@ -104,28 +105,31 @@ int main(int argc, char** argv)
 	av_register_all();
 	
 	NetDaemon daemon(100, 1024);
-	AVCEngine avc_engine(&daemon);
-	en = &avc_engine;
-	
-	ptr<AVCListen> avc_listen = new AVCListen(&avc_engine, AVC_CHANNEL);
-	avc_listen->bind(8001);
-	avc_listen->listen(10);
-	
-	ptr<AVCListen> avc_http = new AVCListen(&avc_engine, AVC_HTTP);
-	avc_http->bind(8000);
-	avc_http->listen(10);
+	ptr<AVCAgent> avc_agent = new AVCAgent(&daemon);
+	avc_agent->createSocket();
+	avc_agent->connectTo("127.0.0.1", 8001);
+	avc_agent->enableObject();
 	
 	adns = new AsyncDNS(&daemon);
 	
 	daemon.addObject(adns);
-	daemon.addObject(avc_http);
-	daemon.addObject(avc_listen);
+	daemon.addObject(avc_agent);
 	
 	daemon.setGlobalTimer(onTimer, &daemon);
 	
+	avc_payload_t p;
+	p.type = AVC_SIMPLE;
+	p.channel = 1;
+	const char *s = "Hello world";
+	int plen = strlen(s) + 5;
+	strcpy(p.buf, s);
+	avc_set_packet_len(&p, plen);
+	printf("plen=%d, avc_packet_len()=%d\n", plen, avc_packet_len(&p));
+	avc_agent->sendPacket(&p);
+	
 	daemon.run();
 	
-	logger.information("avc_server exit");
-	printf("avc_server exit\n");
+	logger.information("avc_feeder exit");
+	printf("avc_feeder exit\n");
 	return 0;
 }

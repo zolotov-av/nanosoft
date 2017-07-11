@@ -1,31 +1,31 @@
-#ifndef AVC_CHANNEL_H
-#define AVC_CHANNEL_H
+#ifndef AVC_AGENT_H
+#define AVC_AGENT_H
 
 #include <ffcairo/avc_stream.h>
-#include <ffcairo/avc_engine.h>
 
 /**
  * Канал (сетевой) сервера видеоконференций
  *
- * Данный класс описывают серверную часть канала
+ * Данный класс описывают клиентскую часть канала
  */
-class AVCChannel: public AVCStream
+class AVCAgent: public AVCStream
 {
 public:
+	
 	/**
-	 * Ссылка на движок
+	 * Ссылка на демона
 	 */
-	AVCEngine *engine;
+	NetDaemon *daemon;
 	
 	/**
 	 * Конструктор
 	 */
-	AVCChannel(int afd, AVCEngine *e);
+	AVCAgent(NetDaemon *d);
 	
 	/**
 	 * Деструктор
 	 */
-	virtual ~AVCChannel();
+	virtual ~AVCAgent();
 	
 protected:
 	
@@ -41,6 +41,15 @@ protected:
 	 * Обработчик пакета
 	 */
 	virtual void onPacket(const avc_packet_t *pkt);
+	
+public:
+	
+	/**
+	 * Создать сокет
+	 *
+	 * Временная функция...
+	 */
+	bool createSocket();
 };
 
-#endif // AVC_CHANNEL_H
+#endif // AVC_AGENT_H

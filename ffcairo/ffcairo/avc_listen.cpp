@@ -36,7 +36,7 @@ void AVCListen::onAccept()
 	if ( proto == AVC_CHANNEL )
 	{
 		ptr<AVCChannel> ch = new AVCChannel(sock, engine);
-		ch->close();
+		engine->daemon->addObject(ch);
 		return;
 	}
 	
