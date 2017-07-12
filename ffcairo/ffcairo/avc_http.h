@@ -58,23 +58,23 @@ public:
 		/**
 		 * Потоковое вещание
 		 */
-		STREAMING
+		STREAMING,
+		
+		/**
+		 * Состояние ошибки
+		 */
+		FAILED_STATE
 	} http_state;
 	
+	/**
+	 * Флаг завершения работы (по инициативе сервера)
+	 */
 	bool done;
+	
+	/**
+	 * Флаг завершения работы (клиент закрыл сокет)
+	 */
 	bool peer_down;
-	
-	FFCVideoOptions opts;
-	
-	/**
-	 * Хост на котором будет рисоваться видео
-	 */
-	ptr<FFCImage> pic;
-	
-	/**
-	 * Контест маштабирования
-	 */
-	ptr<FFCScale> scale;
 	
 	/**
 	 * Мультиплексор
@@ -82,19 +82,29 @@ public:
 	ptr<FFCMuxer> muxer;
 	
 	/**
-	 * Видео-поток
-	 */
-	ptr<FFCVideoOutput> vo;
-	
-	/**
 	 * контекст AVIO
 	 */
 	AVIOContext *avio_ctx;
 	
 	/**
-	 * Номер фрейма
+	 * Видео-поток
 	 */
-	int frameNo;
+	AVStream *vo;
+	
+	/**
+	 * Флаг - пропустить до ключевого фрейма
+	 */
+	bool skip_to_keyframe;
+	
+	/**
+	 * time_base входного потока
+	 */
+	AVRational in_time_base;
+	
+	/**
+	 * Метка времени первого пакета в единицах входного потока (in_time_base)
+	 */
+	int64_t first_pts;
 	
 	/**
 	 * Конструктор
@@ -128,6 +138,11 @@ protected:
 	 */
 	virtual void onPeerDown();
 	
+	/**
+	 * Обработчик записи пакета в поток
+	 */
+	static int write_packet(void *opaque, uint8_t *buf, int buf_size);
+	
 public:
 	
 	void write(const std::string &s);
@@ -135,27 +150,13 @@ public:
 	/**
 	 * Инициализация стриминга
 	 */
-	void initStreaming();
+	bool initStreaming();
 	
 	/**
-	 * Обработчик записи пакета в поток
+	 * Отправить пакет в стрим
 	 */
-	static int write_packet(void *opaque, uint8_t *buf, int buf_size);
+	int sendPacket(AVPacket *pkt);
 	
-	/**
-	 * Временный таймер
-	 */
-	void onTimer();
-	
-	/**
-	 * прервать передачу
-	 */
-	void endStreaming();
-	
-	/**
-	 * Отрисовать фрейм
-	 */
-	void DrawPic();
 };
 
 #endif // AVC_HTTP_H

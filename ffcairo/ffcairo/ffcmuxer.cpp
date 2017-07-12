@@ -266,6 +266,31 @@ AVStream* FFCMuxer::createStream(AVCodecID codec_id)
 }
 
 /**
+* Создать копию потока
+*/
+AVStream* FFCMuxer::createStreamCopy(AVStream *in_stream)
+{
+	AVCodecParameters *in_codecpar = in_stream->codecpar;
+	
+	AVStream *out_stream = avformat_new_stream(avFormat, NULL);
+	if ( ! out_stream )
+	{
+		printf("avformat_new_stream() failed\n");
+		return NULL;
+	}
+	
+	int ret = avcodec_parameters_copy(out_stream->codecpar, in_codecpar);
+	if (ret < 0)
+	{
+		printf("avcodec_parameters_copy() failed\n");
+	}
+	
+	out_stream->codecpar->codec_tag = 0;
+	
+	return out_stream;
+}
+
+/**
 * Создать видео-поток
 */
 FFCVideoOutput* FFCMuxer::createVideoStream(const FFCVideoOptions *opts)

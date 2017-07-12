@@ -1,10 +1,11 @@
 
 #include <ffcairo/avc_scene.h>
+#include <ffcairo/avc_http.h>
 
 /**
 * Конструктор
 */
-AVCScene::AVCScene()
+AVCScene::AVCScene(): http_count(0)
 {
 	memset(&opts, 0, sizeof(opts));
 }
@@ -89,19 +90,30 @@ int AVCScene::sendFrame()
 */
 int AVCScene::sendPacket(AVPacket *pkt)
 {
-	// полагаю это нужно только при ремультиплексировании и только
-	// когда time_base у потоков отличаются
-	//vo->rescale_ts(&pkt);
+	int64_t dts = pkt->dts;
+	int64_t pts = pkt->pts;
+	int64_t pos = pkt->pos;
 	
 	// отправляем пакет в основной стрим (в write_packet)
 	// (в будущем) на twitch, youtube, icecast или что-то типа того
-	if ( ! writeFrame(pkt) )
+	int ret = av_write_frame(avFormat, pkt);
+	if ( ret < 0 )
 	{
-		printf("muxer->writeFrame() failed\n");
+		printf("av_write_frame() failed\n");
+		return ret;
 	}
 	
 	// отправляем пакет HTTP-клиентам
-	// TODO
+	for(int i = 0; i < MAX_HTTP_CLIENTS; i++)
+	{
+		if ( http_clients[i].getObject() )
+		{
+			pkt->dts = dts;
+			pkt->pts = pts;
+			pkt->pos = pos;
+			http_clients[i]->sendPacket(pkt);
+		}
+	}
 	
 	return 0;
 }
@@ -289,7 +301,7 @@ void AVCScene::emitFrame()
 	// Освобождаем контекст рисования Cairo
 	cairo_destroy(cr);
 	
-	//sendFrame();
+	sendFrame();
 }
 
 /**
@@ -303,5 +315,41 @@ void AVCScene::onTimer()
 	{
 		iFrame++;
 		emitFrame();
+	}
+}
+
+/**
+* Клиента HTTP
+*/
+bool AVCScene::addHttpClient(AVCHttp *client)
+{
+	for(int i = 0; i < MAX_HTTP_CLIENTS; i++)
+	{
+		if ( http_clients[i].getObject() == NULL )
+		{
+			http_clients[i] = client;
+			http_count++;
+			printf("new HTTP client, new count %d of %d\n", http_count, MAX_HTTP_CLIENTS);
+			return true;
+		}
+	}
+	
+	printf("addHttpClient() failed\n");
+	return false;
+}
+
+/**
+* Удалить клиента HTTP
+*/
+void AVCScene::removeHttpClient(AVCHttp *client)
+{
+	for(int i = 0; i < MAX_HTTP_CLIENTS; i++)
+	{
+		if ( http_clients[i].getObject() == client )
+		{
+			http_clients[i] = NULL;
+			http_count--;
+			printf("removed HTTP client, new count %d of %d\n", http_count, MAX_HTTP_CLIENTS);
+		}
 	}
 }

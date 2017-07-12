@@ -7,6 +7,9 @@
 #include <ffcairo/scale.h>
 #include <ffcairo/ffcmuxer.h>
 
+class AVCHttp;
+
+#define MAX_HTTP_CLIENTS 8
 
 /**
  * Класс описывающий сцену
@@ -16,6 +19,18 @@
  */
 class AVCScene: public FFCMuxer
 {
+private:
+	
+	/**
+	 * Клиенты HTTP
+	 */
+	ptr<AVCHttp> http_clients[MAX_HTTP_CLIENTS];
+	
+	/**
+	 * Число клиентов HTTP
+	 */
+	int http_count;
+	
 public:
 	
 	/**
@@ -103,6 +118,17 @@ public:
 	 * Временный таймер
 	 */
 	void onTimer();
+	
+	/**
+	 * Клиента HTTP
+	 */
+	bool addHttpClient(AVCHttp *client);
+	
+	/**
+	 * Удалить клиента HTTP
+	 */
+	void removeHttpClient(AVCHttp *client);
+	
 };
 
 #endif // AVC_SCENE_H

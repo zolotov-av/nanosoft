@@ -130,6 +130,11 @@ public:
 	AVStream* createStream(AVCodecID codec_id);
 	
 	/**
+	 * Создать копию потока
+	 */
+	AVStream* createStreamCopy(AVStream *in_stream);
+	
+	/**
 	 * Создать видео-поток
 	 */
 	FFCVideoOutput* createVideoStream(const FFCVideoOptions *opts);

@@ -85,9 +85,6 @@ void onTimer(const timeval &tv, NetDaemon* daemon)
 		logger.information("avc_server is working, uptime: %lu seconds", logger.uptime());
 		
 		en->scene->onTimer();
-		
-		ptr<AVCHttp> http = en->http;
-		if ( http.getObject() ) http->onTimer();
 	}
 }
 

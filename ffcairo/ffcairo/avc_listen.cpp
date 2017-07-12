@@ -2,6 +2,7 @@
 #include <ffcairo/avc_listen.h>
 
 #include <ffcairo/avc_channel.h>
+#include <ffcairo/avc_scene.h>
 #include <ffcairo/avc_http.h>
 
 /**
@@ -43,8 +44,11 @@ void AVCListen::onAccept()
 	if ( proto == AVC_HTTP )
 	{
 		ptr<AVCHttp> ch = new AVCHttp(sock, engine);
-		engine->daemon->addObject(ch);
-		return;
+		if ( engine->scene->addHttpClient(ch.getObject()) )
+		{
+			engine->daemon->addObject(ch);
+			return;
+		}
 	}
 	
 	::close(sock);

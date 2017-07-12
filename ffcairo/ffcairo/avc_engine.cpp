@@ -7,7 +7,7 @@
 /**
 * Конструктор
 */
-AVCEngine::AVCEngine(NetDaemon *d): daemon(d), http(NULL)
+AVCEngine::AVCEngine(NetDaemon *d): daemon(d), http2(NULL)
 {
 	scene = new AVCScene();
 }

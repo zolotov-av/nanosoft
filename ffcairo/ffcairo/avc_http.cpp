@@ -1,5 +1,6 @@
 
 #include <ffcairo/avc_http.h>
+#include <ffcairo/avc_scene.h>
 
 #include <ctype.h>
 #include <string>
@@ -13,6 +14,8 @@ AVCHttp::AVCHttp(int afd, AVCEngine *e): AsyncStream(afd), engine(e)
 	line.clear();
 	done = false;
 	peer_down = false;
+	first_pts = AV_NOPTS_VALUE;
+	skip_to_keyframe = true;
 }
 
 /**
@@ -63,12 +66,14 @@ void AVCHttp::onRead(const char *data, size_t len)
 	if ( http_state == READ_BODY )
 	{
 		printf("read body\n");
-		http_state = STREAMING;
-		initStreaming();
-	}
-	
-	if ( http_state == STREAMING )
-	{
+		if ( initStreaming() )
+		{
+			http_state = STREAMING;
+		}
+		else
+		{
+			http_state = FAILED_STATE;
+		}
 	}
 }
 
@@ -81,10 +86,8 @@ void AVCHttp::onEmpty()
 {
 	if ( done )
 	{
-		if ( engine->http == this )
-		{
-			engine->http = NULL;
-		}
+		printf("onEmtpy done, leave\n");
+		engine->scene->removeHttpClient(this);
 		leaveDaemon();
 	}
 }
@@ -99,12 +102,7 @@ void AVCHttp::onPeerDown()
 {
 	peer_down = true;
 	printf("AVCHttp::onPeerDown()\n");
-	// TODO
-	//disableObject();
-	if ( engine->http == this )
-	{
-		engine->http = NULL;
-	}
+	engine->scene->removeHttpClient(this);
 	leaveDaemon();
 }
 
@@ -117,30 +115,12 @@ void AVCHttp::write(const std::string &s)
 /**
 * Инициализация стриминга
 */
-void AVCHttp::initStreaming()
+bool AVCHttp::initStreaming()
 {
 	std::string error;
-	
-	const int width = 1280;
-	const int height = 720;
-	
-	FFCVideoOptions opts;
-	opts.width = width;
-	opts.height = height;
-	opts.pix_fmt = AV_PIX_FMT_YUV420P;
-	opts.bit_rate = 2000000;
-	opts.time_base = (AVRational){ 1, 25 };
-	opts.gop_size = 12;
-	
+#if 1
 	do
 	{
-		pic = FFCImage::createImage(width, height);
-		if ( pic.getObject() == NULL )
-		{
-			error = "fail to create FFCImage";;
-			break;
-		}
-		
 		muxer = new FFCMuxer();
 		
 		if ( ! muxer->createContext("avi") )
@@ -165,30 +145,16 @@ void AVCHttp::initStreaming()
 			error = "avio_alloc_context() failed";
 			break;
 		}
+		
 		muxer->avFormat->pb = avio_ctx;
 		
-		// add video stream
-		AVCodecID video_codec = muxer->defaultVideoCodec();
-		if ( video_codec == AV_CODEC_ID_NONE)
-		{
-			error = "video_codec = NONE";
-			break;
-		}
+		AVStream *in_stream = engine->scene->vo->avStream;
 		
-		opts.codec_id = video_codec;
+		in_time_base = in_stream->time_base;
 		
-		vo = muxer->createVideoStream(&opts);
-		
-		if ( ! vo->openEncoder(&opts) )
-		{
-			error = "openEncoder() failed";
-			break;
-		}
+		vo = muxer->createStreamCopy(in_stream);
 		
 		av_dump_format(muxer->avFormat, 0, 0, 1);
-		
-		scale = new FFCScale();
-		scale->init_scale(vo->avFrame, pic->avFrame);
 		
 		write("HTTP/1.0 200 OK\r\n");
 		write("Content-type: video/x-flv\r\n");
@@ -200,13 +166,10 @@ void AVCHttp::initStreaming()
 			break;
 		}
 		
-		frameNo = 0;
-		
-		engine->http = this;
-		return;
+		return true;
 	}
 	while ( 0 );
-	
+#endif
 	write("HTTP/1.0 200 OK\r\n");
 	write("Content-type: text/plain\r\n");
 	write("\r\n");
@@ -234,157 +197,71 @@ int AVCHttp::write_packet(void *opaque, uint8_t *buf, int buf_size)
 }
 
 /**
-* Временный таймер
+* Отправить пакет в стрим
 */
-void AVCHttp::onTimer()
+int AVCHttp::sendPacket(AVPacket *pkt)
 {
 	if ( done )
 	{
-		printf("onTimer() after done\n");
-		return;
+		printf("AVCHttp::sendPacket() after done\n");
+		return AVERROR_UNKNOWN;
 	}
+	
 	if ( peer_down )
 	{
-		printf("onTimer() after peer_down\n");
-		return;
+		printf("AVCHttp::sendPacket() after peer_down\n");
+		return AVERROR_UNKNOWN;
 	}
-	//printf("AVCHttp::onTimer(), frameNo: %d\n", frameNo);
 	
-	for(int i = 0; i < 25; i++)
+	if ( http_state != STREAMING )
 	{
-		frameNo++;
-		//printf("FrameNo: %d\n", frameNo);
-		
-		AVPacket pkt = { 0 };
-		pkt.data = NULL;
-		pkt.size = 0;
-		av_init_packet(&pkt);
-		
-		int got_packet = 0;
-		
-		DrawPic();
-		
-		scale->scale(vo->avFrame, pic->avFrame);
-		
-		if ( ! vo->encode() )
+		printf("AVCHttp::sendPacket() in wrong state\n");
+		return AVERROR_UNKNOWN;
+	}
+	
+	if ( skip_to_keyframe )
+	{
+		if ( pkt->flags & AV_PKT_FLAG_KEY )
 		{
-			printf("frame[%d] encode failed\n", frameNo);
-			endStreaming();
-			return;
-		}
-		
-		while ( 1 )
-		{
-			if ( ! vo->recv_packet(&pkt, got_packet) )
-			{
-				printf("recv_packet() failed\n");
-				endStreaming();
-				return;
-			}
-			//printf("recv_packet ok, got_packet = %s\n", (got_packet ? "yes" : "no"));
+			/*
+			printf("got first key frame\n");
+			printf("dts: %"PRId64"\n", pkt->dts);
+			printf("pts: %"PRId64"\n", pkt->pts);
+			printf("pos: %"PRId64"\n", pkt->pos);
+			printf("in_stream.time_base = { %d, %d }\n", engine->scene->vo->avStream->time_base.num, engine->scene->vo->avStream->time_base.den);
+			printf("out_stream.time_base = { %d, %d }\n", vo->time_base.num, vo->time_base.den);
+			*/
 			
-			if ( got_packet )
-			{
-				//vo->rescale_ts(&pkt);
-				
-				/* Write the compressed frame to the media file. */
-				//log_packet(muxer->avFormat, &pkt);
-				if ( muxer->writeFrame(&pkt) )
-				{
-					//printf("muxer->writeFrame() ok\n");
-				}
-				else
-				{
-					printf("muxer->writeFrame() failed\n");
-				}
-				av_packet_unref(&pkt);
-				got_packet = 0;
-			}
-			else
-			{
-				break;
-			}
+			skip_to_keyframe = false;
+			first_pts = pkt->dts;
+			//printf("first_pts: %"PRId64"\n", first_pts);
+		}
+		else
+		{
+			// drop packet
+			//printf("drop not key frame\n");
+			return 0;
 		}
 	}
-}
-
-/**
-* прервать передачу
-*/
-void AVCHttp::endStreaming()
-{
-	if ( engine->http == this )
+	
+	pkt->pos = -1;
+	
+	if ( pkt->dts != AV_NOPTS_VALUE )
 	{
-		engine->http = NULL;
+		pkt->dts = av_rescale_q(pkt->dts - first_pts, engine->scene->vo->avStream->time_base, vo->time_base);
 	}
-	done = true;
-}
-
-/**
-* Отрисовать фрейм
-*/
-void AVCHttp::DrawPic()
-{
-	int iFrame = frameNo;
 	
-	// создаем контекст рисования Cairo
-	cairo_t *cr = cairo_create(pic->surface);
+	if ( pkt->pts != AV_NOPTS_VALUE )
+	{
+		pkt->pts = av_rescale_q(pkt->pts - first_pts, engine->scene->vo->avStream->time_base, vo->time_base);
+	}
 	
-	int width = pic->width;
-	int height = pic->height;
+	int ret = av_write_frame(muxer->avFormat, pkt);
+	if ( ret < 0 )
+	{
+		printf("av_write_frame() failed\n");
+		return ret;
+	}
 	
-	int cx = width / 2;
-	int cy = height / 2;
-	
-	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-	cairo_rectangle (cr, 0, 0, width, height);
-	cairo_fill (cr);
-	
-	double r0 = (width > height ? height : width) / 2.0;
-	double r1 = r0 * 0.75;
-	double r2 = r0 * 0.65;
-	
-	cairo_set_line_width(cr, r0 * 0.04);
-	
-	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-	cairo_arc(cr, cx, cy, r1, 0, 2 * M_PI);
-	cairo_stroke (cr);
-	
-	double x, y;
-	const double k = M_PI * (2.0 / 250);
-	const double f = - M_PI / 2.0;
-	x = r2 * cos(iFrame * k + f) + cx;
-	y = r2 * sin(iFrame * k + f) + cy;
-	cairo_move_to(cr, cx, cy);
-	cairo_line_to(cr, x, y);
-	cairo_stroke (cr);
-	
-	char sFrameId[48];
-	int t = iFrame / 25;
-	int sec = t % 60;
-	int min = t / 60;
-	
-	time_t rawtime;
-	struct tm * timeinfo;
-	time (&rawtime);
-	timeinfo = localtime (&rawtime);
-	strftime(sFrameId, sizeof(sFrameId),"Time %H:%M:%S",timeinfo);
-	//sprintf(sFrameId, "Time: %02d:%02d", min, sec);
-	
-	double hbox = pic->height * 0.1;
-	double shift = pic->height * 0.05;
-	
-	cairo_set_source_rgba (cr, 0x5a /255.0, 0xe8/255.0, 0xf9/255.0, 96/255.0);
-	cairo_rectangle (cr, shift, pic->height - hbox - shift, pic->width - 2*shift, hbox);
-	cairo_fill (cr);
-	
-	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
-	cairo_set_font_size(cr, hbox * 0.8);
-	cairo_set_source_rgb (cr, 0.0, 0.0, 0.0);
-	
-	cairo_move_to (cr, shift*1.5, pic->height - shift*1.5);
-	cairo_show_text (cr, sFrameId);
-	
-	// Освобождаем контекст рисования Cairo
-	cairo_destroy(cr);
+	return 0;
 }
