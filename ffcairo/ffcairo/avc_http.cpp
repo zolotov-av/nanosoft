@@ -12,6 +12,7 @@ AVCHttp::AVCHttp(int afd, AVCEngine *e): AsyncStream(afd), engine(e)
 	http_state = READ_METHOD;
 	line.clear();
 	done = false;
+	peer_down = false;
 }
 
 /**
@@ -78,7 +79,6 @@ void AVCHttp::onRead(const char *data, size_t len)
 */
 void AVCHttp::onEmpty()
 {
-	printf("onEmtpy()\n");
 	if ( done )
 	{
 		if ( engine->http == this )
@@ -97,6 +97,8 @@ void AVCHttp::onEmpty()
 */
 void AVCHttp::onPeerDown()
 {
+	peer_down = true;
+	printf("AVCHttp::onPeerDown()\n");
 	// TODO
 	//disableObject();
 	if ( engine->http == this )
@@ -227,7 +229,6 @@ void AVCHttp::initStreaming()
 int AVCHttp::write_packet(void *opaque, uint8_t *buf, int buf_size)
 {
 	AVCHttp *s = (AVCHttp*)opaque;
-	printf("write_packet()\n");
 	if ( s->put((const char *)buf, buf_size) ) return buf_size;
 	else return 0;
 }
@@ -237,12 +238,22 @@ int AVCHttp::write_packet(void *opaque, uint8_t *buf, int buf_size)
 */
 void AVCHttp::onTimer()
 {
-	printf("AVCHttp::onTimer(), frameNo: %d\n", frameNo);
+	if ( done )
+	{
+		printf("onTimer() after done\n");
+		return;
+	}
+	if ( peer_down )
+	{
+		printf("onTimer() after peer_down\n");
+		return;
+	}
+	//printf("AVCHttp::onTimer(), frameNo: %d\n", frameNo);
 	
 	for(int i = 0; i < 25; i++)
 	{
 		frameNo++;
-		printf("FrameNo: %d\n", frameNo);
+		//printf("FrameNo: %d\n", frameNo);
 		
 		AVPacket pkt = { 0 };
 		pkt.data = NULL;
@@ -261,7 +272,7 @@ void AVCHttp::onTimer()
 			endStreaming();
 			return;
 		}
-		printf("encoded\n");
+		
 		while ( 1 )
 		{
 			if ( ! vo->recv_packet(&pkt, got_packet) )
@@ -270,7 +281,7 @@ void AVCHttp::onTimer()
 				endStreaming();
 				return;
 			}
-			printf("recv_packet ok, got_packet = %s\n", (got_packet ? "yes" : "no"));
+			//printf("recv_packet ok, got_packet = %s\n", (got_packet ? "yes" : "no"));
 			
 			if ( got_packet )
 			{
@@ -280,12 +291,13 @@ void AVCHttp::onTimer()
 				//log_packet(muxer->avFormat, &pkt);
 				if ( muxer->writeFrame(&pkt) )
 				{
-					printf("muxer->writeFrame() ok\n");
+					//printf("muxer->writeFrame() ok\n");
 				}
 				else
 				{
 					printf("muxer->writeFrame() failed\n");
 				}
+				av_packet_unref(&pkt);
 				got_packet = 0;
 			}
 			else

@@ -12,6 +12,7 @@
 #include <ffcairo/avc_listen.h>
 #include <ffcairo/ffctypes.h>
 #include <ffcairo/avc_http.h>
+#include <ffcairo/avc_scene.h>
 
 #include <stdio.h>
 
@@ -83,8 +84,10 @@ void onTimer(const timeval &tv, NetDaemon* daemon)
 		
 		logger.information("avc_server is working, uptime: %lu seconds", logger.uptime());
 		
-		AVCHttp *http = en->http.getObject();
-		if ( http ) http->onTimer();
+		en->scene->onTimer();
+		
+		ptr<AVCHttp> http = en->http;
+		if ( http.getObject() ) http->onTimer();
 	}
 }
 
@@ -106,6 +109,13 @@ int main(int argc, char** argv)
 	NetDaemon daemon(100, 1024);
 	AVCEngine avc_engine(&daemon);
 	en = &avc_engine;
+	
+	int ret = avc_engine.scene->initStreaming(1280, 720, 2000000);
+	if ( ret < 0 )
+	{
+		printf("initStreaming() failed");
+		return -1;
+	}
 	
 	ptr<AVCListen> avc_listen = new AVCListen(&avc_engine, AVC_CHANNEL);
 	avc_listen->bind(8001);

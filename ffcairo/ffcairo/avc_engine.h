@@ -3,6 +3,7 @@
 
 #include <nanosoft/netdaemon.h>
 
+class AVCScene;
 class AVCHttp;
 
 class AVCEngine
@@ -12,6 +13,11 @@ public:
 	 * Ссылка на движок NetDaemon
 	 */
 	NetDaemon *daemon;
+	
+	/**
+	 * Сцена
+	 */
+	ptr<AVCScene> scene;
 	
 	/**
 	 * временная ссылка на http-поток, по хорошему надо список

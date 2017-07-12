@@ -62,6 +62,7 @@ public:
 	} http_state;
 	
 	bool done;
+	bool peer_down;
 	
 	FFCVideoOptions opts;
 	
