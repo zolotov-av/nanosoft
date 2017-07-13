@@ -248,7 +248,14 @@ bool FFCDemuxer::readFrame()
 	int r = av_read_frame(avFormatCtx, &packet);
 	if ( r < 0 )
 	{
+		if ( r == AVERROR(EAGAIN) )
+		{
+			printf("av_read_frame() == EAGAIN\n");
+			return false;
+			
+		}
 		// конец файла или ошибка
+		printf("av_read_frame() failed\n");
 		return false;
 	}
 	

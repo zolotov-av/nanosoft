@@ -40,6 +40,8 @@ void avc_dump_packet(const char *act, const avc_packet_t *pkt)
 			plen--;
 		}
 		printf("%s\n", buf);
+		
+		break;
 	}
 }
 
@@ -62,8 +64,6 @@ AVCStream::~AVCStream()
 */
 void AVCStream::onRead(const char *data, size_t len)
 {
-	printf("AVCStream::onRead() len=%lu\n", len);
-	const avc_packet_t *p;
 	do
 	{
 		// наполняем буфер хотя бы до 2х байт чтобы у нас была информация о
@@ -79,7 +79,7 @@ void AVCStream::onRead(const char *data, size_t len)
 		// если не смогли наполнить буфер, значит входные данные кончились
 		if ( buf_len < 2 ) return;
 		
-		p = (const avc_packet_t*)buf;
+		const avc_packet_t *p = (const avc_packet_t*)buf;
 		int plen = avc_packet_len(p);
 		
 		// наполняем буфер до размера пакета
@@ -88,13 +88,14 @@ void AVCStream::onRead(const char *data, size_t len)
 		memcpy(buf + buf_len, data, xlen);
 		buf_len += xlen;
 		data += xlen;
-		len -= len;
+		len -= xlen;
 		
 		// если не смогли наполнить буфер, значит входные данные кончились
 		if ( buf_len < plen ) return;
 		
 		if ( DEBUG::DUMP_STANZA ) avc_dump_packet("READ", p);
 		onPacket(p);
+		buf_len = 0;
 	}
 	while ( len > 0 );
 }
@@ -115,6 +116,8 @@ void AVCStream::onPeerDown()
 bool AVCStream::sendPacket(const avc_packet_t *pkt)
 {
 	if ( DEBUG::DUMP_STANZA ) avc_dump_packet("SEND", pkt);
+	
+	printf("AVCStream::sendPacket() type=%d, channel=%d, size=%d\n", pkt->type, pkt->channel, avc_packet_len(pkt));
+	
 	return put( (const char*)pkt, avc_packet_len(pkt) );
-	return false;
 }

@@ -38,5 +38,8 @@ void AVCChannel::onPacket(const avc_packet_t *pkt)
 	{
 		const avc_payload_t *p = (const avc_payload_t*)pkt;
 		printf("payload: %s\n", p->buf);
+		return ;
 	}
+	
+	printf("onPacket() type=%d, channel=%d, size=%d\n", pkt->type, pkt->channel, avc_packet_len(pkt));
 }

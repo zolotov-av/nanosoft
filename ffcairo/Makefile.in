@@ -81,6 +81,7 @@ LIBOBJECTS+=obj/avc_channel.o
 LIBOBJECTS+=obj/avc_agent.o
 LIBOBJECTS+=obj/avc_http.o
 LIBOBJECTS+=obj/avc_scene.o
+LIBOBJECTS+=obj/avc_feedagent.o
 
 ############################# GENERIC RULES ##################################
 
@@ -204,6 +205,9 @@ obj/avc_http.o: ffcairo/avc_http.cpp ffcairo/avc_http.h ffcairo/avc_engine.h
 
 obj/avc_scene.o: ffcairo/avc_scene.cpp ffcairo/avc_scene.h
 	$(CXX) -c ffcairo/avc_scene.cpp -o obj/avc_scene.o
+
+obj/avc_feedagent.o: ffcairo/avc_feedagent.cpp ffcairo/avc_feedagent.h
+	$(CXX) -c ffcairo/avc_feedagent.cpp -o obj/avc_feedagent.o
 
 ########################### CLEAN RULES ######################################
 

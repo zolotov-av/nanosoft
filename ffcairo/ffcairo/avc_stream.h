@@ -4,6 +4,7 @@
 #include <nanosoft/asyncstream.h>
 
 #define AVC_SIMPLE 1
+#define AVC_PAYLOAD 2
 
 /**
  * Базовая структура всех передаваемых пакетов

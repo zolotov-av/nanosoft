@@ -17,7 +17,7 @@
 #include <ffcairo/avc_listen.h>
 #include <ffcairo/ffctypes.h>
 #include <ffcairo/avc_http.h>
-#include <ffcairo/avc_agent.h>
+#include <ffcairo/avc_feedagent.h>
 
 #include <stdio.h>
 
@@ -77,6 +77,8 @@ void forkDaemon()
 	}
 }
 
+AVCFeedAgent *agent;
+
 void onTimer(const timeval &tv, NetDaemon* daemon)
 {
 	int ts = tv.tv_sec;
@@ -85,12 +87,19 @@ void onTimer(const timeval &tv, NetDaemon* daemon)
 	{
 		old_ts = ts;
 		
+		printf("onTimer(), ts=%d\n", ts);
+		agent->onTimer();
+		printf("onTimer() leaved, ts=%d\n", ts);
+		
 		logger.information("avc_server is working, uptime: %lu seconds", logger.uptime());
 	}
 }
 
 int main(int argc, char** argv)
 {
+	const char *fname = argc > 1 ? argv[1] : "/dev/video0";
+	printf("device filename = %s\n", fname);
+	
 	logger.open("avc_feeder.log");
 	logger.information("avc_feeder start");
 	
@@ -105,17 +114,40 @@ int main(int argc, char** argv)
 	av_register_all();
 	
 	NetDaemon daemon(100, 1024);
-	ptr<AVCAgent> avc_agent = new AVCAgent(&daemon);
+	ptr<AVCFeedAgent> avc_agent = agent = new AVCFeedAgent(&daemon);
+	
+	int ret = avc_agent->openWebcam(fname);
+	if ( ret < 0 )
+	{
+		printf("openWebcam() failed\n");
+		return -1;
+	}
+	
+	if ( ! avc_agent->openVideoStream() )
+	{
+		printf("failed to open input video stream\n");
+		return -1;
+	}
+	
+	ret = avc_agent->openFeed(avc_agent->opts.width, avc_agent->opts.height, 2000000);
+	if ( ret < 0 )
+	{
+		printf("failed to open output video stream\n");
+		return -1;
+	}
+	
 	avc_agent->createSocket();
-	avc_agent->connectTo("127.0.0.1", 8001);
-	avc_agent->enableObject();
 	
 	adns = new AsyncDNS(&daemon);
 	
 	daemon.addObject(adns);
 	daemon.addObject(avc_agent);
 	
+	avc_agent->connectTo("127.0.0.1", 8001);
+	//avc_agent->enableObject();
+	
 	daemon.setGlobalTimer(onTimer, &daemon);
+	
 	
 	avc_payload_t p;
 	p.type = AVC_SIMPLE;
