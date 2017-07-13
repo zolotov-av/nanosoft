@@ -29,6 +29,11 @@ TARGET_OS:=@target_os@
 # ожидает менеджер пакетов
 DEB_ARCH:=@DEB_ARCH@
 
+# кодовое имя целевой операционной системы, задается произвольно через
+# --with-codename и используется только для того, чтобы было меньше путаницы
+# с пакетами, для какой ОС они собирались
+CODENAME:=@CODENAME@
+
 CPPFLAGS=@CPPFLAGS@
 
 LDFLAGS=@LDFLAGS@
@@ -51,11 +56,13 @@ RANLIB:=ranlib
 
 ############################### VARS #########################################
 
+# список программ для сборки
 PROGS+=avc_server
 PROGS+=avc_feeder
 
-# Имя файла deb-пакета
-DEB_FILENAME=libffcairo-$(DEB_ARCH).deb
+# список deb-пакетов для сборки
+DEB_FFCAIRO:=libffcairo-$(CODENAME)-$(DEB_ARCH).deb
+DEB_AVC:=avc_server-$(CODENAME)-$(DEB_ARCH).deb
 
 # объектные модули которые пойдут в программу
 OBJECTS+=obj/avc_server.o
@@ -92,27 +99,49 @@ demo: demo1-text demo2-makevideo demo3-remux
 .PHONY: test
 test: test5
 
+# сборка deb-пакетов, просто короткая цель чтобы не вспоминать имя пакета
+.PHONY: deb
+deb: deb_ffcairo deb_avc
+
 # установка файлов
-# примечение: будем отходить от этой практике, рекомендуется создавать пакет
+# примечение: будем отходить от этой практики, рекомендуется создавать пакет
 # и устанавливать через менеджер пакетов.
+.PHONY: install
 install: $(PROGS)
 	# TODO...
 
-# сборка deb-пакетов, просто короткая цель чтобы не вспоминать имя пакета
-deb: $(DEB_FILENAME)
+.PHONY: deb_ffcairo deb_ffcairo_clean deb_ffcairo_install
+deb_ffcairo: deb_ffcairo_clean deb_ffcairo_install
+	fakeroot dpkg-deb --build deb $(DEB_FFCAIRO)
 
-# сборка пакета
-$(DEB_FILENAME): deb_clean deb_install
-	fakeroot dpkg-deb --build deb $(DEB_FILENAME)
+deb_ffcairo_clean:
+	rm -rf deb/usr
+	rm -rf libffcairo-*.deb
 
-.PHONY: deb_install
-deb_install:
+deb_ffcairo_install:
 	mkdir -p deb/usr/include/
 	mkdir -p deb/usr/lib/
 	mkdir -p deb/usr/share/ffcairo/
 	install -m 0644 ffcairo/*.h deb/usr/include/
 	install -m 0644 libffcairo.a deb/usr/lib/
 	install -m 0644 README deb/usr/share/ffcairo/
+	install -m 0644 Changelog deb/usr/share/ffcairo/
+
+.PHONY: deb_avc deb_avc_clean deb_avc_install
+deb_avc: deb_avc_clean deb_avc_install
+	fakeroot dpkg-deb --build deb_avc $(DEB_AVC)
+
+deb_avc_clean:
+	rm -rf deb_avc/usr
+	rm -rf avc_server-*.deb
+
+deb_avc_install:
+	mkdir -p deb_avc/usr/bin/
+	mkdir -p deb_avc/usr/share/avc_server/
+	install -m 0755 avc_server deb_avc/usr/bin/
+	install -m 0755 avc_feeder deb_avc/usr/bin/
+	install -m 0644 README deb_avc/usr/share/avc_server/
+	install -m 0644 Changelog deb_avc/usr/share/avc_server/
 
 ########################## BUILD RULES #######################################
 
@@ -180,9 +209,10 @@ obj/avc_scene.o: ffcairo/avc_scene.cpp ffcairo/avc_scene.h
 
 # полная очистка
 distclean: clean deb_clean
-	rm -f Makefile $(DEB_FILENAME) deb/DEBIAN/control
-	rm -f config.log config.status
-	rm -f ffcairo/config.h
+	rm -f Makefile
+	rm -f deb/DEBIAN/control libffcairo-*.deb
+	rm -f deb_avc/DEBIAN/control avc_server-*.deb
+	rm -f config.log config.status ffcairo/config.h
 	rm -rf autom4te.cache
 	rm -rf libffcairo.a $(PROGS) test5
 	rm -rf demo1-text demo2-makevideo demo3-remux
@@ -195,3 +225,6 @@ clean:
 .PHONY: deb_clean
 deb_clean:
 	rm -rf deb/usr
+	rm -rf deb_avc/usr
+	rm -rf libffcairo-*.deb avc_server-*.deb
+

@@ -1,6 +1,8 @@
 #ifndef FFC_CONFIG
 #define FFC_CONFIG
 
+#undef OS_CODENAME
+
 #include <cairo/cairo.h>
 
 extern "C" {

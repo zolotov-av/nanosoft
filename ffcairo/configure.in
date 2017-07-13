@@ -51,6 +51,15 @@ esac
 CPPFLAGS_ORIG=$CPPFLAGS
 LDFLAGS_ORIG=$LDFLAGS
 
+CODENAME=none
+AC_ARG_WITH(codename, AS_HELP_STRING([--with-codename=NAME], [codename of target OS]), [
+		if test x"$withval" != "x"; then
+			CODENAME=$withval
+		fi
+	])
+AC_SUBST(CODENAME)
+AC_DEFINE_UNQUOTED(OS_CODENAME, ["$CODENAME"], [codename of target OS])
+
 # я решил отказаться от поддержки библиотеки libav т.к. она очень сильно
 # уреза. В виду того, что оригинальной библиотеки ffmpeg в Ubunut trusty и
 # его производных дистрибудтивах нет, я решил сделать собственный пакет,
@@ -82,6 +91,7 @@ AC_SUBST(DEB_ARCH)
 # и на его основе генерируется файл.
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES(deb/DEBIAN/control:deb_control.in)
+AC_CONFIG_FILES(deb_avc/DEBIAN/control:deb_avc_control.in)
 
 # даем команду произвести генерацию файлов
 AC_OUTPUT

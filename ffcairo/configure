@@ -588,6 +588,7 @@ DEB_ARCH
 ac_ct_CC
 CFLAGS
 CC
+CODENAME
 OBJEXT
 EXEEXT
 ac_ct_CXX
@@ -648,6 +649,7 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
+with_codename
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1269,6 +1271,11 @@ if test -n "$ac_init_help"; then
      short | recursive ) echo "Configuration of ffcairo 0.1:";;
    esac
   cat <<\_ACEOF
+
+Optional Packages:
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-codename=NAME    codename of target OS
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -2526,6 +2533,24 @@ esac
 CPPFLAGS_ORIG=$CPPFLAGS
 LDFLAGS_ORIG=$LDFLAGS
 
+CODENAME=none
+
+# Check whether --with-codename was given.
+if test "${with_codename+set}" = set; then :
+  withval=$with_codename;
+		if test x"$withval" != "x"; then
+			CODENAME=$withval
+		fi
+
+fi
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define OS_CODENAME "$CODENAME"
+_ACEOF
+
+
 # я решил отказаться от поддержки библиотеки libav т.к. она очень сильно
 # уреза. В виду того, что оригинальной библиотеки ffmpeg в Ubunut trusty и
 # его производных дистрибудтивах нет, я решил сделать собственный пакет,
@@ -3182,6 +3207,8 @@ LDFLAGS="$LDFLAGS_ORIG $LDFLAGS_EXTRA"
 ac_config_files="$ac_config_files Makefile"
 
 ac_config_files="$ac_config_files deb/DEBIAN/control:deb_control.in"
+
+ac_config_files="$ac_config_files deb_avc/DEBIAN/control:deb_avc_control.in"
 
 
 # даем команду произвести генерацию файлов
@@ -3877,6 +3904,7 @@ do
     "ffcairo/config.h") CONFIG_HEADERS="$CONFIG_HEADERS ffcairo/config.h" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "deb/DEBIAN/control") CONFIG_FILES="$CONFIG_FILES deb/DEBIAN/control:deb_control.in" ;;
+    "deb_avc/DEBIAN/control") CONFIG_FILES="$CONFIG_FILES deb_avc/DEBIAN/control:deb_avc_control.in" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
