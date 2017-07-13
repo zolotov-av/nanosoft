@@ -272,7 +272,8 @@ void AVCScene::emitFrame()
 	cairo_line_to(cr, x, y);
 	cairo_stroke (cr);
 	
-	char sFrameId[48];
+	char sTime[48];
+	char sFrameId[80];
 	int t = iFrame / 25;
 	int sec = t % 60;
 	int min = t / 60;
@@ -281,8 +282,8 @@ void AVCScene::emitFrame()
 	struct tm * timeinfo;
 	time (&rawtime);
 	timeinfo = localtime (&rawtime);
-	strftime(sFrameId, sizeof(sFrameId),"Time %H:%M:%S",timeinfo);
-	//sprintf(sFrameId, "Time: %02d:%02d", min, sec);
+	strftime(sTime, sizeof(sTime),"Time %H:%M:%S",timeinfo);
+	sprintf(sFrameId, "%s   HTTP clients: %d", sTime, http_count);
 	
 	double hbox = pic->height * 0.1;
 	double shift = pic->height * 0.05;
@@ -297,6 +298,8 @@ void AVCScene::emitFrame()
 	
 	cairo_move_to (cr, shift*1.5, pic->height - shift*1.5);
 	cairo_show_text (cr, sFrameId);
+	
+	
 	
 	// Освобождаем контекст рисования Cairo
 	cairo_destroy(cr);
