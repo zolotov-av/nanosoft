@@ -101,12 +101,12 @@ bool AsyncUDPServer::bindToDevice(const char *ifname)
 bool AsyncUDPServer::setBroadcast(bool state)
 {
 	int yes = state ? 1 : 0;
-	if ( setsockopt(getFd(), SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1)
+	if ( setsockopt(getFd(), SOL_SOCKET, SO_BROADCAST, &yes, sizeof(yes)) == -1)
 	{
 		stderror();
-		return 0;
+		return false;
 	}
-	return 1;
+	return true;
 }
 
 /**
@@ -115,12 +115,12 @@ bool AsyncUDPServer::setBroadcast(bool state)
 bool AsyncUDPServer::setReuseAddr(bool state)
 {
 	int yes = state ? 1 : 0;
-	if ( setsockopt(getFd(), SOL_SOCKET, SO_BROADCAST, &yes, sizeof(yes)) == -1)
+	if ( setsockopt(getFd(), SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1)
 	{
 		stderror();
-		return 0;
+		return false;
 	}
-	return 1;
+	return true;
 }
 
 /**
