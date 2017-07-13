@@ -128,7 +128,7 @@ int main(int argc, char** argv)
 	avc_listen->listen(10);
 	
 	ptr<AVCListen> avc_http = new AVCListen(&avc_engine, AVC_HTTP);
-	avc_http->bind(8000);
+	avc_http->bind(8002);
 	avc_http->listen(10);
 	
 	adns = new AsyncDNS(&daemon);
