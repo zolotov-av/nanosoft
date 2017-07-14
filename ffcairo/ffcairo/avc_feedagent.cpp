@@ -99,9 +99,9 @@ void AVCFeedAgent::handleFrame(AVFrame *avFrame)
 	*/
 	
 	scale_pic->scale(vout->avFrame, avFrame);
-	int64_t pts = vout->avFrame->pts;
-	if ( pts == AV_NOPTS_VALUE ) pts = 0;
 	
+	//printf("vin.pts=%"PRId64" { %d, %d }\n", avFrame->pts, vin->avStream->time_base.num, vin->avStream->time_base.den);
+	/*
 	if ( avFrame->pts != AV_NOPTS_VALUE )
 	{
 		vout->avFrame->pts = av_rescale_q(avFrame->pts, vin->avStream->time_base, vout->avStream->time_base);
@@ -110,6 +110,12 @@ void AVCFeedAgent::handleFrame(AVFrame *avFrame)
 	{
 		vout->avFrame->pts = AV_NOPTS_VALUE;
 	}
+	printf("vout.pts=%"PRId64" { %d, %d }\n", vout->avFrame->pts, vout->avStream->time_base.num, vout->avStream->time_base.den);
+	*/
+	
+	static uint64_t iFrame = 0;
+	
+	vout->avFrame->pts = iFrame++;
 	
 	sendFrame();
 }
@@ -257,7 +263,7 @@ bool AVCFeedAgent::openVideoStream()
 	opts.height = height;
 	opts.pix_fmt = AV_PIX_FMT_YUV420P;
 	opts.bit_rate = 2000000;
-	opts.time_base = (AVRational){ 1, 25 };
+	opts.time_base = (AVRational){ 1, 10 };
 	opts.gop_size = 5;
 	
 	return true;

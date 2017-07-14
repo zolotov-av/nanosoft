@@ -87,7 +87,7 @@ void onTimer(const timeval &tv, NetDaemon* daemon)
 	// а для этого придется влезать в NetDaemon
 	int ts = tv.tv_sec;
 	int ms = tv.tv_usec / 1000;
-	int ticktime = ((ts % 1000) * 1000 + ms) / 40;
+	int ticktime = ((ts % 1000) * 1000 + ms) / 100;
 	
 	static int prevtime = 0;
 	static int iFrame = 0;
