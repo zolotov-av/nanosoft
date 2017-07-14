@@ -53,6 +53,14 @@ inline int avc_packet_len(const avc_packet_t *pkt)
 }
 
 /**
+ * Возвращает длину содержимого пакета
+ */
+inline int avc_packet_payload(const avc_packet_t *pkt)
+{
+	return avc_packet_len(pkt) - 4;
+}
+
+/**
  * Установить размер пакета
  */
 bool avc_set_packet_len(avc_packet_t *pkt, int len);

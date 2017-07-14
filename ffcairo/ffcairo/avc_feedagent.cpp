@@ -170,35 +170,31 @@ int AVCFeedAgent::sendFrame()
 bool AVCFeedAgent::sendData(const char *buf, int size)
 {
 	avc_payload_t pkt;
-	printf("AVCFeedAgent::sendData(%d) { %lu, %lu }\n", size, (size/sizeof(pkt.buf)), (size%sizeof(pkt.buf)));
+	//printf("AVCFeedAgent::sendData(%d) { full_pkt %lu, rem %lu }\n", size, (size/sizeof(pkt.buf)), (size%sizeof(pkt.buf)));
+	
 	while ( size > 0 )
 	{
 		int sz = size;
-		printf("bytes left: %d\n", sz);
 		if ( sz > sizeof(pkt.buf) ) sz = sizeof(pkt.buf);
 		memcpy(pkt.buf, buf, sz);
 		buf += sz;
 		size -= sz;
 		avc_set_packet_len(&pkt, sz + 4);
-		pkt.type = AVC_PAYLOAD;
 		pkt.channel = 2;
-		printf("send bytes: %d\n", avc_packet_len(&pkt));
+		pkt.type = AVC_PAYLOAD;
+		//printf("payload bytes: %d\n", avc_packet_payload(&pkt));
 		bool ret = sendPacket(&pkt);
-		if ( ret )
+		if ( ! ret )
 		{
-			//printf("AVCFeedAgent::sendData(), sendPacket() ok\n");
-		}
-		else
-		{
+			// данные должны отправиться либо целиком, либо не отправляться
+			// вообще, так что если произошла ошибка с каким-либо пакетом,
+			// то прерываем сеанс
 			printf("AVCFeedAgent::sendData(), sendPacket() failed\n");
-			if ( size > 0 )
-			{
-				printf("error cannot send full data\n");
-				failStreaming();
-			}
+			failStreaming();
+			return false;
 		}
 	}
-	//printf("AVCFeedAgent::sendData(%d) leaved\n", size);
+	
 	return true;
 }
 

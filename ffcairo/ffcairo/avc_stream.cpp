@@ -116,8 +116,5 @@ void AVCStream::onPeerDown()
 bool AVCStream::sendPacket(const avc_packet_t *pkt)
 {
 	if ( DEBUG::DUMP_STANZA ) avc_dump_packet("SEND", pkt);
-	
-	printf("AVCStream::sendPacket() type=%d, channel=%d, size=%d\n", pkt->type, pkt->channel, avc_packet_len(pkt));
-	
 	return put( (const char*)pkt, avc_packet_len(pkt) );
 }
