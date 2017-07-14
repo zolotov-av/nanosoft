@@ -90,11 +90,22 @@ void onTimer(const timeval &tv, NetDaemon* daemon)
 	int ticktime = ((ts % 1000) * 1000 + ms) / 40;
 	
 	static int prevtime = 0;
+	static int iFrame = 0;
 	if ( ticktime != prevtime )
 	{
 		prevtime = ticktime;
 		
+		iFrame++;
 		agent->onTimer(tv);
+	}
+	
+	static int old_ts = 0;
+	static int old_ifr = 0;
+	if ( ts != old_ts )
+	{
+		old_ts = ts;
+		printf("fps: %d\n", iFrame - old_ifr);
+		old_ifr = iFrame;
 	}
 }
 
