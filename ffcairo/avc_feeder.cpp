@@ -81,17 +81,20 @@ AVCFeedAgent *agent;
 
 void onTimer(const timeval &tv, NetDaemon* daemon)
 {
+	// нам нужен таймер 40мс
+	// TODO на самом деле нам нужно принципиальное другое планирование времени
+	// надо чтобы обработчик запускался по определенным временным меткам,
+	// а для этого придется влезать в NetDaemon
 	int ts = tv.tv_sec;
-	static int old_ts = 0;
-	if ( ts > old_ts )
+	int ms = tv.tv_usec / 1000;
+	int ticktime = ((ts % 1000) * 1000 + ms) / 40;
+	
+	static int prevtime = 0;
+	if ( ticktime != prevtime )
 	{
-		old_ts = ts;
+		prevtime = ticktime;
 		
-		printf("onTimer(), ts=%d\n", ts);
-		agent->onTimer();
-		printf("onTimer() leaved, ts=%d\n", ts);
-		
-		logger.information("avc_server is working, uptime: %lu seconds", logger.uptime());
+		agent->onTimer(tv);
 	}
 }
 
@@ -114,6 +117,11 @@ int main(int argc, char** argv)
 	av_register_all();
 	
 	NetDaemon daemon(100, 1024);
+	
+	// нам нужные быстрые таймеры, при FPS=25 нужно запускать таймер
+	// каждые 40мс
+	daemon.setSleepTime(10);
+	
 	ptr<AVCFeedAgent> avc_agent = agent = new AVCFeedAgent(&daemon);
 	
 	int ret = avc_agent->openWebcam(fname);

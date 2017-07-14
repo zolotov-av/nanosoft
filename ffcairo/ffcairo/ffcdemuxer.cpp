@@ -358,7 +358,7 @@ bool FFCDemuxer::readFrame()
 	
 	static int i =0;
 	i++;
-	printf("got_packet #%d\n", i);
+	//printf("got_packet #%d\n", i);
 	
 	int id = packet.stream_index;
 	if ( id >= 0 && id < stream_count )

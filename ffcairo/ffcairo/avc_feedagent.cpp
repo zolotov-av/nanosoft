@@ -101,7 +101,6 @@ void AVCFeedAgent::handleFrame(AVFrame *avFrame)
 	scale_pic->scale(vout->avFrame, avFrame);
 	int64_t pts = vout->avFrame->pts;
 	if ( pts == AV_NOPTS_VALUE ) pts = 0;
-	printf("avFrame.pts: %"PRId64", key_frame=%d\n", pts, vout->avFrame->key_frame);
 	
 	if ( avFrame->pts != AV_NOPTS_VALUE )
 	{
@@ -343,39 +342,13 @@ int AVCFeedAgent::openFeed(int width, int height, int64_t bit_rate)
 /**
 * Таймер
 */
-void AVCFeedAgent::onTimer()
+void AVCFeedAgent::onTimer(const timeval &tv)
 {
-	struct timeval tv;
-	static int t0 = 0;
-	
-	//printf("onTimer()\n");
-	for(int i = 0; i < 1; i++ )
+	bool ret = demux->readFrame();
+	if ( ! ret )
 	{
-		gettimeofday(&tv, 0);
-		int t1 = (tv.tv_sec % 100) * 1000 + (tv.tv_usec / 1000);
-		
-		bool ret = demux->readFrame();
-		
-		gettimeofday(&tv, 0);
-		int t2 = (tv.tv_sec % 100) * 1000 + (tv.tv_usec / 1000);
-		int ds = (t2 - t1) / 1000;
-		int dms = (t2 - t1) % 1000;
-		printf("readFrame() time: %d.%03d\n", ds, dms);
-		
-		ds = (t2 - t0) / 1000;
-		dms = (t2 - t0) % 1000;
-		printf("readFrame() time2: %d.%03d\n", ds, dms);
-		t0 = t2;
-		
-		if ( ret )
-		{
-			//printf("frame readed\n");
-		}
-		else
-		{
-			printf("readFrame failed\n");
-			break;
-		}
+		printf("readFrame failed\n");
+		failStreaming();
+		return;
 	}
-	//printf("onTimer() leave\n");
 }

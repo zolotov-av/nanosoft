@@ -171,7 +171,7 @@ public:
 	/**
 	 * Таймер
 	 */
-	void onTimer();
+	void onTimer(const timeval &tv);
 };
 
 #endif // AVC_FEEDAGENT_H
