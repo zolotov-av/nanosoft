@@ -148,6 +148,16 @@ public:
 	 */
 	void replaceFeed(AVCChannel *ch);
 	
+	/**
+	 * Удалить фидера
+	 *
+	 * Если текущий фидер равен указанному, то удалить фидер, если не
+	 * совпадает, то ничего не делать
+	 *
+	 * Временная функция
+	 */
+	void removeFeed(AVCChannel *ch);
+	
 };
 
 #endif // AVC_SCENE_H

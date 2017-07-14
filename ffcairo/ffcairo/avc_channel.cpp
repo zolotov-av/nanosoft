@@ -5,6 +5,29 @@
 /**
 * Конструктор
 */
+AVCFeedInput::AVCFeedInput(AVCChannel *ch): channel(ch)
+{
+}
+
+/**
+* Деструктор
+*/
+AVCFeedInput::~AVCFeedInput()
+{
+}
+
+/**
+* Обработчик фрейма
+*/
+void AVCFeedInput::handleFrame()
+{
+	//printf("AVCFeedInput::handleFrame()\n");
+	channel->handleFrame(avFrame);
+}
+
+/**
+* Конструктор
+*/
 AVCChannel::AVCChannel(int afd, AVCEngine *e): AVCStream(afd), engine(e)
 {
 	printf("new AVCChannel\n");
@@ -24,21 +47,24 @@ AVCChannel::~AVCChannel()
 	printf("AVCChannel destroyed\n");
 }
 
-static int real_read_packet(AVCChannel *ch, uint8_t *buf, int buf_size)
+/**
+* Обработчик чтения пакета из потока
+*/
+int AVCChannel::real_read_packet(uint8_t *buf, int buf_size)
 {
-	printf("real_read_packet(%d)\n", buf_size);
+	//printf("real_read_packet(%d)\n", buf_size);
 	int len = 0;
 	while ( len < buf_size )
 	{
-		int old_qsize = ch->queue_size;
-		int ret = ch->queueRead(buf + len, buf_size - len);
-		printf("queueRead() = %d, old_qsize=%d, new_qsize=%d\n", ret, old_qsize, ch->queue_size);
+		int old_qsize = queue_size;
+		int ret = queueRead(buf + len, buf_size - len);
+		//printf("queueRead() = %d, old_qsize=%d, new_qsize=%d\n", ret, old_qsize, queue_size);
 		if ( ret < 0 )
 		{
 			//if ( len == 0 ) return AVERROR(EAGAIN);
 			return len;
 		}
-		ch->init_size += ret;
+		init_size += ret;
 		len += ret;
 	}
 	return len;
@@ -53,8 +79,8 @@ int AVCChannel::read_packet(void *opaque, uint8_t *buf, int buf_size)
 	if ( ch )
 	{
 		int old_qsize = ch->queue_size;
-		int ret = real_read_packet(ch, buf, buf_size);
-		printf("read_packet(%d) = %d, old_qsize=%d, new_qszie=%d\n", buf_size, ret, old_qsize, ch->queue_size);
+		int ret = ch->real_read_packet(buf, buf_size);
+		//printf("read_packet(%d) = %d, old_qsize=%d, new_qszie=%d\n", buf_size, ret, old_qsize, ch->queue_size);
 		if ( ret == 0 ) return AVERROR(EAGAIN);
 		return ret;
 	}
@@ -70,6 +96,7 @@ int AVCChannel::read_packet(void *opaque, uint8_t *buf, int buf_size)
 void AVCChannel::onPeerDown()
 {
 	// TODO
+	engine->scene->removeFeed(this);
 	leaveDaemon();
 }
 
@@ -140,7 +167,7 @@ int AVCChannel::queueRead(uint8_t *buf, int buf_size)
 {
 	if ( pkt_count <= 0 )
 	{
-		printf("    queue empty\n");
+		//printf("    queue empty\n");
 		return AVERROR(EAGAIN);
 	}
 	
@@ -201,8 +228,16 @@ void AVCChannel::handleFeedData()
 			
 			printf("openFeed() done, init_size=%d\n", init_size);
 			
+			if ( ! openVideoStream() )
+			{
+				printf("fail to openVideoStream()\n");
+				close();
+				exit(-1);
+			}
+			
 			feed_state = FEED_STREAMING;
-			//engine->scene->replaceFeed(this);
+			
+			engine->scene->replaceFeed(this);
 		}
 	}
 	
@@ -211,25 +246,34 @@ void AVCChannel::handleFeedData()
 		bool ret;
 		do
 		{
-			static int i = 1;
-			if ( queue_size > (32*1024) )
+			//static int i = 1;
+			if ( queue_size > (128*1024) )
 			{
-				printf("readFrame #%d, queue_size=%d\n", i, queue_size);
+				//printf("readFrame #%d, queue_size=%d\n", i, queue_size);
 				ret = demux->readFrame();
-				if ( ret ) printf("readFrame(#%d) ok\n", i++);
+				//if ( ret ) printf("readFrame(#%d) ok\n", i++);
 			}
 			else
 			{
-				printf("queue_size low = %d\n", queue_size);
+				//printf("queue_size low = %d\n", queue_size);
 				break;
 			}
 		}
 		while ( ret );
 		
-		static int cnt = 0;
-		cnt ++;
+		//static int cnt = 0;
+		//cnt ++;
 		//if ( cnt == 60 ) exit(-1);
 	}
+}
+
+/**
+* Обработчик фрейма
+*/
+void AVCChannel::handleFrame(AVFrame *avFrame)
+{
+	//printf("AVCChannel::handleFrame(%d, %d, pts=%"PRId64")\n", avFrame->width, avFrame->height, avFrame->pts);
+	scale->scale(pic->avFrame, avFrame);
 }
 
 /**
@@ -305,6 +349,48 @@ bool AVCChannel::openFeed()
 		printf("demux->openAVIO() failed\n");
 		return false;
 	}
+	
+	return true;
+}
+
+/**
+* Открыть видео поток
+*/
+bool AVCChannel::openVideoStream()
+{
+	// найти видео-поток
+	int video_stream = demux->findVideoStream();
+	if ( video_stream < 0 )
+	{
+		printf("fail to find video stream\n");
+		return false;
+	}
+	printf("video stream #%d\n", video_stream);
+	
+	// присоединить обработчик потока
+	vin = new AVCFeedInput(this);
+	demux->bindStream(video_stream, vin);
+	
+	// открыть декодер видео
+	if ( ! vin->openDecoder() )
+	{
+		printf("stream[%d] openDecoder() failed\n", video_stream);
+		return false;
+	}
+	
+	int width = vin->avStream->codecpar->width;
+	int height = vin->avStream->codecpar->height;
+	printf("video size: %dx%d\n", width, height);
+	
+	pic = FFCImage::createImage(width, height);
+	if ( pic.getObject() == NULL )
+	{
+		printf("fail to create FFCImage\n");
+		return false;
+	}
+	
+	scale = new FFCScale();
+	scale->init_scale(pic->avFrame, vin->avFrame);
 	
 	return true;
 }

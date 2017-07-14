@@ -90,15 +90,15 @@ void AVCFeedAgent::onConnect()
 void AVCFeedAgent::handleFrame(AVFrame *avFrame)
 {
 	iFrame++;
+	
 	/*
-	scale_pic->scale(pic->avFrame, avFrame);
+	scale_pic->scale(pic->avFrame, vout->avFrame);
 	char sFrameId[80];
 	snprintf(sFrameId, sizeof(sFrameId), "out/frame%04d.png", iFrame);
 	printf("avFrame.pts: %"PRId64", key_frame=%d\n", avFrame->pts, avFrame->key_frame);
 	pic->savePNG(sFrameId);
 	*/
-	
-	scale_pic->scale(vout->avFrame, avFrame);
+	scale->scale(vout->avFrame, avFrame);
 	
 	//printf("vin.pts=%"PRId64" { %d, %d }\n", avFrame->pts, vin->avStream->time_base.num, vin->avStream->time_base.den);
 	/*
@@ -112,8 +112,6 @@ void AVCFeedAgent::handleFrame(AVFrame *avFrame)
 	}
 	printf("vout.pts=%"PRId64" { %d, %d }\n", vout->avFrame->pts, vout->avStream->time_base.num, vout->avStream->time_base.den);
 	*/
-	
-	static uint64_t iFrame = 0;
 	
 	vout->avFrame->pts = iFrame++;
 	
@@ -328,10 +326,6 @@ int AVCFeedAgent::openFeed(int width, int height, int64_t bit_rate)
 	
 	iFrame = 0;
 	
-	scale = new FFCScale();
-	scale->init_scale(vout->avFrame, vin->avFrame);
-	
-	// отладочный код
 	pic = FFCImage::createImage(width, height);
 	if ( pic.getObject() == NULL )
 	{
@@ -341,6 +335,9 @@ int AVCFeedAgent::openFeed(int width, int height, int64_t bit_rate)
 	
 	scale_pic = new FFCScale();
 	scale_pic->init_scale(pic->avFrame, vin->avFrame);
+	
+	scale = new FFCScale();
+	scale->init_scale(vout->avFrame, vin->avFrame);
 	
 	return 0;
 }

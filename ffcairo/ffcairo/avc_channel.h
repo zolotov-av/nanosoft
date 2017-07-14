@@ -4,8 +4,43 @@
 #include <ffcairo/avc_stream.h>
 #include <ffcairo/avc_engine.h>
 #include <ffcairo/ffcdemuxer.h>
+#include <ffcairo/ffcimage.h>
+#include <ffcairo/scale.h>
 
 #define MAX_PACKET_COUNT 5000
+
+class AVCChannel;
+
+/**
+ * Поток видео
+ */
+class AVCFeedInput: public FFCVideoInput
+{
+public:
+	
+	/**
+	 * Ссылка на агента
+	 */
+	AVCChannel *channel;
+	
+	/**
+	 * Конструктор
+	 */
+	AVCFeedInput(AVCChannel *ch);
+	
+	/**
+	 * Деструктор
+	 */
+	~AVCFeedInput();
+	
+protected:
+	
+	/**
+	 * Обработчик фрейма
+	 */
+	virtual void handleFrame();
+	
+};
 
 /**
  * Канал (сетевой) сервера видеоконференций
@@ -14,6 +49,7 @@
  */
 class AVCChannel: public AVCStream
 {
+friend class AVCFeedInput;
 public:
 	/**
 	 * Ссылка на движок
@@ -62,6 +98,21 @@ public:
 	ptr<FFCDemuxer> demux;
 	
 	/**
+	 * Видео-поток
+	 */
+	ptr<AVCFeedInput> vin;
+	
+	/**
+	 * Картинка
+	 */
+	ptr<FFCImage> pic;
+	
+	/**
+	 * Контекст маштабирования
+	 */
+	ptr<FFCScale> scale;
+	
+	/**
 	 * контекст AVIO
 	 */
 	AVIOContext *avio_ctx;
@@ -76,8 +127,12 @@ public:
 	 */
 	virtual ~AVCChannel();
 	
-//protected:
-public:
+protected:
+	
+	/**
+	 * Обработчик чтения пакета из потока
+	 */
+	int real_read_packet(uint8_t *buf, int buf_size);
 	
 	/**
 	 * Обработчик чтения пакета из потока
@@ -112,6 +167,11 @@ public:
 	 */
 	void handleFeedData();
 	
+	/**
+	 * Обработчик фрейма
+	 */
+	void handleFrame(AVFrame *avFrame);
+	
 public:
 	
 	/**
@@ -135,6 +195,12 @@ public:
 	 * Открыть входящий поток
 	 */
 	bool openFeed();
+	
+	/**
+	 * Открыть видео поток
+	 */
+	bool openVideoStream();
+	
 };
 
 #endif // AVC_CHANNEL_H

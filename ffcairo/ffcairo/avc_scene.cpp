@@ -2,6 +2,7 @@
 #include <ffcairo/avc_scene.h>
 #include <ffcairo/avc_http.h>
 #include <ffcairo/avc_channel.h>
+#include <ffcairo/ffcimage.h>
 
 /**
 * Конструктор
@@ -300,7 +301,14 @@ void AVCScene::emitFrame()
 	cairo_move_to (cr, shift*1.5, pic->height - shift*1.5);
 	cairo_show_text (cr, sFrameId);
 	
-	
+	if ( feed )
+	{
+		double shift = pic->width * 0.03;
+		double cam_x = pic->width - shift - feed->pic->width;
+		double cam_y = shift;
+		cairo_set_source_surface (cr, feed->pic->surface, cam_x, cam_y);
+		cairo_paint (cr);
+	}
 	
 	// Освобождаем контекст рисования Cairo
 	cairo_destroy(cr);
@@ -371,4 +379,21 @@ void AVCScene::replaceFeed(AVCChannel *ch)
 	printf("AVCScene::replaceFeed()\n");
 	if ( feed ) feed->handleKick();
 	feed = ch;
+}
+
+/**
+* Удалить фидера
+*
+* Если текущий фидер равен указанному, то удалить фидер, если не
+* совпадает, то ничего не делать
+*
+* Временная функция
+*/
+void AVCScene::removeFeed(AVCChannel *ch)
+{
+	if ( ch && feed == ch )
+	{
+		feed = NULL;
+		ch->handleKick();
+	}
 }
