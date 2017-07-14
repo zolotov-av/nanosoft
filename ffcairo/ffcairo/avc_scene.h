@@ -8,6 +8,7 @@
 #include <ffcairo/ffcmuxer.h>
 
 class AVCHttp;
+class AVCChannel;
 
 #define MAX_HTTP_CLIENTS 8
 
@@ -62,6 +63,14 @@ public:
 	 * контекст AVIO
 	 */
 	AVIOContext *avio_ctx;
+	
+	/**
+	 * Фидер
+	 *
+	 * Для начала пишем в лоб и поддерживаем один фидер, позже надо заменить
+	 * на список
+	 */
+	AVCChannel *feed;
 	
 	/**
 	 * Конструктор
@@ -128,6 +137,16 @@ public:
 	 * Удалить клиента HTTP
 	 */
 	void removeHttpClient(AVCHttp *client);
+	
+	/**
+	 * Заменить фидера
+	 *
+	 * Устанавливает фидера, если фидер уже был установлен,то заменяет его,
+	 * а старого кикает с сервера
+	 *
+	 * Временная функция
+	 */
+	void replaceFeed(AVCChannel *ch);
 	
 };
 

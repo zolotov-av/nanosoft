@@ -1,11 +1,12 @@
 
 #include <ffcairo/avc_scene.h>
 #include <ffcairo/avc_http.h>
+#include <ffcairo/avc_channel.h>
 
 /**
 * Конструктор
 */
-AVCScene::AVCScene(): http_count(0)
+AVCScene::AVCScene(): http_count(0), feed(NULL)
 {
 	memset(&opts, 0, sizeof(opts));
 }
@@ -355,4 +356,19 @@ void AVCScene::removeHttpClient(AVCHttp *client)
 			printf("removed HTTP client, new count %d of %d\n", http_count, MAX_HTTP_CLIENTS);
 		}
 	}
+}
+
+/**
+* Заменить фидера
+*
+* Устанавливает фидера, если фидер уже был установлен,то заменяет его,
+* а старого кикает с сервера
+*
+* Временная функция
+*/
+void AVCScene::replaceFeed(AVCChannel *ch)
+{
+	printf("AVCScene::replaceFeed()\n");
+	if ( feed ) feed->handleKick();
+	feed = ch;
 }

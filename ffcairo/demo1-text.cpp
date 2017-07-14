@@ -138,6 +138,8 @@ int main(int argc, char *argv[])
 		printf("fail to open file\n");
 		return -1;
 	}
+	printf("demux->probesize = %"PRId64"\n", demux->avFormat->probesize);
+	printf("demux->fps_probe_size = %d\n", demux->avFormat->fps_probe_size);
 	
 	// найти видео-поток
 	int video_stream = demux->findVideoStream();

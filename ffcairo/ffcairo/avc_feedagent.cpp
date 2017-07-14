@@ -63,11 +63,25 @@ int AVCFeedAgent::write_packet(void *opaque, uint8_t *buf, int buf_size)
 void AVCFeedAgent::onConnect()
 {
 	printf("AVCFeedAgent::onConnect()\n");
+	
+	avc_packet_t pkt;
+	pkt.channel = 0;
+	pkt.type = 1;
+	avc_set_packet_len(&pkt, sizeof(pkt));
+	if ( ! sendPacket(&pkt) )
+	{
+		printf("fail to sendPacket()\n");
+		exit(-1);
+	}
+	
 	if ( ! muxer->openAVIO() )
 	{
 		printf("fail to openAVIO()\n");
 		exit(-1);
 	}
+	
+	//int ret = av_write_frame(muxer->avFormat, 0);
+	//printf("av_write_frame(flush), ret = %d\n", ret);
 }
 
 /**
@@ -248,8 +262,8 @@ bool AVCFeedAgent::openVideoStream()
 	opts.height = height;
 	opts.pix_fmt = AV_PIX_FMT_YUV420P;
 	opts.bit_rate = 2000000;
-	opts.time_base = (AVRational){ 1, 600 };
-	opts.gop_size = 60;
+	opts.time_base = (AVRational){ 1, 25 };
+	opts.gop_size = 5;
 	
 	return true;
 }

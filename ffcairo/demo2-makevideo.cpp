@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 	}
 	
 	int frameNo = 0;
-	while ( 1 )
+	while ( 0 )
 	{
 		frameNo++;
 		if ( frameNo > (25 * 30) ) break;
