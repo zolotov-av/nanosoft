@@ -6,7 +6,7 @@
 /**
 * Конструктор
 */
-FFCVideoOutput::FFCVideoOutput(AVStream *st): avStream(st), avEncoder(NULL), avFrame(NULL)
+FFCVideoOutput::FFCVideoOutput(AVStream *st): avStream(st)
 {
 }
 
@@ -15,7 +15,6 @@ FFCVideoOutput::FFCVideoOutput(AVStream *st): avStream(st), avEncoder(NULL), avF
 */
 FFCVideoOutput::~FFCVideoOutput()
 {
-	closeEncoder();
 }
 
 /**
@@ -23,110 +22,21 @@ FFCVideoOutput::~FFCVideoOutput()
 */
 bool FFCVideoOutput::openEncoder(const FFCVideoOptions *opts)
 {
-	AVCodec *codec = avcodec_find_encoder(opts->codec_id);
-	if ( ! codec )
+	if ( openVideoEncoder(opts) )
 	{
-		printf("encoder not found\n");
-		return false;
+		avStream->time_base = opts->time_base;
+		
+		int ret = avcodec_parameters_from_context(avStream->codecpar, avEncoder);
+		if ( ret < 0 )
+		{
+			printf("Failed to copy encoder parameters to output stream\n");
+			return false;
+		}
+		
+		return true;
 	}
 	
-	avEncoder = avcodec_alloc_context3(codec);
-	avEncoder->width     = opts->width;
-	avEncoder->height    = opts->height;
-	avEncoder->pix_fmt   = opts->pix_fmt;
-	avEncoder->bit_rate  = opts->bit_rate;
-	avStream->time_base   = opts->time_base;
-	avEncoder->time_base = avStream->time_base;
-	avEncoder->gop_size  = opts->gop_size;
-	
-	if ( avEncoder->codec_id == AV_CODEC_ID_MPEG2VIDEO )
-	{
-		/* just for testing, we also add B frames */
-		avEncoder->max_b_frames = 2;
-	}
-	
-	if ( avEncoder->codec_id == AV_CODEC_ID_MPEG1VIDEO )
-	{
-		/* Needed to avoid using macroblocks in which some coeffs overflow.
-		 * This does not happen with normal video, it just happens here as
-		 * the motion of the chroma plane does not match the luma plane. */
-		avEncoder->mb_decision = 2;
-	}
-	
-	int ret = avcodec_open2(avEncoder, codec, NULL);
-	if ( ret < 0 )
-	{
-		printf("avcodec_open2() failed\n");
-		return false;
-	}
-	
-	ret = avcodec_parameters_from_context(avStream->codecpar, avEncoder);
-	if (ret < 0) {
-		printf("Failed to copy encoder parameters to output stream\n");
-		return ret;
-	}
-	
-	avFrame = av_frame_alloc();
-	if ( !avFrame )
-	{
-		printf("av_frame_alloc() failed\n");
-		return false;
-	}
-	
-	avFrame->width  = opts->width;
-	avFrame->height = opts->height;
-	avFrame->format = opts->pix_fmt;
-	
-	/* allocate the buffers for the frame data */
-	ret = av_frame_get_buffer(avFrame, 1);
-	if ( ret < 0 )
-	{
-		printf("av_frame_get_buffer() failed\n");
-		return false;
-	}
-	
-	return true;
-}
-
-/**
-* Закрыть кодек
-*/
-void FFCVideoOutput::closeEncoder()
-{
-	// освободить фрейм, указатель будет установлен в NULL
-	av_frame_free(&avFrame);
-	
-	// освободить кодек, указатель будет установлен в NULL
-	avcodec_free_context(&avEncoder);
-}
-
-/**
-* Кодировать кадр с маштабированием
-*/
-bool FFCVideoOutput::encode()
-{
-	return encode(avFrame);
-}
-
-/**
-* Кодировать кадр
-*/
-bool FFCVideoOutput::encode(AVFrame *frame)
-{
-	int ret = avcodec_send_frame(avEncoder, frame);
-	if ( ret == AVERROR(EAGAIN) )
-	{
-		printf("avcodec_send_frame() == EAGAIN\n");
-		return false;
-	}
-	
-	if ( ret < 0 )
-	{
-		printf("avcodec_send_frame() failed\n");
-		return false;
-	}
-	
-	return true;
+	return false;
 }
 
 /**
@@ -134,23 +44,7 @@ bool FFCVideoOutput::encode(AVFrame *frame)
 */
 bool FFCVideoOutput::recv_packet(AVPacket *pkt, int &got_packet)
 {
-	int ret = avcodec_receive_packet(avEncoder, pkt);
-	if ( ret == 0 )
-	{
-		got_packet = 1;
-		return true;
-	}
-	
-	got_packet = 0;
-	
-	if ( ret == AVERROR(EAGAIN) )
-	{
-		//printf("avcodec_receive_packet() == EAGAIN\n");
-		return true;
-	}
-	
-	printf("avcodec_receive_packet() failed\n");
-	return false;
+	return readPacket(pkt, &got_packet);
 }
 
 /**

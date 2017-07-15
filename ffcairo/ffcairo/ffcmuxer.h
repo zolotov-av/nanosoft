@@ -3,27 +3,20 @@
 
 #include <nanosoft/object.h>
 #include <ffcairo/ffctypes.h>
+#include <ffcairo/avc_encoder.h>
 
 /**
  * Класс исходящего видео потока
+ *
+ * NOTE Устаревший класс, используйте AVCEncoder
  */
-class FFCVideoOutput: public Object
+class FFCVideoOutput: public Object, public AVCVideoEncoder
 {
 public:
 	/**
 	 * Ссылка на поток
 	 */
 	AVStream *avStream;
-	
-	/**
-	 * Ссылка на контекст кодека
-	 */
-	AVCodecContext *avEncoder;
-	
-	/**
-	 * Фрейм в который надо помещать кадр чтобы записать его в поток
-	 */
-	AVFrame *avFrame;
 	
 	/**
 	 * Конструктор
@@ -39,21 +32,6 @@ public:
 	 * Открыть кодек
 	 */
 	bool openEncoder(const FFCVideoOptions *opts);
-	
-	/**
-	 * Закрыть кодек
-	 */
-	void closeEncoder();
-	
-	/**
-	 * Кодировать кадр
-	 */
-	bool encode();
-	
-	/**
-	 * Кодировать кадр
-	 */
-	bool encode(AVFrame *frame);
 	
 	/**
 	 * Получить пакет

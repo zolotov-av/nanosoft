@@ -2,6 +2,7 @@
 #define FFC_DEMUXER_H
 
 #include <ffcairo/ffctypes.h>
+#include <ffcairo/avc_decoder.h>
 #include <nanosoft/object.h>
 
 /**
@@ -39,23 +40,13 @@ protected:
  *
  * Данный класс позволяет декодировать поток и получать отдельные кадры
  */
-class FFCVideoInput: public FFCInputStream
+class FFCVideoInput: public FFCInputStream, public AVCVideoDecoder
 {
 public:
 	/**
 	 * Ссылка на поток
 	 */
 	AVStream *avStream;
-	
-	/**
-	 * Контекст кодека
-	 */
-	AVCodecContext *avDecoder;
-	
-	/**
-	 * Фрейм (кадр)
-	 */
-	AVFrame *avFrame;
 	
 	/**
 	 * Конструктор
@@ -71,11 +62,6 @@ public:
 	 * Открыть кодек
 	 */
 	bool openDecoder();
-	
-	/**
-	 * Закрыть кодек
-	 */
-	void closeDecoder();
 	
 protected:
 	

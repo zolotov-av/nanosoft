@@ -6,7 +6,7 @@
 /**
 * Конструктор
 */
-FFCVideoInput::FFCVideoInput(): avStream(NULL), avDecoder(NULL), avFrame(NULL)
+FFCVideoInput::FFCVideoInput(): avStream(NULL)
 {
 }
 
@@ -15,7 +15,6 @@ FFCVideoInput::FFCVideoInput(): avStream(NULL), avDecoder(NULL), avFrame(NULL)
 */
 FFCVideoInput::~FFCVideoInput()
 {
-	closeDecoder();
 }
 
 /**
@@ -48,55 +47,19 @@ void FFCVideoInput::handleDetach()
 */
 bool FFCVideoInput::openDecoder()
 {
-	// Find the decoder for the video stream
-	AVCodec *codec = avcodec_find_decoder(avStream->codecpar->codec_id);
-	if( codec == NULL ) {
-		printf("Unsupported codec!\n");
-		return false; // Codec not found
-	}
+	AVCodecID codec_id = avStream->codecpar->codec_id;
+	const AVCodecParameters *par = avStream->codecpar;
 	
-	avDecoder = avcodec_alloc_context3(codec);
-	if ( !avDecoder ) {
-		printf("Failed to allocate the decoder context for stream\n");
-		return false;
-	}
-	
-	int ret = avcodec_parameters_to_context(avDecoder, avStream->codecpar);
-	if (ret < 0) {
-		printf("Failed to copy decoder parameters to input decoder context\n");
-		return false;
-	}
-	
-	ret = avcodec_open2(avDecoder, codec, 0);
-	if( ret < 0 ) {
-		printf("Could not open codec\n");
-		return false; // Could not open codec
-	}
-	
-	avFrame = av_frame_alloc();
-	if ( !avFrame )
+	if ( AVCDecoder::openDecoder(codec_id, par) )
 	{
-		printf("av_frame_alloc() failed\n");
-		return false;
+		avFrame->width  = avDecoder->width;
+		avFrame->height = avDecoder->height;
+		avFrame->format = avDecoder->pix_fmt;
+		
+		return true;
 	}
 	
-	avFrame->width  = avDecoder->width;
-	avFrame->height = avDecoder->height;
-	avFrame->format = avDecoder->pix_fmt;
-	
-	return true;
-}
-
-/**
-* Закрыть кодек
-*/
-void FFCVideoInput::closeDecoder()
-{
-	// освободить фрейм, указатель будет установлен в NULL
-	av_frame_free(&avFrame);
-	
-	// освободить кодек, указатель будет установлен в NULL
-	avcodec_free_context(&avDecoder);
+	return false;
 }
 
 /**
@@ -104,34 +67,15 @@ void FFCVideoInput::closeDecoder()
 */
 void FFCVideoInput::handlePacket(AVPacket *packet)
 {
-	int ret = avcodec_send_packet(avDecoder, packet);
-	if ( ret == AVERROR(EAGAIN) )
+	if ( decode(packet) )
 	{
-		printf("avcodec_send_packet() == EAGAIN\n");
-		return;
-	}
-	if ( ret < 0 )
-	{
-		printf("avcodec_send_packet() failed\n");
-		return;
-	}
-	
-	while ( 1 )
-	{
-		ret = avcodec_receive_frame(avDecoder, avFrame);
-		if ( ret < 0 ) break;
-		
-		handleFrame();
-	}
-	
-	if ( ret == AVERROR(EAGAIN) )
-	{
-		return;
-	}
-	else
-	{
-		printf("avcodec_receive_frame() failed\n");
-		return;
+		int got_frame;
+		do
+		{
+			if ( ! readFrame(&got_frame) ) return;
+			if ( got_frame ) handleFrame();
+		}
+		while ( got_frame );
 	}
 }
 
@@ -352,7 +296,6 @@ bool FFCDemuxer::readFrame()
 		}
 		// конец файла или ошибка
 		printf("av_read_frame() failed\n");
-		exit(-1);
 		return false;
 	}
 	

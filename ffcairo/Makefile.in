@@ -83,6 +83,8 @@ LIBOBJECTS+=obj/avc_http.o
 LIBOBJECTS+=obj/avc_scene.o
 LIBOBJECTS+=obj/avc_feedagent.o
 LIBOBJECTS+=obj/avc_time.o
+LIBOBJECTS+=obj/avc_encoder.o
+LIBOBJECTS+=obj/avc_decoder.o
 
 ############################# GENERIC RULES ##################################
 
@@ -215,6 +217,12 @@ obj/avc_feedagent.o: ffcairo/avc_feedagent.cpp ffcairo/avc_feedagent.h
 
 obj/avc_time.o: ffcairo/avc_time.cpp ffcairo/avc_time.h
 	$(CXX) -c ffcairo/avc_time.cpp -o obj/avc_time.o
+
+obj/avc_encoder.o: ffcairo/avc_encoder.cpp ffcairo/avc_encoder.h
+	$(CXX) -c ffcairo/avc_encoder.cpp -o obj/avc_encoder.o
+
+obj/avc_decoder.o: ffcairo/avc_decoder.cpp ffcairo/avc_decoder.h
+	$(CXX) -c ffcairo/avc_decoder.cpp -o obj/avc_decoder.o
 
 ########################### CLEAN RULES ######################################
 
