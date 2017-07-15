@@ -98,7 +98,7 @@ progs: $(PROGS)
 demo: demo1-text demo2-makevideo demo3-remux
 
 .PHONY: test
-test: test5
+test: test5 test6
 
 # сборка deb-пакетов, просто короткая цель чтобы не вспоминать имя пакета
 .PHONY: deb
@@ -154,6 +154,9 @@ avc_feeder: avc_feeder.cpp libffcairo.a ffcairo/config.h
 
 test5: test5-ffc.cpp libffcairo.a
 	$(CXX) $(LDFLAGS) -o test5 test5-ffc.cpp -L. -lffcairo $(LIBS)
+
+test6: test6-pts.cpp libffcairo.a
+	$(CXX) $(LDFLAGS) -o test6 test6-pts.cpp -L. -lffcairo $(LIBS)
 
 demo1-text: demo1-text.cpp libffcairo.a ffcairo/config.h
 	$(CXX) $(LDFLAGS) -o demo1-text demo1-text.cpp -L. -lffcairo $(LIBS)
@@ -218,7 +221,7 @@ distclean: clean deb_clean
 	rm -f deb_avc/DEBIAN/control avc_server-*.deb
 	rm -f config.log config.status ffcairo/config.h
 	rm -rf autom4te.cache
-	rm -rf libffcairo.a $(PROGS) test5
+	rm -rf libffcairo.a $(PROGS) test5 test6
 	rm -rf demo1-text demo2-makevideo demo3-remux
 
 # простая очистка, промежуточные файлы, но оставляет целевые
