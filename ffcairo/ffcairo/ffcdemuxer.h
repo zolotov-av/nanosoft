@@ -9,6 +9,8 @@
  * Абстрактный класс входного потока
  *
  * Это может быть и видео и аудио и субтитры и что угодно
+ *
+ * NOTE Устаревший класс, используйте AVCDecoder
  */
 class FFCInputStream: public Object
 {
@@ -39,6 +41,8 @@ protected:
  * Класс входящего видео потока
  *
  * Данный класс позволяет декодировать поток и получать отдельные кадры
+ *
+ * NOTE Устаревший класс, используйте AVCDecoder
  */
 class FFCVideoInput: public FFCInputStream, public AVCVideoDecoder
 {
