@@ -6,6 +6,7 @@
 #include <ffcairo/ffcdemuxer.h>
 #include <ffcairo/ffcimage.h>
 #include <ffcairo/scale.h>
+#include <nanosoft/bufferstream.h>
 
 #define MAX_PACKET_COUNT 5000
 
@@ -79,9 +80,9 @@ public:
 	} feed_state;
 	
 	/**
-	 * Буфер пакетов
+	 * Буфер
 	 */
-	avc_payload_t *pkt_buf[MAX_PACKET_COUNT];
+	BufferStream pktbuf;
 	
 	/**
 	 * Число пакетов в буфере

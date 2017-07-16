@@ -28,7 +28,7 @@ void AVCFeedInput::handleFrame()
 /**
 * Конструктор
 */
-AVCChannel::AVCChannel(int afd, AVCEngine *e): AVCStream(afd), engine(e)
+AVCChannel::AVCChannel(int afd, AVCEngine *e): AVCStream(afd), engine(e), pktbuf(e->daemon->getPool())
 {
 	printf("new AVCChannel\n");
 	
@@ -139,25 +139,14 @@ void AVCChannel::onPacket(const avc_packet_t *pkt)
 */
 void AVCChannel::queuePacket(const avc_packet_t *pkt)
 {
-	if ( pkt_count < MAX_PACKET_COUNT )
+	avc_payload_t *p = (avc_payload_t *)pkt;
+	int ret = pktbuf.write(p->buf, avc_packet_payload(p));
+	if ( ret == 0 )
 	{
-		int plen = avc_packet_len(pkt);
-		avc_payload_t *p = (avc_payload_t *)malloc(plen);
-		if ( ! p )
-		{
-			printf("malloc() failed\n");
-			exit(-1);
-			return;
-		}
-		memcpy(p, pkt, plen);
-		pkt_buf[pkt_count++] = p;
-		queue_size += plen - 4;
-		return;
+		printf("queue full\n");
+		exit(-1);
 	}
-	
-	printf("queue full\n");
-	exit(-1);
-	return;
+	queue_size = pktbuf.getDataSize();
 }
 
 /**
@@ -165,45 +154,14 @@ void AVCChannel::queuePacket(const avc_packet_t *pkt)
 */
 int AVCChannel::queueRead(uint8_t *buf, int buf_size)
 {
-	if ( pkt_count <= 0 )
+	int ret = pktbuf.read(buf, buf_size);
+	if ( ret == 0 )
 	{
-		//printf("    queue empty\n");
+		printf("    queue empty\n");
 		return AVERROR(EAGAIN);
 	}
-	
-	avc_payload_t *p = pkt_buf[0];
-	int plen = avc_packet_len(p) - 4;
-	
-	// если запрошено больше чем есть в пакете, то сколько есть в пакете
-	if ( buf_size > plen ) buf_size = plen;
-	
-	memcpy(buf, p->buf, buf_size);
-	
-	if ( buf_size < plen )
-	{
-		// если пакет прочитан не полностью, то сдвинуть данные в пакете
-		int xlen = plen - buf_size; // сколько осталось в пакете
-		avc_set_packet_len(p, xlen + 4);
-		for(int i = 0; i < xlen; i++)
-		{
-			p->buf[i] = p->buf[i+buf_size];
-		}
-		
-		queue_size -= buf_size;
-		return buf_size;
-	}
-	
-	// если пакет прочитан полностью, то удалить пакет и подвинуть указатели
-	pkt_count--;
-	for(int i = 0; i < pkt_count; i++)
-	{
-		pkt_buf[i] = pkt_buf[i+1];
-	}
-	free(p);
-	//printf("packet dequeued, count=%d\n", pkt_count);
-	
-	queue_size -= buf_size;
-	return buf_size;
+	queue_size = pktbuf.getDataSize();
+	return ret;
 }
 
 /**
