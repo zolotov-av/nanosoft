@@ -12,6 +12,8 @@ struct nano_block_t
 {
 	/**
 	 * Ссылка на блок
+	 *
+	 * Размер блока всегда фиксирован и равен BLOCKSPOOL_BLOCK_SIZE
 	 */
 	uint8_t *data;
 	

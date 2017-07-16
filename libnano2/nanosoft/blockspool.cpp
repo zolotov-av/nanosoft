@@ -28,7 +28,7 @@ BlocksPool::~BlocksPool()
 static void assert_align(void *p)
 {
 	uintptr_t addr = (uintptr_t)p;
-	if ( addr % FDBUFFER_BLOCK_SIZE )
+	if ( addr % BLOCKSPOOL_BLOCK_SIZE )
 	{
 		printf("block not aligned\n");
 		exit(-1);
@@ -42,12 +42,12 @@ static void assert_align(void *p)
 */
 int BlocksPool::reserve(size_t count)
 {
-	size_t info_blocks = (count * sizeof(nano_block_t) + FDBUFFER_BLOCK_SIZE - 1) / FDBUFFER_BLOCK_SIZE;
-	size_t info_size = info_blocks * FDBUFFER_BLOCK_SIZE;
-	size_t data_size = count * FDBUFFER_BLOCK_SIZE;
+	size_t info_blocks = (count * sizeof(nano_block_t) + BLOCKSPOOL_BLOCK_SIZE - 1) / BLOCKSPOOL_BLOCK_SIZE;
+	size_t info_size = info_blocks * BLOCKSPOOL_BLOCK_SIZE;
+	size_t data_size = count * BLOCKSPOOL_BLOCK_SIZE;
 	
 	void *p;
-	int ret = posix_memalign(&p, FDBUFFER_BLOCK_SIZE, info_size + data_size);
+	int ret = posix_memalign(&p, BLOCKSPOOL_BLOCK_SIZE, info_size + data_size);
 	if ( ret != 0 ) return -1;
 	
 	pool_t *pool = new pool_t;
@@ -63,10 +63,10 @@ int BlocksPool::reserve(size_t count)
 		info->data = data;
 		info->next = stack;
 		assert_align(info->data);
-		memset(info->data, 0, FDBUFFER_BLOCK_SIZE);
+		//memset(info->data, 0, BLOCKSPOOL_BLOCK_SIZE);
 		stack = info;
 		info++;
-		data += FDBUFFER_BLOCK_SIZE;
+		data += BLOCKSPOOL_BLOCK_SIZE;
 	}
 	
 	total_count += count;
@@ -104,7 +104,7 @@ void BlocksPool::clear()
 nano_block_t* BlocksPool::allocBySize(size_t size)
 {
 	// размер в блоках
-	size_t count = (size + FDBUFFER_BLOCK_SIZE - 1) / FDBUFFER_BLOCK_SIZE;
+	size_t count = (size + BLOCKSPOOL_BLOCK_SIZE - 1) / BLOCKSPOOL_BLOCK_SIZE;
 	
 	return allocByBlocks(count);
 }
