@@ -50,10 +50,6 @@ RANLIB:=ranlib
 # Имя файла deb-пакета
 DEB_FILENAME=libnano2-$(DEB_ARCH).deb
 
-# объектные модули которые пойдут в нашу программу/библиотеку
-# просто описываем здесь в крассивом виде, чтобы правила были более понятные
-OBJECTS+=obj/main.o
-
 LIBOBJECTS+=obj/asyncagent.o
 LIBOBJECTS+=obj/asyncdns.o
 LIBOBJECTS+=obj/asyncobject.o
@@ -83,21 +79,22 @@ LIBOBJECTS+=obj/xmlparser.o
 LIBOBJECTS+=obj/xmlwriter.o
 LIBOBJECTS+=obj/attagparser.o
 
+TESTS+=test01_blockspool
+
 ############################# GENERIC RULES ##################################
 
 # .PHONY указывает цели которые не создают файлов.
 .PHONY: all install deb clean distclean
 
 # первая цель - главная, она будет запускаться когда цель явно не указана
-all: libnano2.a demo
-
-.PHONY: demo
-demo: libnano2.a
-	gcc -o main main.cpp -L. -I. -lstdc++ -lnano2
+all: libnano2.a
 
 .PHONY: test
-test:
+test: libnano2.a $(TESTS)
 
+test01_blockspool:
+	gcc -o test01_blockspool test01_blockspool.cpp -L. -I. -lstdc++ -lnano2
+	
 # установка файлов
 # примечение: будем отходить от этой практике, рекомендуется создавать пакет
 # и устанавливать через менеджер пакетов.
@@ -224,7 +221,7 @@ distclean: clean deb_clean
 	rm -f config.log config.status
 	rm -f nanosoft/config.h
 	rm -rf autom4te.cache
-	rm -rf libnano2.a main
+	rm -rf libnano2.a $(TESTS)
 
 # простая очистка, промежуточные файлы, но оставляет целевые
 clean:

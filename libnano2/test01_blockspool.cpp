@@ -1,3 +1,9 @@
+/****************************************************************************
+
+Тест №01: тест пула блоков
+
+****************************************************************************/
+
 #include <stdio.h>
 
 #include <nanosoft/blockspool.h>
@@ -15,7 +21,7 @@ int count_blocks(nano_block_t *p)
 
 int main()
 {
-	printf("Hello world\n");
+	printf("test class BlocksPool\n");
 	
 	BlocksPool bp;
 	bp.reserve(16);
