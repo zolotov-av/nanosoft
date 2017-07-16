@@ -497,10 +497,10 @@ bool NetDaemon::put(int fd, fd_info_t *fb, const char *data, size_t len)
 	{
 		// смещение к свободной части последнего блока или 0, если последний
 		// блок заполнен полностью
-		size_t offset = (fb->offset + fb->size) % FDBUFFER_BLOCK_SIZE;
+		size_t offset = (fb->offset + fb->size) % BLOCKSPOOL_BLOCK_SIZE;
 		
 		// размер свободной части последнего блока
-		size_t rest = offset > 0 ? FDBUFFER_BLOCK_SIZE - offset : 0;
+		size_t rest = offset > 0 ? BLOCKSPOOL_BLOCK_SIZE - offset : 0;
 		
 		// размер недостающей части, которую надо выделить из общего буфера
 		size_t need = len - rest;
@@ -540,12 +540,12 @@ bool NetDaemon::put(int fd, fd_info_t *fb, const char *data, size_t len)
 	}
 	
 	// записываем полные блоки
-	while ( len >= FDBUFFER_BLOCK_SIZE )
+	while ( len >= BLOCKSPOOL_BLOCK_SIZE )
 	{
-		memcpy(block->data, data, FDBUFFER_BLOCK_SIZE);
-		data += FDBUFFER_BLOCK_SIZE;
-		len -= FDBUFFER_BLOCK_SIZE;
-		fb->size += FDBUFFER_BLOCK_SIZE;
+		memcpy(block->data, data, BLOCKSPOOL_BLOCK_SIZE);
+		data += BLOCKSPOOL_BLOCK_SIZE;
+		len -= BLOCKSPOOL_BLOCK_SIZE;
+		fb->size += BLOCKSPOOL_BLOCK_SIZE;
 		fb->last = block;
 		block = block->next;
 	}
@@ -611,7 +611,7 @@ bool NetDaemon::push(int fd)
 	while ( fb->size > 0 )
 	{
 		// размер не записанной части блока
-		size_t rest = FDBUFFER_BLOCK_SIZE - fb->offset;
+		size_t rest = BLOCKSPOOL_BLOCK_SIZE - fb->offset;
 		if ( rest > fb->size ) rest = fb->size;
 		
 		// попробовать записать

@@ -16,7 +16,6 @@ int count_blocks(nano_block_t *p)
 int main()
 {
 	printf("Hello world\n");
-	printf("FDBUFFER_BLOCK_SIZE = %d\n", FDBUFFER_BLOCK_SIZE);
 	
 	BlocksPool bp;
 	bp.reserve(16);

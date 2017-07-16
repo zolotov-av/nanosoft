@@ -5,10 +5,15 @@
 #undef UNIX
 #undef WINDOWS
 
+/**
+* Размер блоков для пула BlocksPool
+*/
 #define BLOCKSPOOL_BLOCK_SIZE 4096
 
 /**
 * Размер блока файлового буфера
+*
+* Устаревшая константа, используйте BLOCKSPOOL_BLOCK_SIZE
 */
 #define FDBUFFER_BLOCK_SIZE BLOCKSPOOL_BLOCK_SIZE
 
