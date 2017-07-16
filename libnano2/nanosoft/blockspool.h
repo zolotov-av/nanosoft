@@ -67,6 +67,9 @@ protected:
 	 */
 	size_t free_count;
 	
+	/**
+	 * Размер пула в байтах
+	 */
 	size_t pool_size;
 	
 	/**

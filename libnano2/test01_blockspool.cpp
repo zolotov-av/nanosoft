@@ -28,6 +28,7 @@ int main()
 	printf("\n");
 	printf("total = %d\n", bp.getTotalCount());
 	printf("free = %d\n", bp.getFreeCount());
+	printf("pool_size = %d\n", (int)bp.getPoolSize());
 	
 	nano_block_t *blocks = bp.allocBySize(4000);
 	printf("\n");

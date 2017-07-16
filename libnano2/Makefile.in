@@ -90,9 +90,9 @@ TESTS+=test01_blockspool
 all: libnano2.a
 
 .PHONY: test
-test: libnano2.a $(TESTS)
+test: $(TESTS)
 
-test01_blockspool:
+test01_blockspool: libnano2.a test01_blockspool.cpp
 	gcc -o test01_blockspool test01_blockspool.cpp -L. -I. -lstdc++ -lnano2
 	
 # установка файлов
@@ -207,11 +207,6 @@ obj/xmlparser.o: nanosoft/xmlparser.cpp nanosoft/xmlparser.h
 
 obj/xmlwriter.o: nanosoft/xmlwriter.cpp nanosoft/xmlwriter.h
 	$(CXX) -c nanosoft/xmlwriter.cpp -o obj/xmlwriter.o
-
-
-
-obj/main.o: main.cpp
-	$(CXX) -c main.cpp -o obj/main.o
 
 ########################### CLEAN RULES ######################################
 
