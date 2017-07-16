@@ -48,7 +48,7 @@ ATXmlTag * ATTagParser::parseFile(const std::string &path)
 * @param path путь к файлу
 * @return тег в случае успеха и NULL в случае ошибки
 */
-ATXmlTag * ATTagParser::parseStream(nanosoft::stream &s)
+ATXmlTag * ATTagParser::parseStream(stream &s)
 {
 	depth = 0;
 	char buf[4096];
@@ -152,7 +152,7 @@ ATXmlTag * parse_xml_file(const std::string &path)
 * @param s поток с данными
 * @return тег в случае успеха и NULL в случае ошибки
 */
-ATXmlTag * parse_xml_stream(nanosoft::stream &s)
+ATXmlTag * parse_xml_stream(stream &s)
 {
 	ATTagParser parser;
 	return parser.parseStream(s);

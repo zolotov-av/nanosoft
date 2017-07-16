@@ -40,7 +40,7 @@ public:
 	* @param s поток с данными
 	* @return тег в случае успеха и NULL в случае ошибки
 	*/
-	ATXmlTag * parseStream(nanosoft::stream &s);
+	ATXmlTag * parseStream(stream &s);
 	
 	/**
 	* Парсинг строки
@@ -89,7 +89,7 @@ ATXmlTag * parse_xml_file(const std::string &path);
 * @param s поток с данными
 * @return тег в случае успеха и NULL в случае ошибки
 */
-ATXmlTag * parse_xml_stream(nanosoft::stream &s);
+ATXmlTag * parse_xml_stream(stream &s);
 
 /**
 * Парсинг произвольной строки
