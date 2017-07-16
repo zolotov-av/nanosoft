@@ -21,6 +21,7 @@ protected:
 	stream& operator = (const stream &) { return *this; }
 	
 public:
+	
 	/**
 	 * Конструктор по умолчанию
 	 */
@@ -40,6 +41,7 @@ public:
 	 * Записать данные в поток
 	 */
 	virtual size_t write(const void *buffer, size_t size) = 0;
+	
 };
 
 #endif // NANOSOFT_STREAM_H

@@ -107,6 +107,11 @@ public:
 	int getFreeCount() const { return free_count; }
 	
 	/**
+	 * Вернуть число свободных блоков
+	 */
+	int getBusyCount() const { return total_count - free_count; }
+	
+	/**
 	 * Размер пула в байтах
 	 */
 	size_t getPoolSize() const { return pool_size; }
