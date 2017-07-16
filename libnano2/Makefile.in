@@ -61,6 +61,7 @@ LIBOBJECTS+=obj/asyncserver.o
 LIBOBJECTS+=obj/asyncstream.o
 LIBOBJECTS+=obj/asyncudpserver.o
 LIBOBJECTS+=obj/asyncxmlstream.o
+LIBOBJECTS+=obj/blockspool.o
 LIBOBJECTS+=obj/debug.o
 LIBOBJECTS+=obj/easylib.o
 LIBOBJECTS+=obj/easymysql.o
@@ -91,7 +92,8 @@ LIBOBJECTS+=obj/attagparser.o
 all: libnano2.a demo
 
 .PHONY: demo
-demo:
+demo: libnano2.a
+	gcc -o main main.cpp -L. -I. -lstdc++ -lnano2
 
 .PHONY: test
 test:
@@ -148,6 +150,9 @@ obj/asyncxmlstream.o: nanosoft/asyncxmlstream.cpp nanosoft/asyncxmlstream.h
 
 obj/attagparser.o: nanosoft/attagparser.cpp nanosoft/attagparser.h nanosoft/xml_types.h
 	$(CXX) -c nanosoft/attagparser.cpp -o obj/attagparser.o
+
+obj/blockspool.o: nanosoft/blockspool.cpp nanosoft/blockspool.h nanosoft/config.h
+	$(CXX) -c nanosoft/blockspool.cpp -o obj/blockspool.o
 
 obj/debug.o: nanosoft/debug.cpp nanosoft/debug.h
 	$(CXX) -c nanosoft/debug.cpp -o obj/debug.o
