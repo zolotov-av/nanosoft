@@ -280,6 +280,14 @@ public:
 	int getBufferSize() const { return bp.getPoolSize(); }
 	
 	/**
+	 * Вернуть пул
+	 *
+	 * TODO надо как-то лучше сделать, чтобы NetDaemon мог предоставлять
+	 * своим клиентам свой пул блоков
+	 */
+	BlocksPool* getPool() { return &bp; }
+	
+	/**
 	* Добавить асинхронный объект
 	*/
 	bool addObject(ptr<AsyncObject> object);
