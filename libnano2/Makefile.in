@@ -78,6 +78,7 @@ LIBOBJECTS+=obj/xml_types.o
 LIBOBJECTS+=obj/xmlparser.o
 LIBOBJECTS+=obj/xmlwriter.o
 LIBOBJECTS+=obj/attagparser.o
+LIBOBJECTS+=obj/filestream.o
 LIBOBJECTS+=obj/bufferstream.o
 
 TESTS+=test01_blockspool
@@ -212,6 +213,9 @@ obj/xmlparser.o: nanosoft/xmlparser.cpp nanosoft/xmlparser.h
 
 obj/xmlwriter.o: nanosoft/xmlwriter.cpp nanosoft/xmlwriter.h
 	$(CXX) -c nanosoft/xmlwriter.cpp -o obj/xmlwriter.o
+
+obj/filestream.o: nanosoft/filestream.cpp nanosoft/filestream.h nanosoft/stream.h
+	$(CXX) -c nanosoft/filestream.cpp -o obj/filestream.o
 
 obj/bufferstream.o: nanosoft/bufferstream.cpp nanosoft/bufferstream.h nanosoft/stream.h
 	$(CXX) -c nanosoft/bufferstream.cpp -o obj/bufferstream.o
