@@ -1,5 +1,6 @@
+
 #include <nanosoft/attagparser.h>
-#include <nanosoft/fstream.h>
+#include <nanosoft/filestream.h>
 
 //using namespace std;
 using namespace nanosoft;
@@ -25,8 +26,8 @@ ATTagParser::~ATTagParser()
 */
 ATXmlTag * ATTagParser::parseFile(const char *path)
 {
-	fstream file;
-	if ( ! file.open(path, fstream::ro) ) {
+	FileStream file;
+	if ( ! file.open(path, FileStream::ro) ) {
 		std::cerr << "[ATTagParser] file not found: " << path << std::endl;
 		return 0;
 	}
