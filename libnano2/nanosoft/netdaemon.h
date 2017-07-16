@@ -5,6 +5,7 @@
 #include <nanosoft/error.h>
 #include <nanosoft/object.h>
 #include <nanosoft/config.h>
+#include <nanosoft/blockspool.h>
 #include <nanosoft/easylib.h>
 #include <nanosoft/processmanager.h>
 
@@ -143,22 +144,6 @@ private:
 	int timerCount;
 	
 	/**
-	* Структура описывающая один блок буфера
-	*/
-	struct block_t
-	{
-		/**
-		* Ссылка на следующий блок
-		*/
-		block_t *next;
-		
-		/**
-		* Данные блока
-		*/
-		char data[FDBUFFER_BLOCK_SIZE];
-	};
-	
-	/**
 	* Структура описывающая файловый дескриптор
 	*/
 	struct fd_info_t
@@ -186,33 +171,18 @@ private:
 		/**
 		* Указатель на первый блок данных
 		*/
-		block_t *first;
+		nano_block_t *first;
 		
 		/**
 		* Указатель на последний блок данных
 		*/
-		block_t *last;
+		nano_block_t *last;
 	};
 	
 	/**
-	* Размер буфера (в блоках)
-	*/
-	size_t buffer_size;
-	
-	/**
-	* Число свободных блоков
-	*/
-	size_t free_blocks;
-	
-	/**
-	* Буфер
-	*/
-	block_t *buffer;
-	
-	/**
-	* Стек свободных блоков
-	*/
-	block_t *stack;
+	 * Пул блоков
+	 */
+	BlocksPool bp;
 	
 	/**
 	* Таблица файловых дескрипторов
@@ -245,19 +215,6 @@ private:
 	* Обработать таймеры
 	*/
 	void processTimers();
-	
-	/**
-	* Выделить цепочку блоков достаточную для буферизации указаного размера
-	* @param size требуемый размер в байтах
-	* @return список блоков или NULL если невозможно выделить запрощенный размер
-	*/
-	block_t* allocBlocks(size_t size);
-	
-	/**
-	* Освободить цепочку блоков
-	* @param top цепочка блоков
-	*/
-	void freeBlocks(block_t *top);
 	
 	/**
 	* Добавить данные в буфер (thread-unsafe)
@@ -320,7 +277,7 @@ public:
 	/**
 	* Вернуть размер буфера в блоках
 	*/
-	int getBufferSize() const { return buffer_size; }
+	int getBufferSize() const { return bp.getPoolSize(); }
 	
 	/**
 	* Добавить асинхронный объект
@@ -414,7 +371,7 @@ public:
 	* Вернуть число свободных блоков в буфере
 	* @return число свободных блоков в буфере
 	*/
-	size_t getFreeSize() { return free_blocks; }
+	size_t getFreeSize() const { return bp.getFreeCount(); }
 	
 	/**
 	* Вернуть размер буферизованных данных

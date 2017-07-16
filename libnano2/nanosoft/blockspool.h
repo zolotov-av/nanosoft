@@ -60,12 +60,14 @@ protected:
 	/**
 	 * Общее число блоков в пуле
 	 */
-	int total_count;
+	size_t total_count;
 	
 	/**
 	 * Число свободных блоков в пуле
 	 */
-	int free_count;
+	size_t free_count;
+	
+	size_t pool_size;
 	
 	/**
 	 * Стек свободных блоков
@@ -94,12 +96,17 @@ public:
 	/**
 	 * Вернуть общее число блоков
 	 */
-	int getTotalCount() { return total_count; }
+	int getTotalCount() const { return total_count; }
 	
 	/**
 	 * Вернуть число свободных блоков
 	 */
-	int getFreeCount() { return free_count; }
+	int getFreeCount() const { return free_count; }
+	
+	/**
+	 * Размер пула в байтах
+	 */
+	size_t getPoolSize() const { return pool_size; }
 	
 	/**
 	 * Зарезервировать блоки
@@ -107,6 +114,13 @@ public:
 	 * Запрашивает у системы новые блоки и добавляет их в пул
 	 */
 	int reserve(size_t count);
+	
+	/**
+	 * Зарезервировать блоки
+	 *
+	 * Запрашивает у системы новые блоки и добавляет их в пул
+	 */
+	int reserveBySize(size_t size);
 	
 	/**
 	 * Очистить пул

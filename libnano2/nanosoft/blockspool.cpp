@@ -11,6 +11,7 @@ BlocksPool::BlocksPool()
 {
 	total_count = 0;
 	free_count = 0;
+	pool_size = 0;
 	stack = NULL;
 	pools = NULL;
 }
@@ -71,8 +72,22 @@ int BlocksPool::reserve(size_t count)
 	
 	total_count += count;
 	free_count += count;
+	pool_size += data_size;
 	
 	return -1;
+}
+
+/**
+* Зарезервировать блоки
+*
+* Запрашивает у системы новые блоки и добавляет их в пул
+*/
+int BlocksPool::reserveBySize(size_t size)
+{
+	// размер в блоках
+	size_t count = (size + BLOCKSPOOL_BLOCK_SIZE - 1) / BLOCKSPOOL_BLOCK_SIZE;
+	
+	return reserve(count);
 }
 
 /**
@@ -92,6 +107,7 @@ void BlocksPool::clear()
 	
 	total_count = 0;
 	free_count = 0;
+	pool_size = 0;
 	stack = 0;
 }
 
