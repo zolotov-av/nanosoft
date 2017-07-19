@@ -176,3 +176,58 @@ void BlocksPool::free(nano_block_t *list)
 	stack = list;
 	free_count += count;
 }
+
+/**
+* Глобальный пул
+*/
+static BlocksPool *global_pool;
+
+/**
+* Вернуть глобальный пул
+*
+* Для инициализации используйте bp_init_pool()
+*/
+BlocksPool* bp_pool()
+{
+	return global_pool;
+}
+
+/**
+* Вернуть глобальный пул
+*
+* Если пул не был инициализирован, то он будет автоматически инициализирован,
+* если пул имеет недостаточный размер, то он будет дополнен, если дополнить
+* не удается, то функция вернет NULL.
+*/
+BlocksPool* bp_pool(size_t min_size)
+{
+	if ( bp_init_pool(min_size) )
+	{
+		return global_pool;
+	}
+	
+	return NULL;
+}
+
+/**
+* Инициализация глобального пула
+*
+* Функция bp_init_pool() является реэнтерабельной. Если пул еще не был
+* инициализирован, то он будет инициализирован с размером не менее указанного.
+* Если пул уже был инициализирован, то убедится размер соответствует указанному
+* минимальному размеру, если нет, то дополнит его до требуемого размера.
+*/
+bool bp_init_pool(size_t min_size)
+{
+	if ( ! global_pool )
+	{
+		global_pool = new BlocksPool();
+	}
+	
+	if ( global_pool->getTotalCount() < min_size )
+	{
+		return global_pool->reserve(min_size - global_pool->getTotalCount());
+	}
+	
+	return true;
+}

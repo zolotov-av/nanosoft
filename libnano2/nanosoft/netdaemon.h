@@ -182,7 +182,7 @@ private:
 	/**
 	 * Пул блоков
 	 */
-	BlocksPool bp;
+	BlocksPool *bp;
 	
 	/**
 	* Таблица файловых дескрипторов
@@ -277,7 +277,7 @@ public:
 	/**
 	* Вернуть размер буфера в блоках
 	*/
-	int getBufferSize() const { return bp.getPoolSize(); }
+	int getBufferSize() const;
 	
 	/**
 	 * Вернуть пул
@@ -285,7 +285,7 @@ public:
 	 * TODO надо как-то лучше сделать, чтобы NetDaemon мог предоставлять
 	 * своим клиентам свой пул блоков
 	 */
-	BlocksPool* getPool() { return &bp; }
+	BlocksPool* getPool() { return bp; }
 	
 	/**
 	* Добавить асинхронный объект
@@ -379,7 +379,7 @@ public:
 	* Вернуть число свободных блоков в буфере
 	* @return число свободных блоков в буфере
 	*/
-	size_t getFreeSize() const { return bp.getFreeCount(); }
+	size_t getFreeSize() const;
 	
 	/**
 	* Вернуть размер буферизованных данных

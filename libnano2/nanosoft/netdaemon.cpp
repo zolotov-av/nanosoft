@@ -41,7 +41,11 @@ NetDaemon::NetDaemon(int fd_limit, int buf_size): sleep_time(200), timerCount(0)
 		fb->last = 0;
 	}
 	
-	bp.reserve(buf_size);
+	bp = bp_pool(buf_size);
+	if ( ! bp )
+	{
+		printf("NetDaemon failed to get BlockPool\n");
+	}
 	
 #ifdef HAVE_GNUTLS
 	printf("BEFORE gnutls_global_init()\n");
@@ -120,6 +124,14 @@ void NetDaemon::setSleepTime(int v)
 int NetDaemon::getObjectCount() const
 {
 	return count;
+}
+
+/**
+* Вернуть размер буфера в блоках
+*/
+int NetDaemon::getBufferSize() const
+{
+	return bp ? bp->getPoolSize() : 0;
 }
 
 /**
@@ -437,6 +449,15 @@ void NetDaemon::processTimers()
 }
 
 /**
+* Вернуть число свободных блоков в буфере
+* @return число свободных блоков в буфере
+*/
+size_t NetDaemon::getFreeSize() const
+{
+	return bp ? bp->getFreeCount() : 0;
+}
+
+/**
 * Вернуть размер буферизованных данных
 * @param fd файловый дескриптор
 * @return размер буферизованных данных
@@ -509,7 +530,7 @@ bool NetDaemon::put(int fd, fd_info_t *fb, const char *data, size_t len)
 		else
 		{
 			// выделить недостающие блоки
-			block = bp.allocBySize(need);
+			block = bp->allocBySize(need);
 			if ( block == 0 ) return false;
 		}
 		
@@ -528,7 +549,7 @@ bool NetDaemon::put(int fd, fd_info_t *fb, const char *data, size_t len)
 	}
 	else // fb->size == 0
 	{
-		block = bp.allocBySize(len);
+		block = bp->allocBySize(len);
 		if ( block == 0 )
 		{
 			// нет буфера
@@ -638,7 +659,7 @@ bool NetDaemon::push(int fd)
 		}
 	}
 	
-	bp.free(unused);
+	bp->free(unused);
 	
 	return fb->size <= 0;
 }
