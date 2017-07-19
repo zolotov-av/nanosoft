@@ -330,7 +330,7 @@ void AVCScene::emitFrame()
 void AVCScene::onTimer(const timeval *tv)
 {
 	int64_t ms = ms_time();
-	if ( ms - curr_pts > 40 )
+	if ( ms - curr_pts >= 40 )
 	{
 		curr_pts = ms;
 		iFrame++;
