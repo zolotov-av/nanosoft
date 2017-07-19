@@ -45,6 +45,16 @@ public:
 	int iFrame;
 	
 	/**
+	 * Время начала стрима в мили-timestamp
+	 */
+	int64_t start_pts;
+	
+	/**
+	 * Время предыдущего кадра в мили-timestamp
+	 */
+	int64_t curr_pts;
+	
+	/**
 	 * Хост на котором будет рисоваться видео
 	 */
 	ptr<FFCImage> pic;
@@ -124,9 +134,11 @@ public:
 	void emitFrame();
 	
 	/**
-	 * Временный таймер
+	 * Таймер
+	 *
+	 * Таймер должен запускаться не менее раз в 40мс
 	 */
-	void onTimer();
+	void onTimer(const timeval *tv);
 	
 	/**
 	 * Клиента HTTP

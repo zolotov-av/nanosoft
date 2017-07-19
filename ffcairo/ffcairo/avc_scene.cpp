@@ -2,6 +2,7 @@
 #include <ffcairo/avc_scene.h>
 #include <ffcairo/avc_http.h>
 #include <ffcairo/avc_channel.h>
+#include <ffcairo/avc_time.h>
 #include <ffcairo/ffcimage.h>
 
 /**
@@ -55,6 +56,9 @@ int AVCScene::sendFrame()
 	{
 		printf("scale() failed\n");
 	}
+	
+	vo->avFrame->pts = av_rescale_q(curr_pts - start_pts, ms_time_base, vo->avStream->time_base);
+	//printf("avFrame->pts: %d\n", (int)vo->avFrame->pts);
 	
 	if ( ! vo->encode() )
 	{
@@ -219,6 +223,8 @@ int AVCScene::initStreaming(int width, int height, int64_t bit_rate)
 	}
 	
 	iFrame = 0;
+	start_pts = ms_time();
+	curr_pts = start_pts;
 	
 	return 0;
 }
@@ -317,14 +323,16 @@ void AVCScene::emitFrame()
 }
 
 /**
-* Временный таймер
+* Таймер
+*
+* Таймер должен запускаться не менее раз в 40мс
 */
-void AVCScene::onTimer()
+void AVCScene::onTimer(const timeval *tv)
 {
-	// по началу таймер запускается раз в секунду, и соответственно
-	// он должен сгенерировать сразу 25 кадров
-	for(int i = 0; i < 25; i++)
+	int64_t ms = ms_time();
+	if ( ms - curr_pts > 40 )
 	{
+		curr_pts = ms;
 		iFrame++;
 		emitFrame();
 	}

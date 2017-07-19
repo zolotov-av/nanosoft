@@ -76,15 +76,23 @@ AVCEngine *en;
 
 void onTimer(const timeval &tv, NetDaemon* daemon)
 {
+	en->scene->onTimer(&tv);
+	
 	int ts = tv.tv_sec;
 	static int old_ts = 0;
+	static int old_frame = 0;
 	if ( ts > old_ts )
 	{
 		old_ts = ts;
+		int fps = en->scene->iFrame - old_frame;
+		old_frame = en->scene->iFrame;
 		
-		logger.information("avc_server is working, uptime: %lu seconds", logger.uptime());
-		
-		en->scene->onTimer();
+		int uptime = logger.uptime();
+		int d = uptime / (24 * 60 * 60);
+		int h = (uptime / (60 * 60)) % 24;
+		int m = (uptime / 60) % 60;
+		int s = uptime % 60;
+		logger.information("avc_server is working, uptime: %d days %02d:%02d:%02d, fps: %d", d, h, m, s, fps);
 	}
 }
 
@@ -113,6 +121,11 @@ int main(int argc, char** argv)
 	av_register_all();
 	
 	NetDaemon daemon(100, 1024);
+	
+	// нам нужные быстрые таймеры, при FPS=25 нужно запускать таймер
+	// каждые 40мс
+	daemon.setSleepTime(10);
+	
 	AVCEngine avc_engine(&daemon);
 	en = &avc_engine;
 	
