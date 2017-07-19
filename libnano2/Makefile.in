@@ -122,7 +122,7 @@ deb_install:
 	mkdir -p deb/usr/lib
 	install -m 0644 libnano2.a deb/usr/lib
 	mkdir -p deb/usr/share/libnano2
-	install -m 0644 README deb/usr/share/libnano2/
+	install -m 0644 README.md deb/usr/share/libnano2/
 
 ########################## BUILD RULES #######################################
 
