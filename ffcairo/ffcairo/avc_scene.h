@@ -50,6 +50,11 @@ public:
 	int64_t start_pts;
 	
 	/**
+	 * Запланированное время следующего кадра
+	 */
+	int64_t next_pts;
+	
+	/**
 	 * Время предыдущего кадра в мили-timestamp
 	 */
 	int64_t curr_pts;

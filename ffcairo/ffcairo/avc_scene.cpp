@@ -223,8 +223,9 @@ int AVCScene::initStreaming(int width, int height, int64_t bit_rate)
 	}
 	
 	iFrame = 0;
-	start_pts = ms_time();
-	curr_pts = start_pts;
+	int64_t ms = ms_time();
+	start_pts = ms + 40; // планируемое время первого фрейма
+	next_pts = ms + 38; // позволим таймеру срабатывать чуть раньше
 	
 	return 0;
 }
@@ -330,9 +331,10 @@ void AVCScene::emitFrame()
 void AVCScene::onTimer(const timeval *tv)
 {
 	int64_t ms = ms_time();
-	if ( ms - curr_pts >= 40 )
+	if ( ms >= next_pts )
 	{
 		curr_pts = ms;
+		next_pts += 40;
 		iFrame++;
 		emitFrame();
 	}
