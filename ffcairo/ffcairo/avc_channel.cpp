@@ -28,7 +28,7 @@ void AVCFeedInput::handleFrame()
 /**
 * Конструктор
 */
-AVCChannel::AVCChannel(int afd, AVCEngine *e): AVCStream(afd), engine(e), pktbuf(e->daemon->getPool())
+AVCChannel::AVCChannel(int afd, AVCEngine *e): AVCStream(afd), engine(e)
 {
 	printf("new AVCChannel\n");
 	
